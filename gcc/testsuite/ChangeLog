@@ -1,3 +1,32 @@
+2004-09-30  Release Manager
+
+	* GCC 3.3.5 Released.
+
+2004-08-08  Roger Sayle  <roger@eyesopen.com>
+
+	PR middle-end/16790
+	* gcc.c-torture/execute/pr16790-1.c: New test case.
+
+2004-08-04  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	Backport from mainline:
+	2003-07-11  Jakub Jelinek  <jakub@redhat.com>
+	* gcc.dg/20030711-1.c: New test.
+
+2004-07-24  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/16175
+	* g++.dg/template/ttp10.C: New test.
+
+2004-06-28  Josef Zlomek  <zlomekj@suse.cz>
+
+	PR c/15549
+	Backport from mainline
+	2003-08-19  Mark Mitchell  <mark@codesourcery.com>
+
+		PR c++/11946.C
+		* gcc.dg/c99-bool-1.c: Remove bogus warning.
+
 2004-05-31  Release Manager
 
 	* GCC 3.3.4 Released.

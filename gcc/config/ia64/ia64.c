@@ -1086,8 +1086,7 @@ ia64_expand_load_address (dest, src, scratch)
       if (! scratch)
 	scratch = no_new_pseudos ? subtarget : gen_reg_rtx (DImode);
 
-      emit_insn (gen_load_symptr (subtarget, plus_constant (sym, hi),
-				  scratch));
+      ia64_expand_load_address (subtarget, plus_constant (sym, hi), scratch);
       emit_insn (gen_adddi3 (temp, subtarget, GEN_INT (lo)));
     }
   else
@@ -7175,11 +7174,12 @@ ia64_reorg (insns)
       insn = get_last_insn ();
       if (! INSN_P (insn))
         insn = prev_active_insn (insn);
-      if (GET_CODE (insn) == INSN
-	  && GET_CODE (PATTERN (insn)) == UNSPEC_VOLATILE
-	  && XINT (PATTERN (insn), 1) == UNSPECV_INSN_GROUP_BARRIER)
-	{
-	  saw_stop = 1;
+      /* Skip over insns that expand to nothing.  */
+      while (GET_CODE (insn) == INSN && get_attr_empty (insn) == EMPTY_YES)
+        {
+	  if (GET_CODE (PATTERN (insn)) == UNSPEC_VOLATILE
+	      && XINT (PATTERN (insn), 1) == UNSPECV_INSN_GROUP_BARRIER)
+	    saw_stop = 1;
 	  insn = prev_active_insn (insn);
 	}
       if (GET_CODE (insn) == CALL_INSN)
@@ -7394,6 +7394,12 @@ bool
 ia64_function_ok_for_sibcall (decl)
      tree decl;
 {
+  /* We can't perform a sibcall if the current function has the syscall_linkage
+     attribute.  */
+  if (lookup_attribute ("syscall_linkage",
+			TYPE_ATTRIBUTES (TREE_TYPE (current_function_decl))))
+    return false;
+
   /* We must always return with our current GP.  This means we can
      only sibcall to functions defined in the current module.  */
   return decl && (*targetm.binds_local_p) (decl);

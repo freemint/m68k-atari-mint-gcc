@@ -1,3 +1,226 @@
+2004-09-30  Release Manager
+
+	* GCC 3.3.5 Released.
+
+2004-09-20  Roger Sayle  <roger@eyesopen.com>
+
+	PR rtl-optimization/17363
+	Backport from mainline
+	2003-07-19  Zdenek Dvorak  <rakdver@atrey.karlin.mff.cuni.cz>
+
+		PR bootstrap/11593
+		* sched-rgn.c (find_rgns): Initialize current_edge correctly.
+
+2004-09-17  James E Wilson  <wilson@specifixinc.com>
+
+	PR target/17455
+	* config/ia64/ia64.c (ia64_function_ok_for_sibcall): Return false
+	if current_function_decl is a sibcall.
+
+2004-09-13  Richard Henderson  <rth@redhat.com>
+
+        PR inline-asm/6806
+        * cselib.c (cselib_invalidate_rtx): Export.  Remove unused args.
+        (cselib_invalidate_rtx_note_stores): New.
+        (cselib_record_sets, cselib_process_insn): Update to match.
+        * cselib.h (cselib_invalidate_rtx): Declare.
+        * reload1.c (reload_cse_simplify): Invalidate asm clobbers.
+
+2004-08-29  Jonathan Wakely  <redi@gcc.gnu.org>
+
+	* doc/trouble.texi (C++ misunderstandings): Fix example code.
+
+2004-08-26  Richard Henderson  <rth@redhat.com>
+
+	PR target/15718
+	* config/alpha/alpha.h (HARD_REGNO_MODE_OK): Allow complex float
+	modes.
+
+2004-08-26  Matthias Klose  <doko@debian.org>
+
+	* doc/invoke.texi: Remove duplicate -fbranch-probabilities entry.
+
+2004-08-14  Roger Sayle  <roger@eyesopen.com>
+
+	* fixinc/tests/base/obstack.h: Backport from mainline.
+
+2004-08-14  Roger Sayle  <roger@eyesopen.com>
+	    David Billinghurst  <David.Billinghurst@riotinto.com>
+
+	PR libgfortran/15930
+	* fixinc/inclhack.def (irix___generic1, irix___generic2): New.
+	* fixinc/fixincl.x: Regenerate.
+	* fixinc/tests/base/internal/math_core.h: New file
+
+2004-08-08  Roger Sayle  <roger@eyesopen.com>
+
+	PR middle-end/16790
+	* fold-const.c (expand_muldiv_1) <NOP_EXPR>: Disallow local
+	truncations, not just global truncations.
+
+2004-08-02  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	Backport from mainline:
+	2003-07-11  Jakub Jelinek  <jakub@redhat.com>
+	* optabs.c (prepare_cmp_insn): Try cmpmemM first if it exists,
+	then fall back to cmpstrM.
+	* builtins.c (expand_builtin_memcmp): Likewise.
+	* config/s390/s390-protos.h (s390_expand_cmpstr): Rename to...
+	(s390_expand_cmpmem): ... this.
+	* config/s390/s390.md (cmpmemdi, cmpmemsi, cmpmem_short_64,
+	cmpmem_short_31, cmpmem_long_64, cmpmem_long_31): Renamed
+	from cmpstr* patterns.  Rename call to s390_expand_cmpstr
+	to s390_expand_cmpmem.
+	* config/s390/s390.c (s390_expand_cmpstr): Rename to...
+	(s390_expand_cmpstr): ... this.  Rename cmpstr* instructions
+	to cmpmem*.
+	* config/i370/i370.md (cmpmemsi, cmpmemsi_1): Renamed from
+	cmpstr* patterns.
+	* doc/md.texi (cmpstrM): Describe as String compare insn, not
+	Block compare insn.
+	(cmpmemM): Add.
+
+2004-07-25  Andreas Jaeger  <aj@suse.de>
+
+	Backport from mainline:
+        * libgcc-std.ver: Add __unorddf2 and __unordsf2 with version 3.3.4.
+
+2004-07-25  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/13250
+	Backport from mainline:
+	* config/sh/sh.md (rotlsi3): Use emit_move_insn.
+
+	PR target/15647
+	Backport from mainline:
+	* config/sh/t-linux (SHLIB_MAPFILES): Use sh specific
+	libgcc-std.ver.
+	* config/sh/libgcc-std.ver: New file.
+
+2004-07-25  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR target/15202
+	* pa.md (movdi, movsi, movhi, movqi): Support move from shift amount
+	register to general register for DI, SI, HI and QI modes.  Remove
+	move to shift amount register in DF mode.
+
+	PR rtl-optimization/14782
+	* pa.c (emit_move_sequence): Use SFmode for 4-byte modes when doing
+	the address checks for secondary reloads for loads from and stores
+	to floating-point registers.
+	* pa.h (EXTRA_CONSTRAINT, case T): Use SFmode for 4-byte modes
+	in the address check.  Move work around for ELF32 targets to
+	GO_IF_LEGITIMATE_ADDRESS.
+	(GO_IF_LEGITIMATE_ADDRESS): Require constant offsets to be
+	correctly aligned for DImode loads and stores.  Don't allow long
+	SFmode displacements on ELF32.
+
+2004-07-25  Matthias Klose  <doko@debian.org>
+
+	Backport:
+	PR rtl-optimization/14700
+
+	2004-06-24  Eric Christopher  <echristo@redhat.com>
+
+ 	* combine.c (distribute_notes): Don't delete sets to
+ 	global register variables.
+ 
+	2004-06-29  Zack Weinberg  <zack@codesourcery.com>
+ 
+ 	* combine.c (distribute_notes): Don't look at global_regs for
+ 	pseudos.
+
+2004-07-23  James E Wilson  <wilson@specifixinc.com>
+
+	PR target/16559
+	* ia64.c (ia64_expand_load_address): For CONST, replace
+	gen_load_symptr call with recursive call.
+
+2004-07-17  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	Backport from mainline:
+	2004-07-13  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	PR target/13926
+	* config/sparc/sparc-protos.h (output_ubranch): New prototype.
+	* config/sparc/sparc.c (output_ubranch): New function.
+	* config/sparc/sparc.md (jump pattern): Use it.
+
+2004-07-13  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	PR target/16494
+	* config/sparc/sparc.c (output_cbranch): Properly guard
+	the code handling far branches with TARGET_V9.
+	* config/sparc/sparc.md (length attribute): Document the
+	side-effect of having a length greater or equal to 3.
+
+2004-07-13  Eric Botcazou  <ebotcazou@libertysurf.fr>
+            Lloyd Parkes  <lloyd@must-have-coffee.gen.nz>
+
+	PR target/15186
+	* config/sparc/sol2-bi.h (LINK_ARCH64_SPEC_BASE): Pass
+	/usr/ucblib/sparcv9 as -R path when -compat-bsd is specified.
+
+2004-07-13  Eric Botcazou  <ebotcazou@libertysurf.fr>
+            Martin Sebor  <sebor@roguewave.com>
+
+	PR target/12602
+	* doc/invoke.texi (SPARC options): Document -threads
+	and -pthreads on Solaris.
+
+2004-07-12  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* config/sparc/sol2-bi.h: Handle TARGET_CPU_ultrasparc3.
+	(CPP_CPU_SPEC): Handle -mcpu=ultrasparc3.
+	(ASM_CPU_SPEC): Likewise
+	* config/sparc/sol2.h: Handle TARGET_CPU_ultrasparc3.
+	(ASM_CPU_SPEC): Handle -mcpu=ultrasparc3.
+
+2004-07-10  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* pa.c (output_indirect_call): Only use %r2 as the link register in
+	indirect calls with the long PA 2.0 pc-relative branch.
+
+	PR target/16459
+	* pa.c (output_indirect_call): Use %r2 as the link register when
+	calling $$dyncall with a pc-relative branch.
+
+2004-07-07  Andreas Schwab  <schwab@suse.de>
+
+	* config/ia64/ia64.md: Define new attribute "empty".
+	(prologue_use, nop_x, insn_group_barrier): Set it.
+
+	* config/ia64/ia64.c (ia64_reorg): When looking for trailing call
+	skip over "empty" insns.
+
+2004-07-04  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Adjust link for GNU Classpath.
+
+2004-06-30  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* pa.c (emit_move_sequence): Fix loading of non 14-bit CONST operands
+	when generating PIC code.
+
+2004-06-28  Josef Zlomek  <zlomekj@suse.cz>
+
+	PR c/15549
+	Backport from mainline
+	2003-08-19  Mark Mitchell  <mark@codesourcery.com>
+
+		PR c++/11946
+		* convert.c (convert_to_integer): Use CONVERT_EXPR (instead of
+		NOP_EXPR) when necessary.
+
+2004-06-17  Ian Lance Taylor  <ian@wasabisystems.com>
+
+	PR middle-end/16038
+	Backport from mainline:
+	Fri Apr  4 17:43:52 2003  Olivier Hainque <hainque@act-europe.fr>
+
+	* emit-rtl.c (get_mem_attrs): Adjust alignment tests determining
+	use of default attributes to agree MEM_ALIGN macro.
+
 2004-05-31  Release Manager
 
 	* GCC 3.3.4 Released.
