@@ -156,6 +156,20 @@ if test -n "$with_cross_host" || test x"$build" != x"$host"; then
       GLIBCPP_CHECK_WCHAR_T_SUPPORT
       os_include_dir="config/os/mingw32"
       ;;
+    *-mint*)
+      AC_CHECK_HEADERS([sys/types.h locale.h float.h])
+      GLIBCPP_CHECK_LINKER_FEATURES
+      GLIBCPP_CHECK_COMPLEX_MATH_SUPPORT
+      GLIBCPP_CHECK_WCHAR_T_SUPPORT
+      os_include_dir="config/os/mint"
+      AC_DEFINE(HAVE_STRTOF)        
+      AC_DEFINE(HAVE_STRTOLD)        
+      AC_DEFINE(HAVE_COPYSIGN)
+      AC_DEFINE(HAVE_ISINF)
+      AC_DEFINE(HAVE_ISINFF)
+      AC_DEFINE(HAVE_ISNAN)
+      AC_DEFINE(HAVE_ISNANF)
+      ;;
     *)
       os_include_dir="config/os/newlib"
       AC_DEFINE(HAVE_HYPOT)
@@ -164,6 +178,8 @@ if test -n "$with_cross_host" || test x"$build" != x"$host"; then
 
   case "$target_alias" in
     *-mingw32*)
+      ;;
+    *-mint*)
       ;;
     *)
       # GLIBCPP_CHECK_STDLIB_SUPPORT
