@@ -40,7 +40,3 @@ _IO_ungetc (c, fp)
   _IO_cleanup_region_end (1);
   return result;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_ungetc, ungetc)
-#endif

@@ -52,9 +52,3 @@ _IO_fclose (fp)
 
   return status;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_fclose, fclose)
-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
-int fclose (_IO_FILE *) __attribute__ ((weak, alias("_IO_fclose")));
-#endif

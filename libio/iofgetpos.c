@@ -49,7 +49,3 @@ _IO_fgetpos (fp, posp)
   *posp = pos;
   return 0;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_fgetpos, fgetpos)
-#endif

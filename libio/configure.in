@@ -50,6 +50,7 @@ frags=
 
 case "${target}" in
   *-hpux*)       frags=hpux.mt ;;
+  *-mint*)       frags=mint.mt ;;
   alpha*-*-linux-gnulibc1)
 		 frags="linux.mt linuxaxp1.mt mtsafe.mt" ;;
   powerpc*-*-linux-gnulibc1)

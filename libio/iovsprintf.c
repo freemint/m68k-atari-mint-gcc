@@ -51,10 +51,3 @@ _IO_vsprintf (string, format, args)
   _IO_cleanup_region_end (1);
   return ret;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_vsprintf, vsprintf)
-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
-int vsprintf (char *, const char *, _IO_va_list)
-	      __attribute__ ((weak, alias("_IO_vsprintf")));
-#endif
