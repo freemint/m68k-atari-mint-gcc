@@ -1805,6 +1805,14 @@ m68k-altos-sysv*)		   # Altos 3068
 		exit 1
 	fi
         ;;
+m68k-atari-mint*)
+	tm_file=m68k/mint.h
+	xm_file=m68k/xm-mint.h
+	tmake_file=m68k/t-mint
+	xmake_file=m68k/x-mint
+	fixincludes=Makefile.in
+	install_headers_dir=install-headers-tar
+	;;
 m68k-bull-sysv*)		# Bull DPX/2
 	if test x$gas = xyes
 	then

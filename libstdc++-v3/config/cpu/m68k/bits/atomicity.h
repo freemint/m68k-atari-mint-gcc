@@ -40,6 +40,7 @@ static inline _Atomic_word
 __attribute__ ((__unused__))
 __exchange_and_add (volatile _Atomic_word *__mem, int __val)
 {
+#if defined(__M68020__)
   register _Atomic_word __result = *__mem;
   register _Atomic_word __temp;
   __asm__ __volatile__ ("1: move%.l %0,%1\n\t"
@@ -49,6 +50,10 @@ __exchange_and_add (volatile _Atomic_word *__mem, int __val)
 			: "=d" (__result), "=&d" (__temp)
 			: "d" (__val), "m" (*__mem), "0" (__result)
 			: "memory");
+#else
+  _Atomic_word __result = *__mem;
+  *__mem += __val;
+#endif
   return __result;
 }
 
