@@ -181,10 +181,6 @@ _IO_popen (command, mode)
   return NULL;
 }
 
-#ifdef strong_alias
-strong_alias (_IO_popen, popen);
-#endif
-
 int
 _IO_proc_close (fp)
      _IO_FILE *fp;

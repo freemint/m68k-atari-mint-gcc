@@ -712,7 +712,7 @@ fi
 cat >dummy.c <<EOF
 int main()
 {
-    return __printf_fp ();
+    return __p_xx_rintf_fp ();
 }
 EOF
 

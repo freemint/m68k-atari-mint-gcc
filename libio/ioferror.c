@@ -37,9 +37,3 @@ _IO_ferror (fp)
   _IO_funlockfile (fp);
   return result;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_ferror, ferror)
-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
-int ferror (_IO_FILE *) __attribute__ ((weak, alias("_IO_ferror")));
-#endif

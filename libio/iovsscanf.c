@@ -47,13 +47,3 @@ _IO_vsscanf (string, format, args)
   _IO_cleanup_region_end (1);
   return ret;
 }
-
-#ifdef weak_alias
-weak_alias (_IO_vsscanf, __vsscanf)
-weak_alias (_IO_vsscanf, vsscanf)
-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
-int __vsscanf (const char *, const char *, _IO_va_list)
-	    __attribute__ ((weak, alias("_IO_vsscanf")));
-int vsscanf (const char *, const char *, _IO_va_list)
-	    __attribute__ ((weak, alias("_IO_vsscanf")));
-#endif

@@ -307,7 +307,8 @@ end ifobjc
 		  else
 		    error ("argument of `asm' is not a constant string"); }
 	| extension extdef
-		{ pedantic = $<itype>1; }
+		{ pedantic = ($<itype>1) & 1;
+		  warn_pointer_arith = (($<itype>1) >> 1) & 1; }
 	;
 
 datadef:
@@ -445,10 +446,11 @@ unary_expr:
 	primary
 	| '*' cast_expr   %prec UNARY
 		{ $$ = build_indirect_ref ($2, "unary *"); }
-	/* __extension__ turns off -pedantic for following primary.  */
+	/* __extension__ turns off some warnings for following primary.  */
 	| extension cast_expr	  %prec UNARY
 		{ $$ = $2;
-		  pedantic = $<itype>1; }
+		  pedantic = ($<itype>1) & 1;
+		  warn_pointer_arith = (($<itype>1) >> 1) & 1; }
 	| unop cast_expr  %prec UNARY
 		{ $$ = build_unary_op ($1, $2, 0);
 		  overflow_warning ($$); }
@@ -1015,7 +1017,8 @@ decl:
 	| declmods ';'
 		{ pedwarn ("empty declaration"); }
 	| extension decl
-		{ pedantic = $<itype>1; }
+		{ pedantic = ($<itype>1) & 1;
+		  warn_pointer_arith = (($<itype>1) >> 1) & 1; }
 	;
 
 /* Declspecs which contain at least one type specifier or typedef name.
@@ -1614,7 +1617,8 @@ component_decl:
 		{ $$ = NULL_TREE; }
 	| extension component_decl
 		{ $$ = $2;
-		  pedantic = $<itype>1; }
+		  pedantic = ($<itype>1) & 1;
+		  warn_pointer_arith = (($<itype>1) >> 1) & 1; }
 	;
 
 components:
@@ -2426,8 +2430,9 @@ identifiers_or_typenames:
 
 extension:
 	EXTENSION
-		{ $<itype>$ = pedantic;
-		  pedantic = 0; }
+		{ $<itype>$ = pedantic | (warn_pointer_arith << 1);
+		  pedantic = 0;
+		  warn_pointer_arith = 0; }
 	;
 
 ifobjc

@@ -935,12 +935,6 @@ __io_defs io_defs__;
 
 #endif /* TODO */
 
-#ifdef weak_alias
-weak_alias (_IO_cleanup, _cleanup)
-#elif defined(_G_STDIO_USES_LIBIO) && defined(_G_HAVE_WEAK_SYMBOL)
-void _cleanup () __attribute__ ((weak, alias ("_IO_cleanup")));
-#endif
-
 #ifdef text_set_element
 text_set_element(__libc_atexit, _cleanup);
 #endif

@@ -1955,6 +1955,8 @@ intl.distdir-fixup:
 # Making the preprocessor
 cpp$(exeext): $(CCCP)$(exeext)
 	-rm -f cpp$(exeext)
+#	cp /usr/local/lib/gcc-lib/m68k-atari-mint/2.8.1/cpp $@
+#	touch $@
 	$(LN) $(CCCP)$(exeext) cpp$(exeext)
 CCCP_OBJS = cccp.o cexp.o intl.o prefix.o version.o @extra_cpp_objs@ mbchar.o 
 cccp$(exeext): $(CCCP_OBJS) $(LIBDEPS)
@@ -2117,6 +2119,7 @@ stmp-int-hdrs: stmp-fixinc $(USER_H) xlimits.h
 	  cp $(srcdir)/config/$(FLOAT_H) include/float.h && \
 	  chmod a+r include/float.h; \
 	else :; fi
+	rm -f include/assert.h
 # Install the README
 	rm -f include/README
 	cp $(srcdir)/README-fixinc include/README
