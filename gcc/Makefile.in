@@ -2118,6 +2118,7 @@ stmp-int-hdrs: stmp-fixinc $(USER_H) xlimits.h
 	  cp $(srcdir)/config/$(FLOAT_H) include/float.h && \
 	  chmod a+r include/float.h; \
 	else :; fi
+	rm -f include/assert.h
 # Install the README
 	rm -f include/README
 	cp $(srcdir)/README-fixinc include/README
