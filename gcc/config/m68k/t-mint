@@ -1,0 +1,48 @@
+# 
+# libgcc1 stuff
+# neccessary for our default 68000 target
+# 
+
+CROSS_LIBGCC1 = libgcc1-asm.a
+LIBGCC1 = libgcc1-asm.a
+
+LIB1ASMSRC = m68k/lb1sf68.asm
+LIB1ASMFUNCS = _mulsi3 _udivsi3 _divsi3 _umodsi3 _modsi3 \
+   _double _float _floatex \
+   _eqdf2 _nedf2 _gtdf2 _gedf2 _ltdf2 _ledf2 \
+   _eqsf2 _nesf2 _gtsf2 _gesf2 _ltsf2 _lesf2
+
+# These are really part of libgcc1, but this will cause them to be
+# built correctly, so...
+LIB2FUNCS_EXTRA = fpgnulib.c xfgnulib.c
+
+fpgnulib.c: $(srcdir)/config/m68k/fpgnulib.c
+	cp $(srcdir)/config/m68k/fpgnulib.c fpgnulib.c
+xfgnulib.c: $(srcdir)/config/m68k/fpgnulib.c
+	echo '#define EXTFLOAT' > xfgnulib.c
+	cat $(srcdir)/config/m68k/fpgnulib.c >> xfgnulib.c
+
+# 
+# compile without debugging informations
+# Guido wanted that :-/
+# 
+LIBGCC2_DEBUG_CFLAGS = 
+
+# 
+# Use multiple libraries
+# 
+MULTILIB_OPTIONS = m68000/m68020-60 mshort
+MULTILIB_DIRNAMES =
+MULTILIB_MATCHES = m68000=mc68000 m68020-60=m68881 m68020-60=m68020-40 m68020-60=m68040 m68020-60=m68060
+
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
+
+# 
+# Don't run fixproto
+STMP_FIXPROTO =
+
+# 
+# Don't install the header files
+# hmm, why? ... disabled now
+#INSTALL_HEADERS =

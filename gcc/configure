@@ -4105,6 +4105,14 @@ for machine in $build $host $target; do
 		fi
 		extra_headers=math-68881.h
 	        ;;
+	m68k-atari-mint*)	# Atari compatible running MiNT
+		tm_file=m68k/mint.h
+		xm_file=m68k/xm-mint.h
+		tmake_file=m68k/t-mint
+		xmake_file=m68k/x-mint
+		fixincludes=Makefile.in
+		install_headers_dir=install-headers-tar
+		;;
 	m68k-bull-sysv*)		# Bull DPX/2
 		if test x$gas = xyes
 		then
