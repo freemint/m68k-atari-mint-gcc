@@ -47,3 +47,7 @@ _IO_ftell (fp)
     }
   return _IO_pos_as_off (pos);
 }
+
+#ifdef weak_alias
+weak_alias (_IO_ftell, ftell)
+#endif

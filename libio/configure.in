@@ -50,7 +50,6 @@ frags=
 
 case "${target}" in
   *-hpux*)       frags=hpux.mt ;;
-  *-mint*)       frags=mint.mt ;;
   alpha*-*-linux-gnulibc1)
 		 frags="linux.mt linuxaxp1.mt mtsafe.mt" ;;
   powerpc*-*-linux-gnulibc1)
@@ -60,6 +59,7 @@ case "${target}" in
   *-linux-gnu)   frags="linux.mt mtsafe.mt" ;;
   *-sco3.2v[45]*)   frags=sco4.mt ;;
   *-isc*)        frags=isc.mt ;;
+  *-mint*)       frags=mint.mt ;;
   *-netware*)    frags=netware.mt ;;
   *)             frags=${target_cpu}.mt ;;
 esac

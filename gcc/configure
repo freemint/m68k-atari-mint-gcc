@@ -4105,7 +4105,7 @@ for machine in $build $host $target; do
 		fi
 		extra_headers=math-68881.h
 	        ;;
-	m68k-atari-mint*)	# Atari compatible running MiNT
+	m68k-atari-mint*)
 		tm_file=m68k/mint.h
 		xm_file=m68k/xm-mint.h
 		tmake_file=m68k/t-mint

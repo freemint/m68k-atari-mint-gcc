@@ -76,7 +76,7 @@ $(OBJ): $(HDR)
 
 fixincl: $(OBJ)
 	@echo $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; \
-	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; stack --fix=128k $@ ; then : ; else \
+	if $(CC) -o $@ $(OBJ) $(LIBERTY) $(LIB) ; then : ; else \
 	rm -f $@ ; (echo "#! /bin/sh" ; echo exit 1 ) > $@ ; \
 	chmod 777 $@ ; fi
 

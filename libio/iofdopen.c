@@ -128,3 +128,7 @@ _IO_fdopen (fd, mode)
 
   return (_IO_FILE *) &new_f->fp;
 }
+
+#ifdef weak_alias
+weak_alias (_IO_fdopen, fdopen)
+#endif

@@ -40,3 +40,7 @@ _IO_setbuffer (fp, buf, size)
   (void) _IO_SETBUF (fp, buf, size);
   _IO_cleanup_region_end (1);
 }
+
+#ifdef weak_alias
+weak_alias (_IO_setbuffer, setbuffer)
+#endif

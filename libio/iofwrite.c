@@ -48,3 +48,7 @@ _IO_fwrite (buf, size, count, fp)
   else
     return written / size;
 }
+
+#ifdef weak_alias
+weak_alias (_IO_fwrite, fwrite)
+#endif
