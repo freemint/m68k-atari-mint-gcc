@@ -28,7 +28,7 @@ Boston, MA 02111-1307, USA.  */
 /* To whomever it may concern: I have heard that such a thing was once
    written by AT&T, but I have never seen it.  */
 
-%expect 66
+/* bison 1.875 means 72 %expect 66 */
 
 %{
 #include "config.h"
