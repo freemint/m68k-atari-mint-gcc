@@ -1559,6 +1559,10 @@ m68k-atari-sysv4*)              # Atari variant of V.4.
 	tmake_file=t-svr4
 	extra_parts="crtbegin.o crtend.o"
 	;;
+m68k-atari-mint*)
+	tm_file=m68k/mint.h
+	tmake_file=m68k/t-mint
+	;;
 m68k-apollo-sysv* | m68k-bull-sysv*)
 	# can otherwise be caught by m68k-*-sysv4*
 	echo "*** Configuration $machine not supported" 1>&2
