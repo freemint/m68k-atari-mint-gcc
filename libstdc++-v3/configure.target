@@ -80,6 +80,9 @@ case "${target_os}" in
   irix6.5)
     os_include_dir="config/os/irix/irix6.5"
     ;;
+  mint)
+    os_include_dir="config/os/mint"
+    ;;
   netbsd*)
     os_include_dir="config/os/bsd/netbsd"
     ;;

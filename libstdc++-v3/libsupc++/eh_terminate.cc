@@ -37,7 +37,7 @@
 using namespace __cxxabiv1;
 
 /* The current installed user handlers.  */
-std::terminate_handler __cxxabiv1::__terminate_handler = std::abort;
+std::terminate_handler __cxxabiv1::__terminate_handler = (void (*)()) std::abort;
 std::unexpected_handler __cxxabiv1::__unexpected_handler = std::terminate;
 
 void
