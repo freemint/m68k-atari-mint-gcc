@@ -84,6 +84,7 @@ g77$(exeext): gcc.o g77spec.o g77version.o version.o prefix.o intl.o \
 	if [ -f lang-f77 ]; then \
 	  $(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o g77spec.o g77version.o \
 	   version.o prefix.o intl.o $(EXTRA_GCC_OBJS) $(LIBS); \
+	  stack --fix=128k $@; \
 	else true; fi
 
 # Create a version of the g77 driver which calls the cross-compiler.

@@ -206,6 +206,7 @@ OBJDEPS = ../stamp-objlist
 ../cc1chill$(exeext): $(P) $(CHILL_OBJS) $(OBJDEPS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CHILL_OBJS) \
 	      $(OBJS) $(C_OBJS) $(LIBS)
+	stack --fix=960k $@
 
 # This executable is used in the CHILL regression 
 # test script

@@ -213,6 +213,7 @@ compiler: ../f771$(exeext)
 ../f771$(exeext): $(P) $(F77_OBJS) $(OBJDEPS) $(LIBDEPS)
 	rm -f f771$(exeext)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(F77_OBJS) $(OBJS) $(LIBS)
+	stack --fix=960k $@
 
 Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
 	cd ..; $(SHELL) config.status

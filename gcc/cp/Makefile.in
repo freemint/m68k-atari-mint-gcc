@@ -197,6 +197,7 @@ OBJDEPS = ../stamp-objlist ../c-common.o ../c-pragma.o
 compiler: ../cc1plus$(exeext)
 ../cc1plus$(exeext): $(P) $(OBJDEPS) $(CXX_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(CXX_OBJS) $(LIBS)
+	stack --fix=960k $@
 
 Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
 	cd ..; $(SHELL) config.status

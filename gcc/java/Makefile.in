@@ -191,24 +191,29 @@ compiler: ../jc1$(exeext) ../jv-scan$(exeext)
 	rm -f ../jc1$(exeext)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
 	      $(JAVA_OBJS) $(OBJS) $(SUBDIR_OBSTACK) $(LIBS)
+	stack --fix=960k $@
 ../jv-scan$(exeext): $(P) $(JAVA_OBJS_LITE) $(OBJDEPS) $(LIBDEPS)
 	rm -f ../jv-scan$(exeext)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
 	      $(JAVA_OBJS_LITE) $(SUBDIR_OBSTACK) $(LIBS)
+	stack --fix=128k $@
 
 ../jcf-dump$(exeext): jcf-dump.o jcf-io.o jcf-depend.o jcf-path.o \
 		zextract.o
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jcf-dump.o jcf-io.o \
 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
+	stack --fix=128k $@
 
 # Dependencies here must be kept in sync with dependencies in Make-lang.in.
 ../jvgenmain$(exeext):  jvgenmain.o mangle.o $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ jvgenmain.o mangle.o ../obstack.o $(LIBS)
+	stack --fix=128k $@
 
 ../gcjh$(exeext): gjavah.o jcf-io.o jcf-depend.o jcf-path.o \
 		zextract.o $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gjavah.o jcf-io.o \
 	  jcf-depend.o jcf-path.o zextract.o $(LIBS)
+	stack --fix=128k $@
 
 Makefile: $(srcdir)/Makefile.in $(srcdir)/../configure
 	cd ..; $(SHELL) config.status

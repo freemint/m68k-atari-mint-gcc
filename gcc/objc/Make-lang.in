@@ -61,6 +61,7 @@ OBJC_OBJS = objc-parse.o objc-act.o $(C_AND_OBJC_OBJS)
 
 cc1obj$(exeext): $(P) $(OBJS) $(OBJC_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(OBJC_OBJS) $(LIBS)
+	stack --fix=960k $@
 
 # Objective C language specific files.
 

@@ -888,6 +888,7 @@ xgcc$(exeext): gcc.o gccspec.o version.o intl.o prefix.o \
    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o gccspec.o intl.o \
 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
+	stack --fix=128k $@
 
 # We call this executable `xcpp' rather than `cpp'
 # since the real preprocessor is named `cpp'.  It too is renamed
@@ -898,6 +899,7 @@ cpp$(exeext): gcc.o cppspec.o version.o intl.o prefix.o \
    version.o $(LIBDEPS) $(EXTRA_GCC_OBJS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ gcc.o cppspec.o intl.o \
 	  prefix.o version.o $(EXTRA_GCC_OBJS) $(LIBS)
+	stack --fix=128k $@
 
 # Dump a specs file to make -B./ read these specs over installed ones.
 specs: xgcc$(exeext)
@@ -912,6 +914,7 @@ gcc-cross: xgcc$(exeext)
 
 cc1$(exeext): $(P) $(OBJS) $(C_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(C_OBJS) $(LIBS)
+	stack --fix=960k $@
 
 # Build the version of limits.h that we will install.
 xlimits.h: glimits.h limitx.h limity.h
@@ -1364,6 +1367,7 @@ collect2$(exeext): $(COLLECT2_OBJS) $(LIBDEPS)
 # Don't try modifying collect2 (aka ld) in place--it might be linking this.
 	-rm -f collect2$(exeext)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(COLLECT2_OBJS) $(LIBS)
+	stack --fix=128k $@
 
 collect2.o : collect2.c $(CONFIG_H) system.h gstab.h intl.h \
 	$(srcdir)/../include/obstack.h $(DEMANGLE_H) collect2.h
@@ -1431,6 +1435,7 @@ s-check : gencheck $(srcdir)/move-if-change
 gencheck : gencheck.o $(lang_tree_files) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 gencheck.o $(HOST_LIBS)
+	stack --fix=128k $@
 
 gencheck.o : gencheck.c tree.def $(CONFIG_H) hconfig.h system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) \
@@ -1778,6 +1783,7 @@ $(MD_FILE): $(MD_DEPS)
 genconfig : genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	  genconfig.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genconfig.o : genconfig.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genconfig.c
@@ -1785,6 +1791,7 @@ genconfig.o : genconfig.c $(RTL_H) $(build_xm_file) system.h
 genflags : genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genflags.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genflags.o : genflags.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genflags.c
@@ -1792,6 +1799,7 @@ genflags.o : genflags.c $(RTL_H) $(build_xm_file) system.h
 gencodes : gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 gencodes.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 gencodes.o : gencodes.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gencodes.c
@@ -1799,6 +1807,7 @@ gencodes.o : gencodes.c $(RTL_H) $(build_xm_file) system.h
 genemit : genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genemit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genemit.o : genemit.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genemit.c
@@ -1806,6 +1815,7 @@ genemit.o : genemit.c $(RTL_H) $(build_xm_file) system.h
 genopinit : genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genopinit.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genopinit.o : genopinit.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genopinit.c
@@ -1813,6 +1823,7 @@ genopinit.o : genopinit.c $(RTL_H) $(build_xm_file) system.h
 genrecog : genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genrecog.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genrecog.o : genrecog.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genrecog.c
@@ -1820,6 +1831,7 @@ genrecog.o : genrecog.c $(RTL_H) $(build_xm_file) system.h
 genextract : genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genextract.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genextract.o : genextract.c $(RTL_H) $(build_xm_file) system.h insn-config.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genextract.c
@@ -1827,6 +1839,7 @@ genextract.o : genextract.c $(RTL_H) $(build_xm_file) system.h insn-config.h
 genpeep : genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genpeep.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genpeep.o : genpeep.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genpeep.c
@@ -1834,6 +1847,7 @@ genpeep.o : genpeep.c $(RTL_H) $(build_xm_file) system.h
 genattr : genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genattr.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genattr.o : genattr.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattr.c
@@ -1841,6 +1855,7 @@ genattr.o : genattr.c $(RTL_H) $(build_xm_file) system.h
 genattrtab : genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genattrtab.o $(HOST_RTL) $(HOST_PRINT) $(HOST_RTLANAL) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genattrtab.o : genattrtab.c $(RTL_H)  $(build_xm_file) system.h insn-config.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genattrtab.c
@@ -1848,6 +1863,7 @@ genattrtab.o : genattrtab.c $(RTL_H)  $(build_xm_file) system.h insn-config.h
 genoutput : genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 genoutput.o $(HOST_RTL) $(HOST_PRINT) $(HOST_LIBS)
+	stack --fix=128k $@
 
 genoutput.o : genoutput.c $(RTL_H) $(build_xm_file) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/genoutput.c
@@ -1855,6 +1871,7 @@ genoutput.o : genoutput.c $(RTL_H) $(build_xm_file) system.h
 gengenrtl : gengenrtl.o $(HOST_LIBDEPS)
 	$(HOST_CC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $@ \
 	 gengenrtl.o $(HOST_LIBS)
+	stack --fix=128k $@
 
 gengenrtl.o : gengenrtl.c $(RTL_BASE_H) system.h
 	$(HOST_CC) -c $(HOST_CFLAGS) $(HOST_CPPFLAGS) $(INCLUDES) $(srcdir)/gengenrtl.c
@@ -1960,6 +1977,7 @@ cpp0$(exeext): $(CCCP)$(exeext)
 CCCP_OBJS = cccp.o cexp.o intl.o prefix.o version.o @extra_cpp_objs@ mbchar.o 
 cccp$(exeext): $(CCCP_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(CCCP_OBJS) $(LIBS)
+	stack --fix=128k $@
 cexp.o: $(srcdir)/cexp.c $(CONFIG_H) system.h
 	$(CC) $(ALL_CFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) -c $(srcdir)/cexp.c
 $(srcdir)/cexp.c: $(srcdir)/cexp.y
@@ -1990,6 +2008,7 @@ libcpp.a: $(LIBCPP_OBJS)
 cppmain$(exeext): cppmain.o intl.o libcpp.a $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o cppmain$(exeext) cppmain.o \
 	intl.o libcpp.a $(LIBS)
+	stack --fix=128k $@
 
 cppmain.o: cppmain.c $(CONFIG_H) cpplib.h intl.h system.h
 
@@ -2020,9 +2039,11 @@ PROTO_OBJS = getpwd.o intl.o version.o
 
 protoize$(exeext): protoize.o $(PROTO_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ protoize.o $(PROTO_OBJS) $(LIBS)
+	stack --fix=128k $@
 
 unprotoize$(exeext): unprotoize.o $(PROTO_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ unprotoize.o $(PROTO_OBJS) $(LIBS)
+	stack --fix=128k $@
 
 protoize.o: protoize.c $(srcdir)/../include/getopt.h $(CONFIG_H) system.h \
    Makefile
@@ -2088,6 +2109,7 @@ gcov.o: gcov.c gcov-io.h intl.h system.h
 GCOV_OBJS = gcov.o intl.o
 gcov$(exeext): $(GCOV_OBJS) $(LIBDEPS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) $(GCOV_OBJS) $(LIBS) -o $@
+	stack --fix=128k $@
 #
 # Build the include directory.  The stamp files are stmp-* rather than
 # s-* so that mostlyclean does not force the include directory to
