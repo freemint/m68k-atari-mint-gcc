@@ -1,4 +1,4 @@
-/* A Bison parser, made from /home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y, by GNU bison 1.75.  */
+/* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
    Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
@@ -34,10 +34,13 @@
    USER NAME SPACE" below.  */
 
 /* Identify Bison output.  */
-#define YYBISON	1
+#define YYBISON 1
+
+/* Skeleton name.  */
+#define YYSKELETON_NAME "yacc.c"
 
 /* Pure parsers.  */
-#define YYPURE	1
+#define YYPURE 1
 
 /* Using locations.  */
 #define YYLSP_NEEDED 0
@@ -275,7 +278,7 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 5 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 37 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
 
 #define JC1_LITE
 
@@ -383,41 +386,32 @@ void report PARAMS ((void));
 # define YYERROR_VERBOSE 0
 #endif
 
-#ifndef YYSTYPE
-#line 99 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-typedef union {
+#if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
+#line 131 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+typedef union YYSTYPE {
   char *node;
   struct method_declarator *declarator;
   int value;			/* For modifiers */
-} yystype;
-/* Line 193 of /usr/share/bison/yacc.c.  */
-#line 395 "ps14046.c"
-# define YYSTYPE yystype
+} YYSTYPE;
+/* Line 191 of yacc.c.  */
+#line 397 "ps19697.c"
+# define yystype YYSTYPE /* obsolescent; will be withdrawn */
+# define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
 #endif
 
-#ifndef YYLTYPE
-typedef struct yyltype
-{
-  int first_line;
-  int first_column;
-  int last_line;
-  int last_column;
-} yyltype;
-# define YYLTYPE yyltype
-# define YYLTYPE_IS_TRIVIAL 1
-#endif
+
 
 /* Copy the second part of user declarations.  */
-#line 105 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 137 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
 
 extern int flag_assert;
 
 #include "lex.c"
 
 
-/* Line 213 of /usr/share/bison/yacc.c.  */
-#line 421 "ps14046.c"
+/* Line 214 of yacc.c.  */
+#line 414 "ps19697.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
@@ -453,7 +447,7 @@ extern int flag_assert;
 
 #if (! defined (yyoverflow) \
      && (! defined (__cplusplus) \
-	 || (YYLTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
+	 || (YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
@@ -463,13 +457,13 @@ union yyalloc
   };
 
 /* The size of the maximum gap between one aligned stack and the next.  */
-# define YYSTACK_GAP_MAX (sizeof (union yyalloc) - 1)
+# define YYSTACK_GAP_MAXIMUM (sizeof (union yyalloc) - 1)
 
 /* The size of an array large to enough to hold all stacks, each with
    N elements.  */
 # define YYSTACK_BYTES(N) \
      ((N) * (sizeof (short) + sizeof (YYSTYPE))				\
-      + YYSTACK_GAP_MAX)
+      + YYSTACK_GAP_MAXIMUM)
 
 /* Copy COUNT objects from FROM to TO.  The source and destination do
    not overlap.  */
@@ -483,7 +477,7 @@ union yyalloc
 	{					\
 	  register YYSIZE_T yyi;		\
 	  for (yyi = 0; yyi < (Count); yyi++)	\
-	    (To)[yyi] = (From)[yyi];	\
+	    (To)[yyi] = (From)[yyi];		\
 	}					\
       while (0)
 #  endif
@@ -500,7 +494,7 @@ union yyalloc
 	YYSIZE_T yynewbytes;						\
 	YYCOPY (&yyptr->Stack, Stack, yysize);				\
 	Stack = &yyptr->Stack;						\
-	yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAX;	\
+	yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
 	yyptr += yynewbytes / sizeof (*yyptr);				\
       }									\
     while (0)
@@ -515,6 +509,7 @@ union yyalloc
 
 /* YYFINAL -- State number of the termination state. */
 #define YYFINAL  28
+/* YYLAST -- Last index in YYTABLE.  */
 #define YYLAST   3334
 
 /* YYNTOKENS -- Number of terminals. */
@@ -530,8 +525,8 @@ union yyalloc
 #define YYUNDEFTOK  2
 #define YYMAXUTOK   366
 
-#define YYTRANSLATE(X) \
-  ((unsigned)(X) <= YYMAXUTOK ? yytranslate[X] : YYUNDEFTOK)
+#define YYTRANSLATE(YYX) 						\
+  ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
 
 /* YYTRANSLATE[YYLEX] -- Bison symbol number corresponding to YYLEX.  */
 static const unsigned char yytranslate[] =
@@ -742,42 +737,42 @@ static const short yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned short yyrline[] =
 {
-       0,   177,   177,   182,   184,   185,   186,   187,   188,   192,
-     194,   197,   203,   208,   215,   217,   220,   224,   228,   232,
-     238,   246,   248,   251,   255,   262,   267,   268,   269,   270,
-     271,   272,   273,   274,   277,   279,   282,   284,   287,   292,
-     294,   297,   301,   305,   307,   308,   312,   321,   334,   332,
-     340,   339,   344,   345,   348,   349,   352,   355,   359,   362,
-     366,   368,   371,   373,   374,   375,   378,   380,   381,   382,
-     383,   387,   390,   394,   397,   400,   402,   405,   408,   412,
-     414,   420,   418,   425,   428,   429,   431,   438,   445,   451,
-     454,   456,   462,   478,   494,   495,   498,   501,   505,   507,
-     511,   515,   522,   524,   527,   529,   534,   537,   541,   543,
-     544,   545,   549,   551,   553,   555,   559,   561,   568,   566,
-     571,   570,   574,   573,   577,   576,   581,   583,   586,   589,
-     593,   595,   598,   600,   601,   602,   605,   609,   614,   616,
-     617,   618,   621,   623,   627,   629,   632,   634,   637,   639,
-     640,   643,   647,   650,   654,   656,   657,   658,   659,   660,
-     663,   665,   666,   667,   668,   671,   673,   674,   675,   676,
-     677,   678,   679,   680,   681,   682,   683,   686,   690,   695,
-     699,   704,   708,   710,   711,   712,   713,   714,   715,   718,
-     722,   727,   732,   736,   738,   739,   740,   743,   745,   748,
-     753,   755,   758,   760,   763,   767,   771,   775,   779,   784,
-     786,   789,   791,   794,   798,   801,   802,   803,   806,   807,
-     810,   812,   815,   817,   821,   823,   826,   828,   831,   835,
-     837,   838,   840,   843,   845,   848,   853,   855,   856,   859,
-     861,   864,   868,   873,   875,   878,   880,   881,   882,   883,
-     884,   885,   886,   888,   892,   895,   897,   899,   903,   905,
-     906,   907,   908,   909,   910,   915,   913,   918,   917,   922,
-     925,   928,   930,   931,   934,   936,   937,   938,   940,   941,
-     944,   946,   949,   953,   956,   960,   962,   966,   969,   971,
-     972,   973,   974,   977,   980,   983,   985,   987,   988,   991,
-     995,   999,  1001,  1002,  1003,  1004,  1007,  1011,  1015,  1017,
-    1018,  1019,  1022,  1024,  1025,  1026,  1029,  1031,  1032,  1033,
-    1036,  1038,  1039,  1042,  1044,  1045,  1046,  1049,  1051,  1052,
-    1053,  1054,  1055,  1058,  1060,  1061,  1064,  1066,  1069,  1071,
-    1074,  1076,  1079,  1081,  1085,  1087,  1091,  1093,  1097,  1099,
-    1102,  1106,  1109,  1110,  1113,  1115,  1118,  1122
+       0,   211,   211,   216,   217,   218,   219,   220,   221,   226,
+     227,   231,   236,   241,   249,   250,   254,   258,   262,   266,
+     271,   280,   281,   285,   289,   296,   300,   301,   302,   303,
+     304,   305,   306,   307,   311,   312,   316,   317,   321,   326,
+     327,   331,   335,   339,   340,   341,   348,   356,   369,   368,
+     375,   374,   379,   380,   383,   384,   388,   390,   395,   397,
+     402,   403,   407,   408,   409,   410,   414,   415,   416,   417,
+     418,   423,   425,   431,   432,   436,   437,   441,   443,   448,
+     449,   455,   454,   461,   463,   464,   466,   474,   480,   486,
+     490,   491,   498,   513,   529,   530,   534,   536,   541,   542,
+     547,   551,   561,   562,   565,   567,   574,   576,   581,   582,
+     583,   584,   589,   590,   593,   595,   600,   601,   608,   607,
+     611,   610,   614,   613,   617,   616,   622,   623,   627,   629,
+     634,   635,   639,   640,   641,   642,   646,   650,   655,   656,
+     657,   658,   662,   663,   668,   669,   673,   674,   678,   679,
+     680,   684,   688,   690,   695,   696,   697,   698,   699,   700,
+     704,   705,   706,   707,   708,   712,   713,   714,   715,   716,
+     717,   718,   719,   720,   721,   722,   723,   727,   731,   736,
+     740,   746,   750,   751,   752,   753,   754,   755,   756,   760,
+     764,   769,   774,   778,   779,   780,   781,   785,   786,   790,
+     795,   796,   800,   801,   805,   809,   813,   817,   821,   826,
+     827,   831,   832,   836,   840,   842,   843,   844,   847,   848,
+     852,   853,   857,   858,   864,   865,   869,   870,   874,   878,
+     879,   880,   882,   886,   887,   891,   896,   897,   898,   902,
+     903,   907,   911,   916,   917,   921,   922,   923,   924,   925,
+     926,   927,   928,   932,   937,   939,   941,   943,   948,   949,
+     950,   951,   952,   953,   954,   959,   958,   962,   961,   967,
+     969,   973,   974,   975,   979,   980,   981,   982,   985,   986,
+     990,   991,   995,   999,  1001,  1006,  1007,  1014,  1016,  1018,
+    1019,  1020,  1021,  1025,  1027,  1031,  1032,  1034,  1035,  1039,
+    1043,  1047,  1048,  1049,  1050,  1051,  1055,  1059,  1063,  1064,
+    1065,  1066,  1070,  1071,  1072,  1073,  1077,  1078,  1079,  1080,
+    1084,  1085,  1086,  1090,  1091,  1092,  1093,  1097,  1098,  1099,
+    1100,  1101,  1102,  1106,  1107,  1108,  1112,  1113,  1117,  1118,
+    1122,  1123,  1127,  1128,  1133,  1134,  1139,  1140,  1145,  1146,
+    1150,  1154,  1156,  1157,  1161,  1162,  1166,  1170
 };
 #endif
 
@@ -1145,7 +1140,7 @@ static const short yypgoto[] =
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
    positive, shift that token.  If negative, reduce the rule which
    number is the opposite.  If zero, do what YYDEFACT says.
-   If YYTABLE_NINF, parse error.  */
+   If YYTABLE_NINF, syntax error.  */
 #define YYTABLE_NINF -354
 static const short yytable[] =
 {
@@ -1909,7 +1904,7 @@ static const unsigned short yystos[] =
 
 #define yyerrok		(yyerrstatus = 0)
 #define yyclearin	(yychar = YYEMPTY)
-#define YYEMPTY		-2
+#define YYEMPTY		(-2)
 #define YYEOF		0
 
 #define YYACCEPT	goto yyacceptlab
@@ -1930,13 +1925,13 @@ do								\
     {								\
       yychar = (Token);						\
       yylval = (Value);						\
-      yychar1 = YYTRANSLATE (yychar);				\
+      yytoken = YYTRANSLATE (yychar);				\
       YYPOPSTACK;						\
       goto yybackup;						\
     }								\
   else								\
     { 								\
-      yyerror ("syntax error: cannot back up");			\
+      yyerror ("syntax error: cannot back up");\
       YYERROR;							\
     }								\
 while (0)
@@ -1948,7 +1943,7 @@ while (0)
    are run).  */
 
 #ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)           \
+# define YYLLOC_DEFAULT(Current, Rhs, N)         \
   Current.first_line   = Rhs[1].first_line;      \
   Current.first_column = Rhs[1].first_column;    \
   Current.last_line    = Rhs[N].last_line;       \
@@ -1958,9 +1953,9 @@ while (0)
 /* YYLEX -- calling `yylex' with the right arguments.  */
 
 #ifdef YYLEX_PARAM
-# define YYLEX	yylex (&yylval, YYLEX_PARAM)
+# define YYLEX yylex (&yylval, YYLEX_PARAM)
 #else
-# define YYLEX	yylex (&yylval)
+# define YYLEX yylex (&yylval)
 #endif
 
 /* Enable debugging if requested.  */
@@ -1976,18 +1971,92 @@ do {						\
   if (yydebug)					\
     YYFPRINTF Args;				\
 } while (0)
+
 # define YYDSYMPRINT(Args)			\
 do {						\
   if (yydebug)					\
     yysymprint Args;				\
 } while (0)
+
+# define YYDSYMPRINTF(Title, Token, Value, Location)		\
+do {								\
+  if (yydebug)							\
+    {								\
+      YYFPRINTF (stderr, "%s ", Title);				\
+      yysymprint (stderr, 					\
+                  Token, Value);	\
+      YYFPRINTF (stderr, "\n");					\
+    }								\
+} while (0)
+
+/*------------------------------------------------------------------.
+| yy_stack_print -- Print the state stack from its BOTTOM up to its |
+| TOP (cinluded).                                                   |
+`------------------------------------------------------------------*/
+
+#if defined (__STDC__) || defined (__cplusplus)
+static void
+yy_stack_print (short *bottom, short *top)
+#else
+static void
+yy_stack_print (bottom, top)
+    short *bottom;
+    short *top;
+#endif
+{
+  YYFPRINTF (stderr, "Stack now");
+  for (/* Nothing. */; bottom <= top; ++bottom)
+    YYFPRINTF (stderr, " %d", *bottom);
+  YYFPRINTF (stderr, "\n");
+}
+
+# define YY_STACK_PRINT(Bottom, Top)				\
+do {								\
+  if (yydebug)							\
+    yy_stack_print ((Bottom), (Top));				\
+} while (0)
+
+
+/*------------------------------------------------.
+| Report that the YYRULE is going to be reduced.  |
+`------------------------------------------------*/
+
+#if defined (__STDC__) || defined (__cplusplus)
+static void
+yy_reduce_print (int yyrule)
+#else
+static void
+yy_reduce_print (yyrule)
+    int yyrule;
+#endif
+{
+  int yyi;
+  unsigned int yylineno = yyrline[yyrule];
+  YYFPRINTF (stderr, "Reducing stack by rule %d (line %u), ",
+             yyrule - 1, yylineno);
+  /* Print the symbols being reduced, and their result.  */
+  for (yyi = yyprhs[yyrule]; 0 <= yyrhs[yyi]; yyi++)
+    YYFPRINTF (stderr, "%s ", yytname [yyrhs[yyi]]);
+  YYFPRINTF (stderr, "-> %s\n", yytname [yyr1[yyrule]]);
+}
+
+# define YY_REDUCE_PRINT(Rule)		\
+do {					\
+  if (yydebug)				\
+    yy_reduce_print (Rule);		\
+} while (0)
+
 /* Nonzero means print parse trace.  It is left uninitialized so that
    multiple parsers can coexist.  */
 int yydebug;
 #else /* !YYDEBUG */
 # define YYDPRINTF(Args)
 # define YYDSYMPRINT(Args)
+# define YYDSYMPRINTF(Title, Token, Value, Location)
+# define YY_STACK_PRINT(Bottom, Top)
+# define YY_REDUCE_PRINT(Rule)
 #endif /* !YYDEBUG */
+
 
 /* YYINITDEPTH -- initial size of the parser's stacks.  */
 #ifndef	YYINITDEPTH
@@ -2067,102 +2136,111 @@ yystpcpy (yydest, yysrc)
 
 
 #if YYDEBUG
-/*-----------------------------.
-| Print this symbol on YYOUT.  |
-`-----------------------------*/
+/*--------------------------------.
+| Print this symbol on YYOUTPUT.  |
+`--------------------------------*/
 
-static void
 #if defined (__STDC__) || defined (__cplusplus)
-yysymprint (FILE* yyout, int yytype, YYSTYPE yyvalue)
+static void
+yysymprint (FILE *yyoutput, int yytype, YYSTYPE *yyvaluep)
 #else
-yysymprint (yyout, yytype, yyvalue)
-    FILE* yyout;
+static void
+yysymprint (yyoutput, yytype, yyvaluep)
+    FILE *yyoutput;
     int yytype;
-    YYSTYPE yyvalue;
+    YYSTYPE *yyvaluep;
 #endif
 {
   /* Pacify ``unused variable'' warnings.  */
-  (void) yyvalue;
+  (void) yyvaluep;
 
   if (yytype < YYNTOKENS)
     {
-      YYFPRINTF (yyout, "token %s (", yytname[yytype]);
+      YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
 # ifdef YYPRINT
-      YYPRINT (yyout, yytoknum[yytype], yyvalue);
+      YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
 # endif
     }
   else
-    YYFPRINTF (yyout, "nterm %s (", yytname[yytype]);
+    YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
 
   switch (yytype)
     {
       default:
         break;
     }
-  YYFPRINTF (yyout, ")");
+  YYFPRINTF (yyoutput, ")");
 }
-#endif /* YYDEBUG. */
 
-
+#endif /* ! YYDEBUG */
 /*-----------------------------------------------.
 | Release the memory associated to this symbol.  |
 `-----------------------------------------------*/
 
-static void
 #if defined (__STDC__) || defined (__cplusplus)
-yydestruct (int yytype, YYSTYPE yyvalue)
+static void
+yydestruct (int yytype, YYSTYPE *yyvaluep)
 #else
-yydestruct (yytype, yyvalue)
+static void
+yydestruct (yytype, yyvaluep)
     int yytype;
-    YYSTYPE yyvalue;
+    YYSTYPE *yyvaluep;
 #endif
 {
   /* Pacify ``unused variable'' warnings.  */
-  (void) yyvalue;
+  (void) yyvaluep;
 
   switch (yytype)
     {
+
       default:
         break;
     }
 }
-
 
 
-/* The user can define YYPARSE_PARAM as the name of an argument to be passed
-   into yyparse.  The argument should have type void *.
-   It should actually point to an object.
-   Grammar actions can access the variable by casting it
-   to the proper pointer type.  */
+/* Prevent warnings from -Wmissing-prototypes.  */
 
 #ifdef YYPARSE_PARAM
 # if defined (__STDC__) || defined (__cplusplus)
-#  define YYPARSE_PARAM_ARG void *YYPARSE_PARAM
-#  define YYPARSE_PARAM_DECL
+int yyparse (void *YYPARSE_PARAM);
 # else
-#  define YYPARSE_PARAM_ARG YYPARSE_PARAM
-#  define YYPARSE_PARAM_DECL void *YYPARSE_PARAM;
+int yyparse ();
 # endif
-#else /* !YYPARSE_PARAM */
-# define YYPARSE_PARAM_ARG
-# define YYPARSE_PARAM_DECL
-#endif /* !YYPARSE_PARAM */
-
-/* Prevent warning if -Wstrict-prototypes.  */
-#ifdef __GNUC__
-# ifdef YYPARSE_PARAM
-int yyparse (void *);
-# else
+#else /* ! YYPARSE_PARAM */
+#if defined (__STDC__) || defined (__cplusplus)
 int yyparse (void);
-# endif
+#else
+int yyparse ();
 #endif
+#endif /* ! YYPARSE_PARAM */
 
 
 
 
+
+
+/*----------.
+| yyparse.  |
+`----------*/
+
+#ifdef YYPARSE_PARAM
+# if defined (__STDC__) || defined (__cplusplus)
+int yyparse (void *YYPARSE_PARAM)
+# else
+int yyparse (YYPARSE_PARAM)
+  void *YYPARSE_PARAM;
+# endif
+#else /* ! YYPARSE_PARAM */
+#if defined (__STDC__) || defined (__cplusplus)
 int
-yyparse (YYPARSE_PARAM_ARG)
-     YYPARSE_PARAM_DECL
+yyparse (void)
+#else
+int
+yyparse ()
+
+#endif
+#endif
 {
   /* The lookahead symbol.  */
 int yychar;
@@ -2170,7 +2248,7 @@ int yychar;
 /* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;
 
-/* Number of parse errors so far.  */
+/* Number of syntax errors so far.  */
 int yynerrs;
 
   register int yystate;
@@ -2179,7 +2257,7 @@ int yynerrs;
   /* Number of tokens to shift before error messages enabled.  */
   int yyerrstatus;
   /* Lookahead token as an internal (translated) token number.  */
-  int yychar1 = 0;
+  int yytoken = 0;
 
   /* Three stacks and their tools:
      `yyss': related to states,
@@ -2243,7 +2321,7 @@ int yynerrs;
  yysetstate:
   *yyssp = yystate;
 
-  if (yyssp >= yyss + yystacksize - 1)
+  if (yyss + yystacksize - 1 <= yyssp)
     {
       /* Get the current used size of the three stacks, in elements.  */
       YYSIZE_T yysize = yyssp - yyss + 1;
@@ -2275,10 +2353,10 @@ int yynerrs;
       goto yyoverflowlab;
 # else
       /* Extend the stack our own way.  */
-      if (yystacksize >= YYMAXDEPTH)
+      if (YYMAXDEPTH <= yystacksize)
 	goto yyoverflowlab;
       yystacksize *= 2;
-      if (yystacksize > YYMAXDEPTH)
+      if (YYMAXDEPTH < yystacksize)
 	yystacksize = YYMAXDEPTH;
 
       {
@@ -2304,7 +2382,7 @@ int yynerrs;
       YYDPRINTF ((stderr, "Stack size increased to %lu\n",
 		  (unsigned long int) yystacksize));
 
-      if (yyssp >= yyss + yystacksize - 1)
+      if (yyss + yystacksize - 1 <= yyssp)
 	YYABORT;
     }
 
@@ -2329,39 +2407,28 @@ yybackup:
 
   /* Not known => get a lookahead token if don't already have one.  */
 
-  /* yychar is either YYEMPTY or YYEOF
-     or a valid token in external form.  */
-
+  /* YYCHAR is either YYEMPTY or YYEOF or a valid lookahead symbol.  */
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
       yychar = YYLEX;
     }
 
-  /* Convert token to internal form (in yychar1) for indexing tables with.  */
-
-  if (yychar <= 0)		/* This means end of input.  */
+  if (yychar <= YYEOF)
     {
-      yychar1 = 0;
-      yychar = YYEOF;		/* Don't call YYLEX any more.  */
-
+      yychar = yytoken = YYEOF;
       YYDPRINTF ((stderr, "Now at end of input.\n"));
     }
   else
     {
-      yychar1 = YYTRANSLATE (yychar);
-
-      /* We have to keep this `#if YYDEBUG', since we use variables
-	 which are defined only if `YYDEBUG' is set.  */
-      YYDPRINTF ((stderr, "Next token is "));
-      YYDSYMPRINT ((stderr, yychar1, yylval));
-      YYDPRINTF ((stderr, "\n"));
+      yytoken = YYTRANSLATE (yychar);
+      YYDSYMPRINTF ("Next token is", yytoken, &yylval, &yylloc);
     }
 
-  /* If the proper action on seeing token YYCHAR1 is to reduce or to
+  /* If the proper action on seeing token YYTOKEN is to reduce or to
      detect an error, take that action.  */
-  yyn += yychar1;
-  if (yyn < 0 || YYLAST < yyn || yycheck[yyn] != yychar1)
+  yyn += yytoken;
+  if (yyn < 0 || YYLAST < yyn || yycheck[yyn] != yytoken)
     goto yydefault;
   yyn = yytable[yyn];
   if (yyn <= 0)
@@ -2376,8 +2443,7 @@ yybackup:
     YYACCEPT;
 
   /* Shift the lookahead token.  */
-  YYDPRINTF ((stderr, "Shifting token %d (%s), ",
-	      yychar, yytname[yychar1]));
+  YYDPRINTF ((stderr, "Shifting token %s, ", yytname[yytoken]));
 
   /* Discard the token being shifted unless it is eof.  */
   if (yychar != YYEOF)
@@ -2423,207 +2489,191 @@ yyreduce:
   yyval = yyvsp[1-yylen];
 
 
-
-#if YYDEBUG
-  /* We have to keep this `#if YYDEBUG', since we use variables which
-     are defined only if `YYDEBUG' is set.  */
-  if (yydebug)
-    {
-      int yyi;
-
-      YYFPRINTF (stderr, "Reducing via rule %d (line %d), ",
-		 yyn - 1, yyrline[yyn]);
-
-      /* Print the symbols being reduced, and their result.  */
-      for (yyi = yyprhs[yyn]; yyrhs[yyi] >= 0; yyi++)
-	YYFPRINTF (stderr, "%s ", yytname[yyrhs[yyi]]);
-      YYFPRINTF (stderr, " -> %s\n", yytname[yyr1[yyn]]);
-    }
-#endif
+  YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
         case 11:
-#line 199 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 232 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 		  /* use preset global here. FIXME */
 		  yyval.node = xstrdup ("int");
-		}
+		;}
     break;
 
   case 12:
-#line 204 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 237 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 		  /* use preset global here. FIXME */
 		  yyval.node = xstrdup ("double");
-		}
+		;}
     break;
 
   case 13:
-#line 209 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 242 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 		  /* use preset global here. FIXME */
 		  yyval.node = xstrdup ("boolean");
-		}
+		;}
     break;
 
   case 19:
-#line 234 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 267 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 	          while (bracket_count-- > 0) 
 		    yyval.node = concat ("[", yyvsp[-1].node, NULL);
-		}
+		;}
     break;
 
   case 20:
-#line 239 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 272 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 	          while (bracket_count-- > 0) 
 		    yyval.node = concat ("[", yyvsp[-1].node, NULL);
-		}
+		;}
     break;
 
   case 24:
-#line 257 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 290 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  yyval.node = concat (yyvsp[-2].node, ".", yyvsp[0].node, NULL);
-		}
+		;}
     break;
 
   case 38:
-#line 289 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { package_name = yyvsp[-1].node; }
+#line 322 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { package_name = yyvsp[-1].node; ;}
     break;
 
   case 46:
-#line 314 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 349 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  if (yyvsp[0].value == PUBLIC_TK)
 		    modifier_value++;
                   if (yyvsp[0].value == STATIC_TK)
                     modifier_value++;
 	          USE_ABSORBER;
-		}
+		;}
     break;
 
   case 47:
-#line 322 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 357 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  if (yyvsp[0].value == PUBLIC_TK)
 		    modifier_value++;
                   if (yyvsp[0].value == STATIC_TK)
                     modifier_value++;
 		  USE_ABSORBER;
-		}
+		;}
     break;
 
   case 48:
-#line 334 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 369 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  report_class_declaration(yyvsp[-2].node);
 		  modifier_value = 0;
-                }
+                ;}
     break;
 
   case 50:
-#line 340 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration(yyvsp[-2].node); }
+#line 375 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration(yyvsp[-2].node); ;}
     break;
 
   case 56:
-#line 354 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 389 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 57:
-#line 356 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 391 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 58:
-#line 361 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { pop_class_context (); }
+#line 396 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { pop_class_context (); ;}
     break;
 
   case 59:
-#line 363 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { pop_class_context (); }
+#line 398 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { pop_class_context (); ;}
     break;
 
   case 71:
-#line 389 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 424 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 72:
-#line 391 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { modifier_value = 0; }
+#line 426 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { modifier_value = 0; ;}
     break;
 
   case 77:
-#line 407 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { bracket_count = 0; USE_ABSORBER; }
+#line 442 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { bracket_count = 0; USE_ABSORBER; ;}
     break;
 
   case 78:
-#line 409 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++bracket_count; }
+#line 444 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++bracket_count; ;}
     break;
 
   case 81:
-#line 420 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++method_depth; }
+#line 455 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++method_depth; ;}
     break;
 
   case 82:
-#line 422 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { --method_depth; }
+#line 457 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { --method_depth; ;}
     break;
 
   case 83:
-#line 427 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 462 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 85:
-#line 430 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { modifier_value = 0; }
+#line 465 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { modifier_value = 0; ;}
     break;
 
   case 86:
-#line 432 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 467 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
                   report_main_declaration (yyvsp[-1].declarator);
 		  modifier_value = 0;
-		}
+		;}
     break;
 
   case 87:
-#line 440 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 475 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  struct method_declarator *d;
 		  NEW_METHOD_DECLARATOR (d, yyvsp[-2].node, NULL);
 		  yyval.declarator = d;
-		}
+		;}
     break;
 
   case 88:
-#line 446 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 481 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  struct method_declarator *d;
 		  NEW_METHOD_DECLARATOR (d, yyvsp[-3].node, yyvsp[-1].node);
 		  yyval.declarator = d;
-		}
+		;}
     break;
 
   case 91:
-#line 457 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 492 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 		  yyval.node = concat (yyvsp[-2].node, ",", yyvsp[0].node, NULL);
-		}
+		;}
     break;
 
   case 92:
-#line 464 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 499 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     { 
 		  USE_ABSORBER;
 		  if (bracket_count)
@@ -2637,11 +2687,11 @@ yyreduce:
 		    }
 		  else
 		    yyval.node = yyvsp[-1].node;
-		}
+		;}
     break;
 
   case 93:
-#line 479 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 514 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
     {
 		  if (bracket_count)
 		    {
@@ -2654,299 +2704,290 @@ yyreduce:
 		    }
 		  else
 		    yyval.node = yyvsp[-1].node;
-		}
+		;}
     break;
 
   case 96:
-#line 500 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 535 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 97:
-#line 502 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 537 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 101:
-#line 517 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 552 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 103:
-#line 525 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { modifier_value = 0; }
+#line 563 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { modifier_value = 0; ;}
     break;
 
   case 105:
-#line 530 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { modifier_value = 0; }
+#line 568 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { modifier_value = 0; ;}
     break;
 
   case 106:
-#line 536 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 575 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 107:
-#line 538 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 577 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 114:
-#line 554 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 594 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 115:
-#line 556 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 596 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 118:
-#line 568 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (yyvsp[0].node); modifier_value = 0; }
+#line 608 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (yyvsp[0].node); modifier_value = 0; ;}
     break;
 
   case 120:
-#line 571 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (yyvsp[0].node); modifier_value = 0; }
+#line 611 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (yyvsp[0].node); modifier_value = 0; ;}
     break;
 
   case 122:
-#line 574 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (yyvsp[-1].node); modifier_value = 0; }
+#line 614 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (yyvsp[-1].node); modifier_value = 0; ;}
     break;
 
   case 124:
-#line 577 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (yyvsp[-1].node); modifier_value = 0; }
+#line 617 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (yyvsp[-1].node); modifier_value = 0; ;}
     break;
 
   case 128:
-#line 588 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { pop_class_context (); }
+#line 628 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { pop_class_context (); ;}
     break;
 
   case 129:
-#line 590 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { pop_class_context (); }
+#line 630 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { pop_class_context (); ;}
     break;
 
   case 152:
-#line 649 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 689 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 153:
-#line 651 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { modifier_value = 0; }
+#line 691 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { modifier_value = 0; ;}
     break;
 
   case 178:
-#line 692 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 732 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 189:
-#line 719 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 760 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 190:
-#line 724 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 765 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 191:
-#line 729 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 770 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 199:
-#line 749 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 790 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 204:
-#line 764 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 805 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 208:
-#line 781 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 822 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 214:
-#line 799 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 840 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 225:
-#line 823 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 865 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 228:
-#line 832 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 874 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 231:
-#line 839 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    {yyerror ("Missing term"); RECOVER;}
+#line 881 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    {yyerror ("Missing term"); RECOVER;;}
     break;
 
   case 232:
-#line 841 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    {yyerror ("';' expected"); RECOVER;}
+#line 883 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    {yyerror ("';' expected"); RECOVER;;}
     break;
 
   case 235:
-#line 850 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 892 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 241:
-#line 865 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 907 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 242:
-#line 869 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 911 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 253:
-#line 889 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 933 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 254:
-#line 894 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 938 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 255:
-#line 896 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 940 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 256:
-#line 898 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 942 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 257:
-#line 900 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 944 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 265:
-#line 915 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (anonymous_context); }
+#line 959 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (anonymous_context); ;}
     break;
 
   case 267:
-#line 918 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { report_class_declaration (anonymous_context); }
+#line 962 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { report_class_declaration (anonymous_context); ;}
     break;
 
   case 269:
-#line 924 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 968 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 283:
-#line 955 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { bracket_count = 1; }
+#line 1000 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { bracket_count = 1; ;}
     break;
 
   case 284:
-#line 957 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { bracket_count++; }
+#line 1002 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { bracket_count++; ;}
     break;
 
   case 287:
-#line 968 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; ++complexity; }
+#line 1015 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ++complexity; ;}
     break;
 
   case 288:
-#line 970 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; ++complexity; }
+#line 1017 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ++complexity; ;}
     break;
 
   case 289:
-#line 971 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1018 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 290:
-#line 972 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1019 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 291:
-#line 973 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1020 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 292:
-#line 974 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1021 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 293:
-#line 979 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 1026 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 296:
-#line 986 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 1033 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
   case 343:
-#line 1082 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1129 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 345:
-#line 1088 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1135 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 347:
-#line 1094 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { ++complexity; }
+#line 1141 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { ++complexity; ;}
     break;
 
   case 351:
-#line 1108 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
-    { USE_ABSORBER; }
+#line 1155 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
+    { USE_ABSORBER; ;}
     break;
 
 
     }
 
-/* Line 1016 of /usr/share/bison/yacc.c.  */
-#line 2935 "ps14046.c"
+/* Line 991 of yacc.c.  */
+#line 2984 "ps19697.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
 
 
-#if YYDEBUG
-  if (yydebug)
-    {
-      short *yyssp1 = yyss - 1;
-      YYFPRINTF (stderr, "state stack now");
-      while (yyssp1 != yyssp)
-	YYFPRINTF (stderr, " %d", *++yyssp1);
-      YYFPRINTF (stderr, "\n");
-    }
-#endif
+  YY_STACK_PRINT (yyss, yyssp);
 
   *++yyvsp = yyval;
 
@@ -2991,12 +3032,12 @@ yyerrlab:
 	       yyx < (int) (sizeof (yytname) / sizeof (char *)); yyx++)
 	    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
 	      yysize += yystrlen (yytname[yyx]) + 15, yycount++;
-	  yysize += yystrlen ("parse error, unexpected ") + 1;
+	  yysize += yystrlen ("syntax error, unexpected ") + 1;
 	  yysize += yystrlen (yytname[yytype]);
 	  yymsg = (char *) YYSTACK_ALLOC (yysize);
 	  if (yymsg != 0)
 	    {
-	      char *yyp = yystpcpy (yymsg, "parse error, unexpected ");
+	      char *yyp = yystpcpy (yymsg, "syntax error, unexpected ");
 	      yyp = yystpcpy (yyp, yytname[yytype]);
 
 	      if (yycount < 5)
@@ -3017,19 +3058,15 @@ yyerrlab:
 	      YYSTACK_FREE (yymsg);
 	    }
 	  else
-	    yyerror ("parse error; also virtual memory exhausted");
+	    yyerror ("syntax error; also virtual memory exhausted");
 	}
       else
 #endif /* YYERROR_VERBOSE */
-	yyerror ("parse error");
+	yyerror ("syntax error");
     }
-  goto yyerrlab1;
 
 
-/*----------------------------------------------------.
-| yyerrlab1 -- error raised explicitly by an action.  |
-`----------------------------------------------------*/
-yyerrlab1:
+
   if (yyerrstatus == 3)
     {
       /* If just tried and failed to reuse lookahead token after an
@@ -3041,28 +3078,46 @@ yyerrlab1:
 	  /* Pop the error token.  */
           YYPOPSTACK;
 	  /* Pop the rest of the stack.  */
-	  while (yyssp > yyss)
+	  while (yyss < yyssp)
 	    {
-	      YYDPRINTF ((stderr, "Error: popping "));
-	      YYDSYMPRINT ((stderr,
-			    yystos[*yyssp],
-			    *yyvsp));
-	      YYDPRINTF ((stderr, "\n"));
-	      yydestruct (yystos[*yyssp], *yyvsp);
+	      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+	      yydestruct (yystos[*yyssp], yyvsp);
 	      YYPOPSTACK;
 	    }
 	  YYABORT;
         }
 
-      YYDPRINTF ((stderr, "Discarding token %d (%s).\n",
-		  yychar, yytname[yychar1]));
-      yydestruct (yychar1, yylval);
+      YYDSYMPRINTF ("Error: discarding", yytoken, &yylval, &yylloc);
+      yydestruct (yytoken, &yylval);
       yychar = YYEMPTY;
+
     }
 
   /* Else will try to reuse lookahead token after shifting the error
      token.  */
+  goto yyerrlab2;
 
+
+/*----------------------------------------------------.
+| yyerrlab1 -- error raised explicitly by an action.  |
+`----------------------------------------------------*/
+yyerrlab1:
+
+  /* Suppress GCC warning that yyerrlab1 is unused when no action
+     invokes YYERROR.  */
+#if defined (__GNUC_MINOR__) && 2093 <= (__GNUC__ * 1000 + __GNUC_MINOR__) \
+    && !defined __cplusplus
+  __attribute__ ((__unused__))
+#endif
+
+
+  goto yyerrlab2;
+
+
+/*---------------------------------------------------------------.
+| yyerrlab2 -- pop states until the error token can be shifted.  |
+`---------------------------------------------------------------*/
+yyerrlab2:
   yyerrstatus = 3;	/* Each real token shifted decrements this.  */
 
   for (;;)
@@ -3083,26 +3138,12 @@ yyerrlab1:
       if (yyssp == yyss)
 	YYABORT;
 
-      YYDPRINTF ((stderr, "Error: popping "));
-      YYDSYMPRINT ((stderr,
-		    yystos[*yyssp], *yyvsp));
-      YYDPRINTF ((stderr, "\n"));
-
-      yydestruct (yystos[yystate], *yyvsp);
+      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+      yydestruct (yystos[yystate], yyvsp);
       yyvsp--;
       yystate = *--yyssp;
 
-
-#if YYDEBUG
-      if (yydebug)
-	{
-	  short *yyssp1 = yyss - 1;
-	  YYFPRINTF (stderr, "Error: state stack now");
-	  while (yyssp1 != yyssp)
-	    YYFPRINTF (stderr, " %d", *++yyssp1);
-	  YYFPRINTF (stderr, "\n");
-	}
-#endif
+      YY_STACK_PRINT (yyss, yyssp);
     }
 
   if (yyn == YYFINAL)
@@ -3150,7 +3191,7 @@ yyreturn:
 }
 
 
-#line 1126 "/home/gdr/gcc-3.3.5/gcc-3.3.5/gcc/java/parse-scan.y"
+#line 1173 "/home/gdr/gcc-3.3.6/gcc-3.3.6/gcc/java/parse-scan.y"
 
 
 /* Create a new parser context */

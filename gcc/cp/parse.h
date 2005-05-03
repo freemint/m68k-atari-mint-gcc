@@ -1,4 +1,4 @@
-/* A Bison parser, made from parse.y, by GNU bison 1.75.  */
+/* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
    Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
@@ -22,9 +22,6 @@
    Bison output file, you may use that output file without restriction.
    This special exception was added by the Free Software Foundation
    in version 1.24 of Bison.  */
-
-#ifndef BISON_P______H
-# define BISON_P______H
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -212,24 +209,25 @@
 
 
 
-#ifndef YYSTYPE
-#line 249 "parse.y"
-typedef union { GTY(())
+#if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
+#line 271 "parse.y"
+typedef union YYSTYPE { GTY(())
   long itype;
   tree ttype;
   char *strtype;
   enum tree_code code;
   flagged_type_tree ftype;
   struct unparsed_text *pi;
-} yystype;
-/* Line 1281 of /usr/share/bison/yacc.c.  */
-#line 227 "p13706.h"
-# define YYSTYPE yystype
+} YYSTYPE;
+/* Line 1249 of yacc.c.  */
+#line 223 "p19357.h"
+# define yystype YYSTYPE /* obsolescent; will be withdrawn */
+# define YYSTYPE_IS_DECLARED 1
+# define YYSTYPE_IS_TRIVIAL 1
 #endif
 
 extern YYSTYPE yylval;
 
 
-#endif /* not BISON_P______H */
 
-#define YYEMPTY		-2
+#define YYEMPTY		(-2)

@@ -821,12 +821,11 @@
 #     define SVR4
 #     ifdef __arch64__
 	/* libc_stack_end is not set reliably for sparc64 */
-#       define STACKBOTTOM ((ptr_t) 0x80000000000)
 #	define DATASTART (ptr_t)GC_SysVGetDataStart(0x100000, _etext)
 #     else
-#       define LINUX_STACKBOTTOM
 #	define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, _etext)
 #     endif
+#     define LINUX_STACKBOTTOM
 #   endif
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
@@ -1387,7 +1386,7 @@
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define CPP_WORDSZ 64
-#       define STACKBOTTOM ((ptr_t) 0x120000000)
+#       define LINUX_STACKBOTTOM
 #       ifdef __ELF__
 #	  define SEARCH_FOR_DATA_START
 #	  define DATASTART GC_data_start

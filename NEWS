@@ -21,6 +21,12 @@ http://gcc.gnu.org/gcc-3.3/index.html
 
 Release History
 
+   GCC 3.3.5
+          September 30, 2004
+
+   GCC 3.3.4
+          May 31, 2004
+
    GCC 3.3.3
           February 14, 2004 ([4]changes)
 
@@ -73,7 +79,7 @@ References and Acknowledgements
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [23]Valid XHTML 1.0 
+   Last modified 2005-01-25 [23]Valid XHTML 1.0 
 
 References
 
@@ -1445,7 +1451,7 @@ GCC 3.3.3
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [558]Valid XHTML 1.0 
+   Last modified 2004-11-14 [558]Valid XHTML 1.0 
 
 References
 
@@ -2083,7 +2089,7 @@ References and Acknowledgements
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [22]Valid XHTML 1.0 
+   Last modified 2004-11-14 [22]Valid XHTML 1.0 
 
 References
 
@@ -2266,7 +2272,7 @@ GCC 3.2.3
      * [44]9954: Cross-build for target i586-pc-linux-gnu (--with-newlib)
        failed
 
-    Sparc-specific:
+    SPARC-specific:
 
      * [45]7784: [Sparc] ICE in extract_insn, in recog.c
      * [46]7796: sparc extra failure with -m64 on execute/930921-1.c in
@@ -2724,7 +2730,7 @@ GCC 3.2
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-30 [254]Valid XHTML 1.0 
+   Last modified 2004-11-14 [254]Valid XHTML 1.0 
 
 References
 
@@ -3038,7 +3044,7 @@ http://gcc.gnu.org/gcc-3.1/index.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [19]Valid XHTML 1.0 
+   Last modified 2004-11-14 [19]Valid XHTML 1.0 
 
 References
 
@@ -3407,7 +3413,7 @@ Documentation improvements
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [21]Valid XHTML 1.0 
+   Last modified 2004-11-14 [21]Valid XHTML 1.0 
 
 References
 
@@ -3495,7 +3501,7 @@ Previous 3.0.x Releases
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [19]Valid XHTML 1.0 
+   Last modified 2004-11-14 [19]Valid XHTML 1.0 
 
 References
 
@@ -3700,7 +3706,7 @@ Other significant improvements
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [22]Valid XHTML 1.0 
+   Last modified 2004-11-14 [22]Valid XHTML 1.0 
 
 References
 
@@ -3784,7 +3790,7 @@ http://gcc.gnu.org/gcc-3.0/caveats.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [12]Valid XHTML 1.0 
+   Last modified 2004-11-14 [12]Valid XHTML 1.0 
 
 References
 
@@ -3868,7 +3874,7 @@ http://gcc.gnu.org/gcc-2.95/index.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [21]Valid XHTML 1.0 
+   Last modified 2004-11-14 [21]Valid XHTML 1.0 
 
 References
 
@@ -3924,7 +3930,7 @@ http://gcc.gnu.org/gcc-2.95/features.html
           + More support for various pragmas which appear in vendor
             include files
      * New Targets and Target Specific Improvements
-          + [14]Sparc backend rewrite.
+          + [14]SPARC backend rewrite.
           + -mschedule=8000 will optimize code for PA8000 class
             processors; -mpa-risc-2-0 will generate code for PA2.0
             processors
@@ -3938,7 +3944,7 @@ http://gcc.gnu.org/gcc-2.95/features.html
             -mcpu=403. -mcpu=e603e was added to do -mcpu=603e and
             -msoft-float.
           + c3x, c4x
-          + HyperSparc
+          + HyperSPARC
           + SparcLite86x
           + sh4
           + Support for new systems (OpenBSD, FreeBSD, UWIN, Interix,
@@ -4049,7 +4055,7 @@ Additional Changes in GCC 2.95.2
             of an obscure series of bit manipulations, shifts and
             arithmetic.
           + Fixed register allocator bug which caused teTeX to be
-            mis-compiled on Sparc targets.
+            mis-compiled on SPARC targets.
           + Avoid incorrect optimization of degenerate case statements
             for certain targets such as the ARM.
           + Fix out of range memory reference in the jump optimizer.
@@ -4064,8 +4070,8 @@ Additional Changes in GCC 2.95.2
             targets (for example the ARM).
      * Platform specific bugfixes and improvements
           + Work around bug in Sun V5.0 compilers which caused bootstrap
-            comparison failures on Sparc targets.
-          + Fix Sparc backend bug which caused aborts in final.c.
+            comparison failures on SPARC targets.
+          + Fix SPARC backend bug which caused aborts in final.c.
           + Fix sparc-hal-solaris2* configuration fragments.
           + Fix bug in sparc block profiling.
           + Fix obscure code generation bug for the PARISC targets.
@@ -4148,7 +4154,7 @@ Additional Changes in GCC 2.95.3
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [25]Valid XHTML 1.0 
+   Last modified 2004-11-14 [25]Valid XHTML 1.0 
 
 References
 
@@ -4242,7 +4248,7 @@ http://gcc.gnu.org/gcc-2.95/caveats.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [10]Valid XHTML 1.0 
+   Last modified 2004-11-14 [10]Valid XHTML 1.0 
 
 References
 
@@ -4474,7 +4480,7 @@ http://gcc.gnu.org/egcs-1.1/index.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [19]Valid XHTML 1.0 
+   Last modified 2004-11-14 [19]Valid XHTML 1.0 
 
 References
 
@@ -4589,7 +4595,7 @@ http://gcc.gnu.org/egcs-1.1/features.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [14]Valid XHTML 1.0 
+   Last modified 2004-11-14 [14]Valid XHTML 1.0 
 
 References
 
@@ -4655,7 +4661,7 @@ http://gcc.gnu.org/egcs-1.1/caveats.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [9]Valid XHTML 1.0 
+   Last modified 2004-11-14 [9]Valid XHTML 1.0 
 
 References
 
@@ -4764,7 +4770,7 @@ http://gcc.gnu.org/egcs-1.0/egcs-1.0.3.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [14]Valid XHTML 1.0 
+   Last modified 2004-11-14 [14]Valid XHTML 1.0 
 
 References
 
@@ -4909,7 +4915,7 @@ http://gcc.gnu.org/egcs-1.0/egcs-1.0.2.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [14]Valid XHTML 1.0 
+   Last modified 2004-11-14 [14]Valid XHTML 1.0 
 
 References
 
@@ -5054,7 +5060,7 @@ http://gcc.gnu.org/egcs-1.0/egcs-1.0.1.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [14]Valid XHTML 1.0 
+   Last modified 2004-11-14 [14]Valid XHTML 1.0 
 
 References
 
@@ -5156,7 +5162,7 @@ http://gcc.gnu.org/egcs-1.0/egcs-1.0.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [14]Valid XHTML 1.0 
+   Last modified 2004-11-14 [14]Valid XHTML 1.0 
 
 References
 
@@ -5235,7 +5241,7 @@ http://gcc.gnu.org/egcs-1.0/features.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [11]Valid XHTML 1.0 
+   Last modified 2004-11-14 [11]Valid XHTML 1.0 
 
 References
 
@@ -5300,7 +5306,7 @@ http://gcc.gnu.org/egcs-1.0/caveats.html
    Verbatim copying and distribution of this entire article is permitted
    in any medium, provided this notice is preserved.
 
-   Last modified 2004-08-06 [9]Valid XHTML 1.0 
+   Last modified 2004-11-14 [9]Valid XHTML 1.0 
 
 References
 
