@@ -77,6 +77,31 @@ Boston, MA 02111-1307, USA.  */
 
 #define HAVE_ATEXIT
 
+#define DO_GLOBAL_CTORS_BODY	\
+do {	                        \
+  extern char* _base;		\
+  func_ptr *p = (func_ptr*) ((char*) &__CTOR_LIST__ + sizeof (func_ptr)); \
+  while (*p) {			\
+    if (((char *) (*p)) < (_base + 0x100)) \
+      *p = (func_ptr) (_base + (unsigned long) *p + 0x100); \
+    p++;			\
+    (*(p-1)) ();		\
+  }				\
+} while (0)
+
+#define DO_GLOBAL_DTORS_BODY	\
+do {	                        \
+  extern char* _base;		\
+  func_ptr *p = (func_ptr*) ((char*) &__DTOR_LIST__ + sizeof (func_ptr)); \
+  while (*p) {			\
+    if (((char *) (*p)) < (_base + 0x100)) \
+      *p = (func_ptr) (_base + (unsigned long) *p + 0x100); \
+    p++;			\
+    (*(p-1)) ();		\
+  }				\
+} while (0)
+
+
 #undef PTRDIFF_TYPE
 #define PTRDIFF_TYPE	"long int"
 
@@ -90,13 +115,17 @@ Boston, MA 02111-1307, USA.  */
 #define WCHAR_TYPE_SIZE	16
 
 /* Alignment of field after `int : 0' in a structure.  */
-/* recent gcc's have this as 16, this is left in for the benfit of */
+/* recent gcc's have this as 16, this is left in for the benefit of */
  /* older gcc */
 #undef EMPTY_FIELD_BOUNDARY
 #define EMPTY_FIELD_BOUNDARY 16
 
 /* Every structure or union's size must be a multiple of 2 bytes.  */
 #define STRUCTURE_SIZE_BOUNDARY 16
+
+/* Biggest alignment supported by the object file format of this machine. */
+#undef MAX_OFILE_ALIGNMENT
+#define MAX_OFILE_ALIGNMENT 32
 
 #undef PREFERRED_DEBUGGING_TYPE
 #define PREFERRED_DEBUGGING_TYPE DBX_DEBUG
