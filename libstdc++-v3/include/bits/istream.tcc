@@ -1167,8 +1167,7 @@ namespace std
       if (__cerb) 
 	{
 	  __str.erase();
-          __size_type __n_nobug = __str.max_size();
-          __size_type __n = __n_nobug;
+	  __size_type __n = __str.max_size();
 
 	  __int_type __idelim = _Traits::to_int_type(__delim);
 	  __streambuf_type* __sb = __in.rdbuf();

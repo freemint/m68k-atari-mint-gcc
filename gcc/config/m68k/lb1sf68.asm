@@ -113,36 +113,6 @@ Boston, MA 02111-1307, USA.  */
 |                                  exceptions
 |=============================================================================
 
-| The following exception types are supported:
-INEXACT_RESULT 		= 0x0001
-UNDERFLOW 		= 0x0002
-OVERFLOW 		= 0x0004
-DIVIDE_BY_ZERO 		= 0x0008
-INVALID_OPERATION 	= 0x0010
-
-| The allowed rounding modes are:
-UNKNOWN           = -1
-ROUND_TO_NEAREST  = 0 | round result to nearest representable value
-ROUND_TO_ZERO     = 1 | round result towards zero
-ROUND_TO_PLUS     = 2 | round result towards plus infinity
-ROUND_TO_MINUS    = 3 | round result towards minus infinity
-
-| The allowed values of format are:
-NIL          = 0
-SINGLE_FLOAT = 1
-DOUBLE_FLOAT = 2
-LONG_FLOAT   = 3
-
-| The allowed values for the last operation are:
-NOOP         = 0
-ADD          = 1
-MULTIPLY     = 2
-DIVIDE       = 3
-NEGATE       = 4
-COMPARE      = 5
-EXTENDSFDF   = 6
-TRUNCDFSF    = 7
-
 | This is the floating point condition code register (_fpCCR):
 |
 | struct {
@@ -196,6 +166,36 @@ FORMT  = __format - SYM (_fpCCR)
 LASTO  = __last_operation - SYM (_fpCCR)
 OPER1  = __operand1 - SYM (_fpCCR)
 OPER2  = __operand2 - SYM (_fpCCR)
+
+| The following exception types are supported:
+INEXACT_RESULT 		= 0x0001
+UNDERFLOW 		= 0x0002
+OVERFLOW 		= 0x0004
+DIVIDE_BY_ZERO 		= 0x0008
+INVALID_OPERATION 	= 0x0010
+
+| The allowed rounding modes are:
+UNKNOWN           = -1
+ROUND_TO_NEAREST  = 0 | round result to nearest representable value
+ROUND_TO_ZERO     = 1 | round result towards zero
+ROUND_TO_PLUS     = 2 | round result towards plus infinity
+ROUND_TO_MINUS    = 3 | round result towards minus infinity
+
+| The allowed values of format are:
+NIL          = 0
+SINGLE_FLOAT = 1
+DOUBLE_FLOAT = 2
+LONG_FLOAT   = 3
+
+| The allowed values for the last operation are:
+NOOP         = 0
+ADD          = 1
+MULTIPLY     = 2
+DIVIDE       = 3
+NEGATE       = 4
+COMPARE      = 5
+EXTENDSFDF   = 6
+TRUNCDFSF    = 7
 
 |=============================================================================
 |                           __clear_sticky_bits
