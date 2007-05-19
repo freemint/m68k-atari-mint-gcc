@@ -235,6 +235,23 @@ case "${host}" in
     GLIBCXX_CHECK_COMPLEX_MATH_SUPPORT
     GLIBCXX_CHECK_WCHAR_T_SUPPORT
     ;;
+  *-mint*)
+    AC_CHECK_HEADERS([sys/types.h locale.h float.h])
+    GLIBCPP_CHECK_LINKER_FEATURES
+    GLIBCPP_CHECK_COMPLEX_MATH_SUPPORT
+    GLIBCPP_CHECK_WCHAR_T_SUPPORT
+    os_include_dir="os/mint"
+    AC_DEFINE(HAVE_COPYSIGN)
+    AC_DEFINE(HAVE_FINITE)
+    AC_DEFINE(HAVE_FINITEF)
+    AC_DEFINE(HAVE_FINITEL)
+    AC_DEFINE(HAVE_ISINF)
+    AC_DEFINE(HAVE_ISINFF)
+    AC_DEFINE(HAVE_ISINFL)
+    AC_DEFINE(HAVE_ISNAN)
+    AC_DEFINE(HAVE_ISNANF)
+    AC_DEFINE(HAVE_ISNANL)
+    ;;
   *-netbsd*)
     AC_CHECK_HEADERS([nan.h ieeefp.h endian.h sys/isa_defs.h \
       machine/endian.h machine/param.h sys/machine.h sys/types.h \

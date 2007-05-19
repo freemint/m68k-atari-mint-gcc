@@ -1,7 +1,6 @@
-// -*- C++ -*- forwarding header.
+// Specific definitions for generic platforms  -*- C++ -*-
 
-// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002
-// Free Software Foundation, Inc.
+// Copyright (C) 2000 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -28,38 +27,17 @@
 // invalidate any other reasons why the executable file might be covered by
 // the GNU General Public License.
 
-//
-// ISO C++ 14882: 20.4.6  C library
-//
 
-/** @file csetjmp
- *  This is a Standard C++ Library file.  You should @c #include this file
- *  in your programs, rather than any of the "*.h" implementation files.
- *
- *  This is the C++ version of the Standard C Library header @c setjmp.h,
- *  and its contents are (mostly) the same as that header, but are all
- *  contained in the namespace @c std.
- */
+#ifndef _GLIBCXX_OS_DEFINES
+#define _GLIBCXX_OS_DEFINES 1
 
-#ifndef _GLIBCXX_CSETJMP
-#define _GLIBCXX_CSETJMP 1
+// System-specific #define, typedefs, corrections, etc, go here.  This
+// file will come before all others.
 
-#pragma GCC system_header
+// These taken from mintlib-0.57.3/include/unistd.h
 
-#include <setjmp.h>
-
-// Get rid of those macros defined in <setjmp.h> in lieu of real functions.
-//#undef longjmp
-
-// Adhere to section 17.4.1.2 clause 5 of ISO 14882:1998
-#ifndef setjmp
-#define setjmp(env) setjmp (env)
-#endif
-
-namespace std
-{
-  using ::jmp_buf;
-  //using ::longjmp;
-}
+#define __off_t off_t
+#define __off64_t off64_t
+#define __ssize_t ssize_t
 
 #endif

@@ -1,7 +1,6 @@
-// -*- C++ -*- forwarding header.
+// Locale support -*- C++ -*-
 
-// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002
-// Free Software Foundation, Inc.
+// Copyright (C) 2000, 2003 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -29,37 +28,42 @@
 // the GNU General Public License.
 
 //
-// ISO C++ 14882: 20.4.6  C library
+// ISO C++ 14882: 22.1  Locales
 //
 
-/** @file csetjmp
- *  This is a Standard C++ Library file.  You should @c #include this file
- *  in your programs, rather than any of the "*.h" implementation files.
- *
- *  This is the C++ version of the Standard C Library header @c setjmp.h,
- *  and its contents are (mostly) the same as that header, but are all
- *  contained in the namespace @c std.
- */
+// ctype bits to be inlined go here. Non-inlinable (ie virtual do_*)
+// functions go in ctype.cc
 
-#ifndef _GLIBCXX_CSETJMP
-#define _GLIBCXX_CSETJMP 1
+// Mint C types, taken from mintlib-0.57.3/include/ctype.h
 
-#pragma GCC system_header
+  bool
+  ctype<char>::
+  is(mask __m, char __c) const
+  { return _ctype[(unsigned char)((__c) + 1)] & __m; }
 
-#include <setjmp.h>
+  const char*
+  ctype<char>::
+  is(const char* __low, const char* __high, mask* __vec) const
+  {
+    while (__low < __high)
+      *__vec++ = _ctype[(*__low++) + 1] ;
+    return __high;
+  }
 
-// Get rid of those macros defined in <setjmp.h> in lieu of real functions.
-//#undef longjmp
+  const char*
+  ctype<char>::
+  scan_is(mask __m, const char* __low, const char* __high) const
+  {
+    while (__low < __high && !this->is(__m, *__low))
+      ++__low;
+    return __low;
+  }
 
-// Adhere to section 17.4.1.2 clause 5 of ISO 14882:1998
-#ifndef setjmp
-#define setjmp(env) setjmp (env)
-#endif
-
-namespace std
-{
-  using ::jmp_buf;
-  //using ::longjmp;
-}
-
-#endif
+  const char*
+  ctype<char>::
+  scan_not(mask __m, const char* __low, const char* __high) const
+  {
+    while (__low < __high && this->is(__m, *__low) != 0)
+      ++__low;
+    return __low;
+  }

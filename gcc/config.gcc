@@ -1365,6 +1365,13 @@ m68000-hp-hpux*)		# HP 9000 series 300
 	use_collect2=yes
 	use_fixproto=yes
 	;;
+m68k-atari-mint*)
+	tm_file="m68k/m68k.h m68k/m68k-none.h m68k/mint.h"
+	tm_defines="MOTOROLA USE_GAS"
+	xm_file=m68k/xm-mint.h
+	tmake_file=m68k/t-mint
+	target_cpu_default="M68K_CPU_m68000"
+	;;
 m68k-hp-hpux7*)	# HP 9000 series 300 running HPUX version 7.
 	tm_file="m68k/hp320base.h m68k/m68k.h m68k/hp320.h"
 	if test x$gas = xyes
