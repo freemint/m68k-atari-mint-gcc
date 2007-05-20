@@ -234,6 +234,9 @@ case "${host_os}" in
   mingw32*)
     os_include_dir="os/mingw32"
     ;;
+  mint*)
+    os_include_dir="os/mint"
+    ;;
   netbsd*)
     os_include_dir="os/bsd/netbsd"
     ;;

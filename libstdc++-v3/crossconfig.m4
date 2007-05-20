@@ -173,6 +173,17 @@ case "${host}" in
     GLIBCXX_CHECK_LINKER_FEATURES
     GLIBCXX_CHECK_COMPLEX_MATH_SUPPORT
     ;;
+  *-mint*)
+    AC_CHECK_HEADERS([sys/stat.h sys/time.h sys/types.h\
+       unistd.h locale.h float.h endian.h inttypes.h stdint.h])
+    SECTION_FLAGS='-D_GNU_SOURCE'
+    AC_SUBST(SECTION_FLAGS) 
+    GLIBCXX_CHECK_LINKER_FEATURES
+    GLIBCXX_CHECK_MATH_SUPPORT
+    GLIBCXX_CHECK_BUILTIN_MATH_SUPPORT
+    GLIBCXX_CHECK_COMPLEX_MATH_SUPPORT
+    GLIBCXX_CHECK_STDLIB_SUPPORT
+    ;;
   *-netbsd*)
     AC_CHECK_HEADERS([nan.h ieeefp.h endian.h sys/isa_defs.h \
       machine/endian.h machine/param.h sys/machine.h sys/types.h \

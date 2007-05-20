@@ -1,7 +1,6 @@
-// -*- C++ -*- forwarding header.
+// Locale support -*- C++ -*-
 
-// Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
-// Free Software Foundation, Inc.
+// Copyright (C) 2000, 2003 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -16,7 +15,7 @@
 
 // You should have received a copy of the GNU General Public License along
 // with this library; see the file COPYING.  If not, write to the Free
-// Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
+// Software Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 // USA.
 
 // As a special exception, you may use this file as part of a free software
@@ -28,41 +27,52 @@
 // invalidate any other reasons why the executable file might be covered by
 // the GNU General Public License.
 
-/** @file csetjmp
- *  This is a Standard C++ Library file.  You should @c #include this file
- *  in your programs, rather than any of the "*.h" implementation files.
- *
- *  This is the C++ version of the Standard C Library header @c setjmp.h,
- *  and its contents are (mostly) the same as that header, but are all
- *  contained in the namespace @c std (except for names which are defined
- *  as macros in C).
+/** @file ctype_inline.h
+ *  This is an internal header file, included by other library headers.
+ *  You should not attempt to use it directly.
  */
 
 //
-// ISO C++ 14882: 20.4.6  C library
+// ISO C++ 14882: 22.1  Locales
 //
 
-#ifndef _GLIBCXX_CSETJMP
-#define _GLIBCXX_CSETJMP 1
+// ctype bits to be inlined go here. Non-inlinable (ie virtual do_*)
+// functions go in ctype.cc
 
-#pragma GCC system_header
-
-#include <bits/c++config.h>
-#include <setjmp.h>
-
-// Get rid of those macros defined in <setjmp.h> in lieu of real functions.
-//#undef longjmp
-
-// Adhere to section 17.4.1.2 clause 5 of ISO 14882:1998
-#ifndef setjmp
-#define setjmp(env) setjmp (env)
-#endif
+// Mint C types, taken from mintlib-0.57.3/include/ctype.h
 
 _GLIBCXX_BEGIN_NAMESPACE(std)
 
-  using ::jmp_buf;
-  //using ::longjmp;
+  bool
+  ctype<char>::
+  is(mask __m, char __c) const
+  { return _ctype[(unsigned char)((__c) + 1)] & __m; }
+
+  const char*
+  ctype<char>::
+  is(const char* __low, const char* __high, mask* __vec) const
+  {
+    while (__low < __high)
+      *__vec++ = _ctype[(*__low++) + 1] ;
+    return __high;
+  }
+
+  const char*
+  ctype<char>::
+  scan_is(mask __m, const char* __low, const char* __high) const
+  {
+    while (__low < __high && !this->is(__m, *__low))
+      ++__low;
+    return __low;
+  }
+
+  const char*
+  ctype<char>::
+  scan_not(mask __m, const char* __low, const char* __high) const
+  {
+    while (__low < __high && this->is(__m, *__low) != 0)
+      ++__low;
+    return __low;
+  }
 
 _GLIBCXX_END_NAMESPACE
-
-#endif
