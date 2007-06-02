@@ -213,6 +213,32 @@ do {									\
 */
 #define DWARF2_UNWIND_INFO 0
 
+/* Use the default action for outputting the case label.  */
+#undef ASM_OUTPUT_CASE_LABEL
+#define ASM_RETURN_CASE_JUMP				\
+  do {							\
+    if (TARGET_COLDFIRE)				\
+      {						\
+	if (ADDRESS_REG_P (operands[0]))		\
+	  return "jmp %%pc@(2,%0:l)";			\
+	else						\
+	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
+      }						\
+    else						\
+      return "jmp %%pc@(2,%0:w)";			\
+  } while (0)
+
+#undef ALIGN_ASM_OP
+#define ALIGN_ASM_OP "\t.align\t"
+
+/* This is how to output an assembler line that says to advance the
+   location counter to a multiple of 2**LOG bytes.  */
+
+#undef ASM_OUTPUT_ALIGN
+#define ASM_OUTPUT_ALIGN(FILE,LOG)				\
+  if ((LOG) > 0)						\
+    fprintf ((FILE), "%s%u\n", ALIGN_ASM_OP, 1 << (LOG));
+
 /* If defined, a C expression whose value is a string containing the
    assembler operation to identify the following data as uninitialized global
    data.  */
