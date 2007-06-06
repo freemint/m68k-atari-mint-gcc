@@ -51,7 +51,7 @@
 #include <setjmp.h>
 
 // Get rid of those macros defined in <setjmp.h> in lieu of real functions.
-//#undef longjmp
+#undef longjmp
 
 // Adhere to section 17.4.1.2 clause 5 of ISO 14882:1998
 #ifndef setjmp
@@ -61,7 +61,7 @@
 _GLIBCXX_BEGIN_NAMESPACE(std)
 
   using ::jmp_buf;
-  //using ::longjmp;
+  using ::longjmp;
 
 _GLIBCXX_END_NAMESPACE
 

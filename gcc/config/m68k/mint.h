@@ -218,12 +218,12 @@ do {									\
 #define ASM_RETURN_CASE_JUMP				\
   do {							\
     if (TARGET_COLDFIRE)				\
-      {						\
+      {							\
 	if (ADDRESS_REG_P (operands[0]))		\
 	  return "jmp %%pc@(2,%0:l)";			\
 	else						\
 	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
-      }						\
+      }							\
     else						\
       return "jmp %%pc@(2,%0:w)";			\
   } while (0)
