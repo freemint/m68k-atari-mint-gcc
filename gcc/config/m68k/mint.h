@@ -252,3 +252,14 @@ do {									\
 
 #define ASM_OUTPUT_ALIGNED_BSS(FILE, DECL, NAME, SIZE, ALIGN) \
   asm_output_aligned_bss (FILE, DECL, NAME, SIZE, ALIGN)
+
+/* Disable -fpic and -fPIC since bsr.l _label@PLTPC
+   is unsupported by the assembler.  */
+
+#undef  SUBTARGET_OVERRIDE_OPTIONS
+#define SUBTARGET_OVERRIDE_OPTIONS					\
+do {									\
+  if (flag_pic && !TARGET_PCREL)					\
+      error ("-f%s is not supported on this target",			\
+	       (flag_pic > 1) ? "PIC" : "pic");				\
+} while (0)
