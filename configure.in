@@ -666,6 +666,9 @@ case "${target}" in
   m68k-*-coff*)
     noconfigdirs="$noconfigdirs ${libgcj}"
     ;;
+  m68k-*-mint*)
+    noconfigdirs="$noconfigdirs target-libiberty ${libgcj}"
+    ;;
   mcore-*-pe*)
   # The EPOC C++ environment does not support exceptions or rtti,
   # and so building libstdc++-v3 tends not to always work.
