@@ -213,8 +213,9 @@ do {									\
 */
 #define DWARF2_UNWIND_INFO 0
 
-/* Use the default action for outputting the case label.  */
-#undef ASM_OUTPUT_CASE_LABEL
+/* config/m68k.md has an explicit reference to the program counter,
+   prefix this by the register prefix.  */
+
 #define ASM_RETURN_CASE_JUMP				\
   do {							\
     if (TARGET_COLDFIRE)				\
@@ -228,8 +229,15 @@ do {									\
       return "jmp %%pc@(2,%0:w)";			\
   } while (0)
 
+/* The ADDR_DIFF_VEC must exactly follow the previous instruction.  */
+
+#undef ADDR_VEC_ALIGN
+#define ADDR_VEC_ALIGN(ADDR_VEC) 0
+
+/* Make sure that ALIGN_ASM_OP uses a number of bytes.  */
+
 #undef ALIGN_ASM_OP
-#define ALIGN_ASM_OP "\t.align\t"
+#define ALIGN_ASM_OP "\t.balign\t"
 
 /* This is how to output an assembler line that says to advance the
    location counter to a multiple of 2**LOG bytes.  */
