@@ -234,19 +234,6 @@ do {									\
 #undef ADDR_VEC_ALIGN
 #define ADDR_VEC_ALIGN(ADDR_VEC) 0
 
-/* Make sure that ALIGN_ASM_OP uses a number of bytes.  */
-
-#undef ALIGN_ASM_OP
-#define ALIGN_ASM_OP "\t.balign\t"
-
-/* This is how to output an assembler line that says to advance the
-   location counter to a multiple of 2**LOG bytes.  */
-
-#undef ASM_OUTPUT_ALIGN
-#define ASM_OUTPUT_ALIGN(FILE,LOG)				\
-  if ((LOG) > 0)						\
-    fprintf ((FILE), "%s%u\n", ALIGN_ASM_OP, 1 << (LOG));
-
 /* If defined, a C expression whose value is a string containing the
    assembler operation to identify the following data as uninitialized global
    data.  */

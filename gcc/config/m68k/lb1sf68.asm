@@ -3756,7 +3756,7 @@ SYM (__cmpsf2):
 	pea	1
 	movl	a6@(12),sp@-
 	movl	a6@(8),sp@-
-	bsr (__cmpsf2_internal)
+	bsr 	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
 
