@@ -1,6 +1,6 @@
 /* Definitions of target machine for GNU compiler.
    Atari ST TOS/MiNT.
-   Copyright (C) 1994, 1995 Free Software Foundation, Inc.
+   Copyright (C) 1994, 1995, 2007 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -123,59 +123,37 @@ do {								\
 #define PREFERRED_DEBUGGING_TYPE DBX_DEBUG
 #define DBX_DEBUGGING_INFO
 
-/* 1 if N is a possible register number for a function value.  For
-   m68k/SVR4 allow d0, a0, or fp0 as return registers, for integral,
-   pointer, or floating types, respectively.  Reject fp0 if not using
-   a 68881 coprocessor.  */
+/* Define how to generate (in the callee) the output value of a
+   function and how to find (in the caller) the value returned by a
+   function.  VALTYPE is the data type of the value (as a tree).  If
+   the precise function being called is known, FUNC is its
+   FUNCTION_DECL; otherwise, FUNC is 0.  */
+
+#define FUNCTION_VALUEX(MODE) \
+  gen_rtx_REG ((MODE), (TARGET_68881 && FLOAT_MODE_P (MODE) ? 16 : 0))
+
+#undef FUNCTION_VALUE
+#define FUNCTION_VALUE(VALTYPE, FUNC) \
+  FUNCTION_VALUEX (TYPE_MODE (VALTYPE))
+
+/* Define how to find the value returned by a library function
+   assuming the value has mode MODE.  */
+
+#undef LIBCALL_VALUE
+#define LIBCALL_VALUE(MODE) \
+  FUNCTION_VALUEX (MODE)
+
+/* 1 if N is a possible register number for a function value.  */
 
 #undef FUNCTION_VALUE_REGNO_P
 #define FUNCTION_VALUE_REGNO_P(N) \
-  ((N) == 0 || (N) == 8 || (TARGET_68881 && (N) == 16))
+  ((N) == 0 || (TARGET_68881 && (N) == 16))
 
 /* Define this to be true when FUNCTION_VALUE_REGNO_P is true for
    more than one register.  */
 
 #undef NEEDS_UNTYPED_CALL
-#define NEEDS_UNTYPED_CALL 1
-
-/* Define how to generate (in the callee) the output value of a
-   function and how to find (in the caller) the value returned by a
-   function.  VALTYPE is the data type of the value (as a tree).  If
-   the precise function being called is known, FUNC is its
-   FUNCTION_DECL; otherwise, FUNC is 0.  For m68k/SVR4 generate the
-   result in d0, a0, or fp0 as appropriate.  */
-
-#undef FUNCTION_VALUE
-#define FUNCTION_VALUE(VALTYPE, FUNC)					\
-  m68k_function_value (VALTYPE, FUNC)
-
-/* For compatibility with the large body of existing code which does
-   not always properly declare external functions returning pointer
-   types, the m68k/SVR4 convention is to copy the value returned for
-   pointer functions from a0 to d0 in the function epilogue, so that
-   callers that have neglected to properly declare the callee can
-   still find the correct return value.  */
-
-#define FUNCTION_EXTRA_EPILOGUE(FILE, SIZE)				\
-do {									\
-  if (current_function_returns_pointer					\
-      && ! find_equiv_reg (0, get_last_insn (), 0, 0, 0, 8, Pmode))	\
-    asm_fprintf (FILE, "\tmove.l %Ra0,%Rd0\n");				\
-} while (0);
-
-/* Define how to find the value returned by a library function
-   assuming the value has mode MODE.
-   For m68k/SVR4 look for integer values in d0, pointer values in d0
-   (returned in both d0 and a0), and floating values in fp0.  */
-
-#undef LIBCALL_VALUE
-#define LIBCALL_VALUE(MODE)						\
-  m68k_libcall_value (MODE)
-
-/* For m68k SVR4, structures are returned using the reentrant
-   technique.  */
-#undef PCC_STATIC_STRUCT_RETURN
-#define DEFAULT_PCC_STRUCT_RETURN 0
+#define NEEDS_UNTYPED_CALL (TARGET_68881)
 
 /* This is the assembler directive to equate two values.  */
 #undef SET_ASM_OP
