@@ -31,12 +31,3 @@ MULTILIB_MATCHES = m68000=mc68000 m68020-60=m68881 m68020-60=m68020-40 m68020-60
 
 LIBGCC = stmp-multilib
 INSTALL_LIBGCC = install-multilib
-
-# 
-# Don't fix includes  
-STMP_FIXINC =
-
-# 
-# Don't install the header files
-# hmm, why? ... disabled now
-#INSTALL_HEADERS =
