@@ -85,37 +85,6 @@ Boston, MA 02110-1301, USA.  */
 
 #define HAVE_ATEXIT
 
-#define DO_GLOBAL_CTORS_BODY					\
-do {								\
-  extern char* _base;						\
-  char* text = _base + 0x100;					\
-  func_ptr *p = __CTOR_LIST__ + 1;				\
-  while (*p) {							\
-    func_ptr f = (func_ptr) (text + (unsigned long) *p);	\
-    (*f) ();							\
-    ++p;							\
-  }								\
-} while (0)
-
-
-#define DO_GLOBAL_DTORS_BODY					\
-do {								\
-  extern char* _base;						\
-  char* text = _base + 0x100;					\
-  func_ptr *p = __DTOR_LIST__ + 1;				\
-  func_ptr *s = p;						\
-  while (*p) {							\
-    ++p;							\
-  }								\
-  --p;								\
-  while (p >= s) {						\
-    func_ptr f = (func_ptr) (text + (unsigned long) *p);	\
-    (*f) ();							\
-    --p;							\
-  }								\
-} while (0)
-
-
 /* Every structure or union's size must be a multiple of 2 bytes.  */
 #define STRUCTURE_SIZE_BOUNDARY 16
 
