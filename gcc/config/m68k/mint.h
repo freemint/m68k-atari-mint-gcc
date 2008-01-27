@@ -141,9 +141,6 @@ Boston, MA 02110-1301, USA.  */
 /* The system headers are C++-aware.  */
 #define NO_IMPLICIT_EXTERN_C
 
-/* Show we can debug even without a frame pointer.  */
-#define CAN_DEBUG_WITHOUT_FP
-
 /* By default, the vtable entries are void pointers, the so the alignment
    is the same as pointer alignment.  The value of this macro specifies
    the alignment of the vtable entry in bits.  It should be defined only
