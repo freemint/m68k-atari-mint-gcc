@@ -1,6 +1,6 @@
 /* Definitions of target machine for GNU compiler.
    Atari ST TOS/MiNT.
-   Copyright (C) 1994, 1995, 2007 Free Software Foundation, Inc.
+   Copyright (C) 1994, 1995, 2007, 2008 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -15,9 +15,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 /* Here are four prefixes that are used by asm_fprintf to
    facilitate customization for alternate assembler syntaxes.
@@ -202,3 +201,9 @@ do {									\
       error ("-f%s is not supported on this target",			\
 	       (flag_pic > 1) ? "PIC" : "pic");				\
 } while (0)
+
+
+/* Workaround for GCC bug #35067 about multiple thunks.  */
+
+#undef MAKE_DECL_ONE_ONLY
+#define MAKE_DECL_ONE_ONLY(DECL) (DECL_WEAK (DECL) = 1)
