@@ -174,15 +174,59 @@ case "${host}" in
     GLIBCXX_CHECK_COMPLEX_MATH_SUPPORT
     ;;
   *-mint*)
-    AC_CHECK_HEADERS([sys/stat.h sys/time.h sys/types.h\
-       unistd.h locale.h float.h endian.h inttypes.h stdint.h])
-    SECTION_FLAGS='-D_GNU_SOURCE'
-    AC_SUBST(SECTION_FLAGS) 
+    # With MiNT, the linker should work in a cross environment,
+    # so we just check for all the features here.
+
+    # Check for available headers.
+    AC_CHECK_HEADERS([nan.h ieeefp.h endian.h sys/isa_defs.h machine/endian.h \
+    machine/param.h sys/machine.h fp.h locale.h float.h inttypes.h gconv.h \
+    sys/types.h sys/ipc.h sys/sem.h])
+
     GLIBCXX_CHECK_LINKER_FEATURES
     GLIBCXX_CHECK_MATH_SUPPORT
     GLIBCXX_CHECK_BUILTIN_MATH_SUPPORT
     GLIBCXX_CHECK_COMPLEX_MATH_SUPPORT
+    GLIBCXX_CHECK_ICONV_SUPPORT
     GLIBCXX_CHECK_STDLIB_SUPPORT
+
+    # For showmanyc_helper().
+    AC_CHECK_HEADERS(sys/ioctl.h sys/filio.h)
+    GLIBCXX_CHECK_POLL
+    GLIBCXX_CHECK_S_ISREG_OR_S_IFREG
+
+    # For xsputn_2().
+    AC_CHECK_HEADERS(sys/uio.h)
+    GLIBCXX_CHECK_WRITEV
+
+    # For the __streamoff_base_type typedef.
+    GLIBCXX_CHECK_INT64_T
+
+    # For LFS support.
+    GLIBCXX_CHECK_LFS
+
+    # For C99 support to TR1.
+    GLIBCXX_CHECK_C99_TR1
+
+    # For dev/random and dev/urandom for TR1.
+    AC_DEFINE(_GLIBCXX_USE_RANDOM_TR1)
+
+    # For TLS support.
+    GCC_CHECK_TLS
+
+    # For _Unwind_GetIPInfo.
+    GCC_CHECK_UNWIND_GETIPINFO
+
+    AC_LC_MESSAGES
+
+    AC_TRY_COMPILE(
+      [#include <setjmp.h>],
+      [sigjmp_buf env;
+       while (! sigsetjmp (env, 1))
+	 siglongjmp (env, 1);
+      ],
+      [AC_DEFINE(HAVE_SIGSETJMP, 1, [Define if sigsetjmp is available.])])
+
+    AC_FUNC_MMAP
     ;;
   *-netbsd*)
     AC_CHECK_HEADERS([nan.h ieeefp.h endian.h sys/isa_defs.h \
