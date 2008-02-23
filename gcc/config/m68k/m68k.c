@@ -766,7 +766,8 @@ m68k_output_function_prologue (FILE *stream,
     }
 }
 
-/* Return true if this function's epilogue can be output as RTL.  */
+/* Return true if a simple (return) instruction is sufficient for this
+   instruction (i.e. if no epilogue is needed).  */
 
 bool
 use_return_insn (void)
@@ -774,10 +775,8 @@ use_return_insn (void)
   if (!reload_completed || frame_pointer_needed || get_frame_size () != 0)
     return false;
 
-  /* We can output the epilogue as RTL only if no registers need to be
-     restored.  */
   m68k_compute_frame_layout ();
-  return current_frame.reg_no ? false : true;
+  return current_frame.offset == 0;
 }
 
 /* This function generates the assembly code for function exit,
