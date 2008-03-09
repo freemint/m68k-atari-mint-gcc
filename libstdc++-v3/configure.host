@@ -258,6 +258,10 @@ case "${host_os}" in
     os_include_dir="os/mingw32"
     error_constants_dir="os/mingw32"
     ;;
+  mint*)
+    SECTION_FLAGS="${SECTION_FLAGS} -D_GNU_SOURCE"
+    os_include_dir="os/mint"
+    ;;
   netbsd*)
     os_include_dir="os/bsd/netbsd"
     ;;
