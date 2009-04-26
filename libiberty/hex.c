@@ -24,7 +24,7 @@ Boston, MA 02110-1301, USA.  */
 #include "libiberty.h"
 #include "safe-ctype.h" /* for HOST_CHARSET_ASCII */
 
-#if EOF != -1
+#if !(EOF == -1)	/* gcc 2.95.3 has bug in '!=' operator for negative constants */
  #error "hex.c requires EOF == -1"
 #endif
 

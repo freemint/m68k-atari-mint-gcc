@@ -383,6 +383,8 @@ m68k-*-linux*)		# Motorola m68k's running GNU/Linux
 				# with ELF format using glibc 2
 				# aka the GNU/Linux C library 6.
 	;;
+m68k-*-mint*)
+	;;
 m68k-*-rtems*)
 	;;
 mcore-*-elf)
