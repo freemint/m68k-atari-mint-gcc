@@ -36,60 +36,52 @@ along with GCC; see the file COPYING3.  If not see
 #undef LOCAL_LABEL_PREFIX
 #define LOCAL_LABEL_PREFIX "."
 
+#undef ASM_COMMENT_START
 #define ASM_COMMENT_START "|"
-
-#undef SIZE_TYPE
-#define SIZE_TYPE "long unsigned int"
-
-#undef PTRDIFF_TYPE
-#define PTRDIFF_TYPE "long int"
 
 #undef WCHAR_TYPE
 #define WCHAR_TYPE "short unsigned int"
 
 #undef WCHAR_TYPE_SIZE
-#define WCHAR_TYPE_SIZE 16
+#define WCHAR_TYPE_SIZE SHORT_TYPE_SIZE
 
 #undef TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()		\
   do						\
     {						\
-      builtin_define_std ("__MINT__");		\
+      builtin_define ("__MINT__");		\
       builtin_define_std ("atarist");		\
       builtin_assert ("machine=atari");		\
       builtin_assert ("system=mint");		\
     }						\
   while (0)
 
-#define COMMON_CPP_SPEC \
-  "%{mshort:-D__MSHORT__} %{fPIC:-D__PIC__ -D__pic__} %{fpic:-D__PIC__ -D__pic__}"
+/* The following defines are nonstandard
+   and are kept only for compatibility
+   with older versions of GCC for MiNT.  */
 
 #undef CPP_SPEC
-#define CPP_SPEC							\
-  "%{m68000:-D__M68000__ -D__mc68000__ %{!ansi:-Dmc68000}} "		\
-  "%{mc68020:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68020:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68030:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68040:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68060:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68020-40:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{m68020-60:-D__M68020__ -D__mc68020__ %{!ansi:-Dmc68020}} "		\
-  "%{!m680*:%{!mc680*:-D__M68000__ -D__mc68000__ %{!ansi:-Dmc68000}}} "	\
-  "%{m68881:-D__M68881__} "						\
-  COMMON_CPP_SPEC
+#define CPP_SPEC			\
+  "%{m68000:-D__M68000__} "		\
+  "%{mc68020:-D__M68020__} "		\
+  "%{m68020:-D__M68020__} "		\
+  "%{m68030:-D__M68020__} "		\
+  "%{m68040:-D__M68020__} "		\
+  "%{m68060:-D__M68020__} "		\
+  "%{m68020-40:-D__M68020__} "		\
+  "%{m68020-60:-D__M68020__} "		\
+  "%{!m680*:%{!mc680*:-D__M68000__}} "	\
+  "%{m68881:-D__M68881__} "		\
+  "%{mshort:-D__MSHORT__}"
 
 #define STARTFILE_SPEC	"%{pg:g}crt0.o%s"
 #define LIB_SPEC	"-lc%{g:_g}%{pg:_p}"
-#define LINKER_NAME	"ld"
-
-#define HAVE_ATEXIT
 
 /* Every structure or union's size must be a multiple of 2 bytes.  */
 #define STRUCTURE_SIZE_BOUNDARY 16
 
-#undef PREFERRED_DEBUGGING_TYPE
-#define PREFERRED_DEBUGGING_TYPE DBX_DEBUG
-#define DBX_DEBUGGING_INFO
+/* The -g option generates stabs debug information.  */
+#define DBX_DEBUGGING_INFO 1
 
 /* Define how to generate (in the callee) the output value of a
    function and how to find (in the caller) the value returned by a
@@ -133,8 +125,8 @@ along with GCC; see the file COPYING3.  If not see
   do { fputs ("\t.weak\t", FILE); assemble_name (FILE, NAME); \
        fputc ('\n', FILE); } while (0)
 
-/* Don't default to pcc-struct-return, because gcc is the only compiler.  */
-#undef PCC_STATIC_STRUCT_RETURN
+/* Don't default to pcc-struct-return, because gcc is the only compiler, and
+   we want to retain compatibility with older gcc versions.  */
 #define DEFAULT_PCC_STRUCT_RETURN 0
 
 /* The system headers are C++-aware.  */
