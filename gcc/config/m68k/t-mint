@@ -37,7 +37,5 @@ MULTILIB_MATCHES = \
 	mcpu?5475=mcpu?5485 \
 	mcpu?5475=mcpu?548x
 
-MULTILIB_EXCEPTIONS = m68020-60/mshort mcpu=5475/mshort
-
 LIBGCC = stmp-multilib
 INSTALL_LIBGCC = install-multilib
