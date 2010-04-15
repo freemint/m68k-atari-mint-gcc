@@ -395,22 +395,22 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     # MiNT.  But MiNT is downward compatible to TOS, so this should
     # be no problem.
     atarist[e]:*MiNT:*:* | atarist[e]:*mint:*:* | atarist[e]:*TOS:*:*)
-        echo m68k-atari-mint${UNAME_RELEASE}
+        echo m68k-atari-mint
 	exit ;;
     atari*:*MiNT:*:* | atari*:*mint:*:* | atarist[e]:*TOS:*:*)
-	echo m68k-atari-mint${UNAME_RELEASE}
+	echo m68k-atari-mint
         exit ;;
     *falcon*:*MiNT:*:* | *falcon*:*mint:*:* | *falcon*:*TOS:*:*)
-        echo m68k-atari-mint${UNAME_RELEASE}
+        echo m68k-atari-mint
 	exit ;;
     milan*:*MiNT:*:* | milan*:*mint:*:* | *milan*:*TOS:*:*)
-        echo m68k-milan-mint${UNAME_RELEASE}
+        echo m68k-milan-mint
         exit ;;
     hades*:*MiNT:*:* | hades*:*mint:*:* | *hades*:*TOS:*:*)
-        echo m68k-hades-mint${UNAME_RELEASE}
+        echo m68k-hades-mint
         exit ;;
     *:*MiNT:*:* | *:*mint:*:* | *:*TOS:*:*)
-        echo m68k-unknown-mint${UNAME_RELEASE}
+        echo m68k-unknown-mint
         exit ;;
     m68k:machten:*:*)
 	echo m68k-apple-machten${UNAME_RELEASE}
