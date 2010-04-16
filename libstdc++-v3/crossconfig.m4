@@ -141,7 +141,7 @@ case "${host}" in
 	;;
     esac
     ;;
-  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-knetbsd*-gnu)
+  *-linux* | *-uclinux* | *-gnu* | *-kfreebsd*-gnu | *-knetbsd*-gnu | *-mint*)
     GLIBCXX_CHECK_COMPILER_FEATURES
     GLIBCXX_CHECK_LINKER_FEATURES
     GLIBCXX_CHECK_MATH_SUPPORT
@@ -154,14 +154,6 @@ case "${host}" in
     GLIBCXX_CHECK_LINKER_FEATURES
     GLIBCXX_CHECK_MATH_SUPPORT
     GLIBCXX_CHECK_STDLIB_SUPPORT
-    ;;
-  *-mint*)
-    GLIBCXX_CHECK_LINKER_FEATURES
-    GLIBCXX_CHECK_MATH_SUPPORT
-    GLIBCXX_CHECK_STDLIB_SUPPORT
-    #AC_DEFINE(_GLIBCXX_USE_RANDOM_TR1)
-    GCC_CHECK_TLS
-    AM_ICONV
     ;;
   *-netbsd*)
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
