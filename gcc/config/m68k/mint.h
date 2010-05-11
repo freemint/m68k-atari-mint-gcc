@@ -200,3 +200,10 @@ do {									\
 
 #undef MAKE_DECL_ONE_ONLY
 #define MAKE_DECL_ONE_ONLY(DECL) (DECL_WEAK (DECL) = 1)
+
+/* Avoid requiring -static with -fmudflap like in config/bfin/uclinux.h */
+#define MFWRAP_SPEC " %{fmudflap|fmudflapth: \
+ --wrap=malloc --wrap=free --wrap=calloc --wrap=realloc\
+ --wrap=mmap --wrap=munmap --wrap=alloca\
+ %{fmudflapth: --wrap=pthread_create\
+}} %{fmudflap|fmudflapth: --wrap=main}"
