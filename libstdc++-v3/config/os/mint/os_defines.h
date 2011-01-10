@@ -1,4 +1,4 @@
-// Specific definitions for generic platforms  -*- C++ -*-
+// Specific definitions for MiNT  -*- C++ -*-
 
 // Copyright (C) 2000, 2009 Free Software Foundation, Inc.
 //
@@ -32,11 +32,5 @@
 
 // System-specific #define, typedefs, corrections, etc, go here.  This
 // file will come before all others.
-
-// These taken from mintlib-0.57.3/include/unistd.h
-
-#define __off_t off_t
-#define __off64_t off64_t
-#define __ssize_t ssize_t
 
 #endif
