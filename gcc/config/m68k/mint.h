@@ -1,6 +1,6 @@
 /* Definitions of target machine for GNU compiler.
    Atari ST TOS/MiNT.
-   Copyright (C) 1994, 1995, 2007, 2008, 2009, 2010
+   Copyright (C) 1994, 1995, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
 
 This file is part of GCC.
@@ -72,7 +72,6 @@ along with GCC; see the file COPYING3.  If not see
   "%{m68020-40:-D__M68020__} "		\
   "%{m68020-60:-D__M68020__} "		\
   "%{!m680*:%{!mc680*:-D__M68000__}} "	\
-  "%{m68881:-D__M68881__} "		\
   "%{mshort:-D__MSHORT__}"
 
 #define STARTFILE_SPEC	"%{pg:g}crt0.o%s"
@@ -83,38 +82,6 @@ along with GCC; see the file COPYING3.  If not see
 
 /* The -g option generates stabs debug information.  */
 #define DBX_DEBUGGING_INFO 1
-
-/* Define how to generate (in the callee) the output value of a
-   function and how to find (in the caller) the value returned by a
-   function.  VALTYPE is the data type of the value (as a tree).  If
-   the precise function being called is known, FUNC is its
-   FUNCTION_DECL; otherwise, FUNC is 0.  */
-
-#define FUNCTION_VALUEX(MODE) \
-  gen_rtx_REG ((MODE), (TARGET_68881 && FLOAT_MODE_P (MODE) ? 16 : 0))
-
-#undef FUNCTION_VALUE
-#define FUNCTION_VALUE(VALTYPE, FUNC) \
-  FUNCTION_VALUEX (TYPE_MODE (VALTYPE))
-
-/* Define how to find the value returned by a library function
-   assuming the value has mode MODE.  */
-
-#undef LIBCALL_VALUE
-#define LIBCALL_VALUE(MODE) \
-  FUNCTION_VALUEX (MODE)
-
-/* 1 if N is a possible register number for a function value.  */
-
-#undef FUNCTION_VALUE_REGNO_P
-#define FUNCTION_VALUE_REGNO_P(N) \
-  ((N) == D0_REG || (TARGET_68881 && (N) == FP0_REG))
-
-/* Define this to be true when FUNCTION_VALUE_REGNO_P is true for
-   more than one register.  */
-
-#undef NEEDS_UNTYPED_CALL
-#define NEEDS_UNTYPED_CALL (TARGET_68881)
 
 /* This is the assembler directive to equate two values.  */
 #undef SET_ASM_OP
