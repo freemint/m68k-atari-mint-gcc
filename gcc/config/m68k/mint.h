@@ -74,8 +74,8 @@ along with GCC; see the file COPYING3.  If not see
   "%{!m680*:%{!mc680*:-D__M68000__}} "	\
   "%{mshort:-D__MSHORT__}"
 
-#define STARTFILE_SPEC	"%{pg:g}crt0.o%s"
-#define LIB_SPEC	"-lc%{g:_g}%{pg:_p}"
+#define STARTFILE_SPEC	"%{pg|p|profile:gcrt0.o%s;:crt0.o%s}"
+#define LIB_SPEC	"-lc"
 
 /* Every structure or union's size must be a multiple of 2 bytes.  */
 #define STRUCTURE_SIZE_BOUNDARY 16
