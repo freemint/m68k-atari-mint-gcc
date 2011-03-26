@@ -351,6 +351,23 @@ m68*-*-*)
 	    esac
 	  done
 	fi
+	case "${host}" in
+	  *-*-mint*)
+	    case "${srcdir}" in
+	      */libgcc ) : ;;
+	      *)
+	        old_multidirs="${multidirs}"
+	        multidirs=""
+	        for x in ${old_multidirs}; do
+		  case "$x" in
+		    *mshort ) : ;;
+		    *) multidirs="${multidirs} ${x}" ;;
+		  esac
+		done
+		;;
+	    esac
+	    ;;
+	esac
 	;;
 mips*-*-*)
 	if [ x$enable_single_float = xno ]
