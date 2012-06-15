@@ -4859,6 +4859,9 @@ case "${host}" in
 	# Common symbols not allowed in MH_DYLIB files
 	PICFLAG=-fno-common
 	;;
+    *-*-mint*)
+	# PIC is unsupported.
+	;;
     alpha*-dec-osf5*)
 	# PIC is the default.
 	;;

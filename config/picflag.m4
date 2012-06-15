@@ -11,6 +11,9 @@ case "${$2}" in
 	# Common symbols not allowed in MH_DYLIB files
 	$1=-fno-common
 	;;
+    *-*-mint*)
+	# PIC is unsupported.
+	;;
     alpha*-dec-osf5*)
 	# PIC is the default.
 	;;

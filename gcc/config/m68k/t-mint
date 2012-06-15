@@ -1,0 +1,41 @@
+# 
+# Use multiple libraries
+# 
+
+MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
+
+MULTILIB_DIRNAMES = m68020-60 m5475 mshort
+
+MULTILIB_MATCHES = \
+	m68020-60=m68881 \
+	m68020-60=m68020 \
+	m68020-60=m68020-40 \
+	m68020-60=mc68020 \
+	m68020-60=m68030 \
+	m68020-60=m68040 \
+	m68020-60=m68060 \
+	m68020-60=mcpu?68020 \
+	m68020-60=mcpu?68030 \
+	m68020-60=mcpu?68040 \
+	m68020-60=mcpu?68060 \
+	m68020-60=march?68020 \
+	m68020-60=march?68030 \
+	m68020-60=march?68040 \
+	m68020-60=march?68060 \
+	mcpu?5475=mcfv4e \
+	mcpu?5475=mcpu?5470 \
+	mcpu?5475=mcpu?5471 \
+	mcpu?5475=mcpu?5472 \
+	mcpu?5475=mcpu?5473 \
+	mcpu?5475=mcpu?5474 \
+	mcpu?5475=mcpu?547x \
+	mcpu?5475=mcpu?5480 \
+	mcpu?5475=mcpu?5481 \
+	mcpu?5475=mcpu?5482 \
+	mcpu?5475=mcpu?5483 \
+	mcpu?5475=mcpu?5484 \
+	mcpu?5475=mcpu?5485 \
+	mcpu?5475=mcpu?548x
+
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib

@@ -1671,6 +1671,8 @@ WRAPPER2(int, system, const char *string)
 }
 
 
+#ifdef HAVE_DLFCN_H
+
 WRAPPER2(void *, dlopen, const char *path, int flags)
 {
   void *p;
@@ -1737,6 +1739,8 @@ WRAPPER2(void *, dlsym, void *handle, char *symbol)
   }
   return p;
 }
+
+#endif /* HAVE_DLFCN_H */
 
 
 #if defined (HAVE_SYS_IPC_H) && defined (HAVE_SYS_SEM_H) && defined (HAVE_SYS_SHM_H)

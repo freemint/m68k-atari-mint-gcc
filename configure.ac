@@ -468,6 +468,9 @@ if test x$enable_libmudflap = x ; then
     *-*-freebsd*)
         # Enable libmudflap by default in FreeBSD.
 	;;
+    *-*-mint*)
+        # Enable libmudflap by default in MiNT.
+	;;
     *)
         # Disable it by default everywhere else.
 	noconfigdirs="$noconfigdirs target-libmudflap"
@@ -720,6 +723,9 @@ case "${target}" in
     ;;
   m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
     libgloss_dir=m68hc11
+    ;;
+  m68k-*-mint*)
+    noconfigdirs="$noconfigdirs target-libiberty ${libgcj}"
     ;;
   m68*-*-* | fido-*-*)
     libgloss_dir=m68k
