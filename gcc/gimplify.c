@@ -391,6 +391,13 @@ find_single_pointer_decl_1 (tree *tp, int *walk_subtrees ATTRIBUTE_UNUSED,
 {
   tree *pdecl = (tree *) data;
 
+  /* We are only looking for pointers at the same level as the
+     original tree; we must not look through any indirections.
+     Returning anything other than NULL_TREE will cause the caller to
+     not find a base.  */
+  if (REFERENCE_CLASS_P (*tp))
+    return *tp;
+
   if (DECL_P (*tp) && POINTER_TYPE_P (TREE_TYPE (*tp)))
     {
       if (*pdecl)
@@ -406,8 +413,9 @@ find_single_pointer_decl_1 (tree *tp, int *walk_subtrees ATTRIBUTE_UNUSED,
   return NULL_TREE;
 }
 
-/* Find the single DECL of pointer type in the tree T and return it.
-   If there are zero or more than one such DECLs, return NULL.  */
+/* Find the single DECL of pointer type in the tree T, used directly
+   rather than via an indirection, and return it.  If there are zero
+   or more than one such DECLs, return NULL.  */
 
 static tree
 find_single_pointer_decl (tree t)
@@ -418,7 +426,8 @@ find_single_pointer_decl (tree t)
     {
       /* find_single_pointer_decl_1 returns a nonzero value, causing
 	 walk_tree to return a nonzero value, to indicate that it
-	 found more than one pointer DECL.  */
+	 found more than one pointer DECL or that it found an
+	 indirection.  */
       return NULL_TREE;
     }
 
@@ -5464,7 +5473,11 @@ goa_lhs_expr_p (tree expr, tree addr)
 	  expr = TREE_OPERAND (expr, 0);
 	  addr = TREE_OPERAND (addr, 0);
 	}
-      return expr == addr;
+      if (expr == addr)
+	return true;
+      return (TREE_CODE (addr) == ADDR_EXPR
+	      && TREE_CODE (expr) == ADDR_EXPR
+	      && TREE_OPERAND (addr, 0) == TREE_OPERAND (expr, 0));
     }
   if (TREE_CODE (addr) == ADDR_EXPR && expr == TREE_OPERAND (addr, 0))
     return true;
@@ -6018,10 +6031,16 @@ gimplify_expr (tree *expr_p, tree *pre_p, tree *post_p,
 
 	case OMP_RETURN:
 	case OMP_CONTINUE:
-        case OMP_ATOMIC_LOAD:
-        case OMP_ATOMIC_STORE:
-
+	case OMP_ATOMIC_STORE:
 	  ret = GS_ALL_DONE;
+	  break;
+
+	case OMP_ATOMIC_LOAD:
+	  if (gimplify_expr (&TREE_OPERAND (*expr_p, 1), pre_p, NULL,
+	      is_gimple_val, fb_rvalue) != GS_ALL_DONE)
+	    ret = GS_ERROR;
+	  else
+	    ret = GS_ALL_DONE;
 	  break;
 
 	case POINTER_PLUS_EXPR:

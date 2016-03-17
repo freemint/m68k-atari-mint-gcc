@@ -1,3 +1,44 @@
+2008-06-06  Release Manager
+
+	* GCC 4.3.1 released.
+
+2008-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/36308
+	* testsuite/libgomp.c++/ctor-11.C: New test.
+	* testsuite/libgomp.c++/ctor-12.C: New test.
+
+2008-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/36106
+	* testsuite/libgomp.c/atomic-5.c: New test.
+	* testsuite/libgomp.c/atomic-6.c: New test.
+	* testsuite/libgomp.c/autopar-1.c: New test.
+
+2008-03-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/35611
+	* testsuite/libgomp.c/atomic-4.c: New test.
+
+	PR libgomp/35625
+	* iter.c (gomp_iter_guided_next_locked): If q > n, set end to ws->end.
+	(gomp_iter_guided_next): Likewise.
+	* testsuite/libgomp.c/pr35625.c: New test.
+
+2008-03-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/35185
+	* testsuite/libgomp.c++/pr35185.C: New test.
+
+2008-03-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/35549
+	* testsuite/libgomp.c/pr35549.c: New test.
+
+2008-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/libgomp.c/atomic-3.c: New test.
+
 2008-03-05  Release Manager
 
 	* GCC 4.3.0 released.

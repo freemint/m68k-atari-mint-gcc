@@ -1668,6 +1668,7 @@ gfc_trans_array_constructor (gfc_loopinfo * loop, gfc_ss * ss)
   tree offsetvar;
   tree desc;
   tree type;
+  tree loopfrom;
   bool dynamic;
 
   if (flag_bounds_check && ss->expr->ts.type == BT_CHARACTER)
@@ -1746,8 +1747,33 @@ gfc_trans_array_constructor (gfc_loopinfo * loop, gfc_ss * ss)
 	}
     }
 
+  /* Temporarily reset the loop variables, so that the returned temporary
+     has the right size and bounds.  This seems only to be necessary for
+     1D arrays.  */
+  if (!integer_zerop (loop->from[0]) && loop->dimen == 1)
+    {
+      loopfrom = loop->from[0];
+      loop->from[0] = gfc_index_zero_node;
+      loop->to[0] = fold_build2 (MINUS_EXPR, gfc_array_index_type,
+				 loop->to[0], loopfrom);
+    }
+  else
+    loopfrom = NULL_TREE;
+
   gfc_trans_create_temp_array (&loop->pre, &loop->post, loop, &ss->data.info,
 			       type, dynamic, true, false);
+
+  if (loopfrom != NULL_TREE)
+    {
+      loop->from[0] = loopfrom;
+      loop->to[0] = fold_build2 (PLUS_EXPR, gfc_array_index_type,
+				 loop->to[0], loopfrom);
+      /* In the case of a non-zero from, the temporary needs an offset
+	 so that subsequent indexing is correct.  */
+      ss->data.info.offset = fold_build1 (NEGATE_EXPR,
+					  gfc_array_index_type,
+					  loop->from[0]);
+    }
 
   desc = ss->data.info.descriptor;
   offset = gfc_index_zero_node;
@@ -1841,20 +1867,21 @@ gfc_add_loop_ss_code (gfc_loopinfo * loop, gfc_ss * ss, bool subscript)
 	  /* Scalar expression.  Evaluate this now.  This includes elemental
 	     dimension indices, but not array section bounds.  */
 	  gfc_init_se (&se, NULL);
-          gfc_conv_expr (&se, ss->expr);
-          gfc_add_block_to_block (&loop->pre, &se.pre);
+	  gfc_conv_expr (&se, ss->expr);
+	  gfc_add_block_to_block (&loop->pre, &se.pre);
 
-          if (ss->expr->ts.type != BT_CHARACTER)
-            {
-              /* Move the evaluation of scalar expressions outside the
-                 scalarization loop.  */
-              if (subscript)
-                se.expr = convert(gfc_array_index_type, se.expr);
-              se.expr = gfc_evaluate_now (se.expr, &loop->pre);
-              gfc_add_block_to_block (&loop->pre, &se.post);
-            }
-          else
-            gfc_add_block_to_block (&loop->post, &se.post);
+	  if (ss->expr->ts.type != BT_CHARACTER)
+	    {
+	      /* Move the evaluation of scalar expressions outside the
+		 scalarization loop, except for WHERE assignments.  */
+	      if (subscript)
+		se.expr = convert(gfc_array_index_type, se.expr);
+	      if (!ss->where)
+		se.expr = gfc_evaluate_now (se.expr, &loop->pre);
+	      gfc_add_block_to_block (&loop->pre, &se.post);
+	    }
+	  else
+	    gfc_add_block_to_block (&loop->post, &se.post);
 
 	  ss->data.scalar.expr = se.expr;
 	  ss->string_length = se.string_length;
@@ -2198,7 +2225,6 @@ gfc_conv_array_index_offset (gfc_se * se, gfc_ss_info * info, int dim, int i,
       switch (ar->dimen_type[dim])
 	{
 	case DIMEN_ELEMENT:
-	  gcc_assert (i == -1);
 	  /* Elemental dimension.  */
 	  gcc_assert (info->subscript[dim]
 		      && info->subscript[dim]->type == GFC_SS_SCALAR);
@@ -3490,7 +3516,7 @@ gfc_conv_loop_setup (gfc_loopinfo * loop)
         size = 1 - lbound;
         a.ubound[n] = specified_upper_bound;
         a.stride[n] = stride;
-        size = ubound + size; //size = ubound + 1 - lbound
+        size = siz >= 0 ? ubound + size : 0; //size = ubound + 1 - lbound
         stride = stride * size;
       }
     return (stride);
@@ -3589,6 +3615,9 @@ gfc_array_init_size (tree descriptor, int rank, tree * poffset,
 	or_expr = cond;
       else
 	or_expr = fold_build2 (TRUTH_OR_EXPR, boolean_type_node, or_expr, cond);
+
+      size = fold_build3 (COND_EXPR, gfc_array_index_type, cond,
+			  gfc_index_zero_node, size);
 
       /* Multiply the stride by the number of elements in this dimension.  */
       stride = fold_build2 (MULT_EXPR, gfc_array_index_type, stride, size);
@@ -5544,6 +5573,11 @@ gfc_trans_deferred_array (gfc_symbol * sym, tree body)
 	  rank = sym->as ? sym->as->rank : 0;
 	  tmp = gfc_nullify_alloc_comp (sym->ts.derived, descriptor, rank);
 	  gfc_add_expr_to_block (&fnblock, tmp);
+	  if (sym->value)
+	    {
+	      tmp = gfc_init_default_dt (sym, NULL);
+	      gfc_add_expr_to_block (&fnblock, tmp);
+	    }
 	}
     }
   else if (!GFC_DESCRIPTOR_TYPE_P (type))

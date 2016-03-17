@@ -1,3 +1,734 @@
+2008-06-06  Release Manager
+
+	* GCC 4.3.1 released.
+
+2008-05-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/nested-func-6.c: New test.
+
+2008-05-28  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36300
+	* gcc.dg/pr36300-1.c: New testcase.
+	* gcc.dg/pr36300-2.c: Likewise.
+
+2008-05-27  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/36339
+	* gcc.c-torture/execute/pr36339.c: New testcase.
+	* gcc.dg/tree-ssa/loadpre8.c: XFAIL.
+
+2008-05-27  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR c++/35909
+	* g++.dg/conversion/bitfield9.C: New.
+
+2008-05-26  Kai Tietz  <kai.tietz@onevision.com>
+
+	PR target/36321
+	* gcc-c.torture/execute/pr36321.c: New.
+
+2008-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/36237
+	* g++.dg/gomp/pr36237.C: New test.
+
+2008-05-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/36023
+	* g++.dg/ext/complit10.C: New test.
+
+2008-05-21  Sebastian Pop  <sebastian.pop@amd.com>
+	    Jan Sjodin  <jan.sjodin@amd.com>
+
+	PR tree-optimization/36181
+	Backport from mainline:
+	* gcc.dg/tree-ssa/pr36181.c: New.
+
+2008-05-20  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-05-15  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36244
+	* gcc.dg/torture/pr36244.c: New testcase.
+
+	PR tree-optimization/34330
+	* gcc.dg/torture/pr34330.c: New testcase.
+
+2008-05-19  Adam Nemet  <anemet@caviumnetworks.com>
+
+	PR middle-end/36194
+	* gcc.dg/pr36194.c: New test.
+
+2008-05-14  Michael Meissner  <michael.meissner@amd.com>
+
+	Backport from mainline:
+	PR target/36224
+	* gcc.dg/pr36224.c: New file.
+
+2008-05-18  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/36176
+	* gfortran.dg/transfer_simplify_9.f90: New test.
+
+2008-05-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/36090
+	* gcc.c-torture/execute/20080502-1.c: New test.
+
+2008-05-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/bit_packed_array3.adb: New test.
+
+2008-05-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/warn4.adb: New test.
+
+2008-05-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline:
+	PR fortran/35756
+	PR fortran/35759
+	* gfortran.dg/where_1.f90: New test.
+
+	PR fortran/35743
+	PR fortran/35745
+	* gfortran.dg/where_2.f90: New test.
+
+	PR fortran/36233
+	* gfortran.dg/actual_procedure_1.f90: New test
+
+2008-05-15  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/36245
+	* gcc.c-torture/compile/pr36245.c: New testcase.
+
+2008-05-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr8.ad[sb]: New test.
+	* gnat.dg/discr8_pkg[123].ads: New helpers.
+
+2008-05-14  Ira Rosen  <irar@il.ibm.com>
+
+	PR tree-optimization/36098
+	* gcc.dg/vect/vect.exp: Compile with -O3 all the tests named "O3-*".
+	* gcc.dg/vect/O3-pr36098.c: New test.
+
+2008-05-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35997
+	* gfortran.dg/use_rename_3.f90
+
+2008-05-13  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36227
+	* gcc.dg/pr36227.c: New testcase.
+
+2008-05-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr7.adb: New test
+	* gnat.dg/conv_integer.adb: Likewise.
+
+2008-05-12  Ira Rosen  <irar@il.ibm.com>
+
+	* gfortran.dg/vect/pr36119.f: Rename to ...
+	* gfortran.dg/vect/O3-pr36119.f90: ... this. Compile for all targets
+	with -O3.
+
+2008-05-11  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	PR c++/35578
+	* g++.dg/parse/friend8.C: New test.
+
+2008-05-09  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/36187
+	* g++.dg/opt/pr36187.C: New testcase.
+
+2008-05-08  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36154
+	* gcc.c-torture/compile/pr36154.c: New testcase.
+
+2008-05-08  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36172
+	* gcc.c-torture/compile/pr36172.c: New testcase.
+
+2008-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/36013
+	* gcc.c-torture/execute/20080506-2.c: New test.
+
+	PR middle-end/36137
+	* gcc.c-torture/execute/20080506-1.c: New test.
+
+2008-05-06  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/35995
+	PR libfortran/35990
+	Backport from trunk
+	* gfortran.dg/intrinsic_ifunction_1.f90:  New test case.
+	* gfortran.dg/intrinsic_pack_4.f90:  New test case.
+
+2008-05-05  Ira Rosen  <irar@il.ibm.com>
+
+	PR tree-optimization/36119
+	* gfortran.dg/vect/pr36119.f: New test.
+
+2008-05-03  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/35993
+	Backport from trunk.
+	* gfortran.dg/intrinsic_product_1.f90:  New test case.
+
+2008-05-01  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36093
+	* gcc.c-torture/execute/pr36093.c: New testcase.
+
+2008-05-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35780
+	* gfortran.dg/simplify_argN_1.f90: New test.
+
+2008-04-30  Ian Lance Taylor  <iant@google.com>
+
+	Backport from mainline:
+	2008-04-22  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.c-torture/compile/20080419-1.c: New test.
+
+	2008-04-18  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.dg/tree-ssa/forwprop-3.c: Use -O2 rather than -O.
+
+	2008-04-14  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.dg/strict-overflow-6.c: New.
+	* gcc.dg/no-strict-overflow-7.c: New.
+	* gcc.dg/Wstrict-overflow-22.c: New.
+
+2008-04-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35986
+	* g++.dg/overload/template4.C: New test.
+
+2008-04-29  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36077
+	* gcc.c-torture/execute/pr36077.c: New testcase.
+
+2008-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35650
+	* g++.dg/init/ref17.C: New test.
+
+	PR c++/35987
+	* g++.dg/other/error28.C: New test.
+
+2008-04-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR testsuite/36056
+	* g++.dg/ext/vector14.C: Add -msse for 32bit x86 targets.
+
+2008-04-26  Tobias Burnus  <burnus@net-b.de>
+
+	* gfortran/array_constructor_23.f: Change REAL(10) into kind > 8.
+
+2008-04-26  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35994
+	* gfortran.dg/minmaxloc_5.f90: New test.
+	* gfortran.dg/minmaxloc_6.f90: New test.
+
+2008-04-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/pr36017.c: Run on all targets, remove -lm from dg-options.
+
+	PR c++/35758
+	* g++.dg/ext/vector14.C: New test.
+
+	PR tree-optimization/36008
+	* gcc.c-torture/execute/20080424-1.c: New test.
+
+2008-04-24  Ira Rosen  <irar@il.ibm.com>
+	    Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/36034
+	* gcc.c-torture/execute/pr36034-1.c: New testcase.
+	* gcc.c-torture/execute/pr36034-2.c: Likewise.
+
+2008-04-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/36015
+	* gcc.dg/pr36015.c: New test.
+
+2008-04-23  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/36021
+	* gcc.dg/attr-alloc_size-2.c: New testcase.
+
+2008-04-23  Ira Rosen  <irar@il.ibm.com>
+
+	PR tree-optimization/35982
+	* gcc.dg/vect/fast-math-pr35982.c: New.
+
+2008-04-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35316
+	* g++.dg/cpp0x/decltype11.C: New.
+
+2008-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/36017
+	* gcc.dg/pr36017.c: New test.
+
+2008-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35747
+	* g++.dg/ext/stmtexpr13.C: New test.
+
+	* g++.dg/ext/fixed1.C: Add dg-options.
+
+2008-04-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35325
+	* g++.dg/ext/fixed1.C: New.
+
+	PR c++/35678
+	* g++.dg/template/ttp27.C: New.
+
+2008-04-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35944
+	PR fortran/35946
+	PR fortran/35947
+	* gfortran.dg/array_constructor_23.f: New test.
+
+	PR fortran/35959
+	* gfortran.dg/alloc_comp_default_init_2.f90: New test.
+	* gfortran.dg/alloc_comp_basics_1.f90: Change occurrences of
+	"builtin_free" to 27.
+	* gfortran.dg/alloc_comp_constructor_1.f90: Change occurrences
+	of "builtin_free" to 21.
+
+2008-04-18  Jakub Jelinek  <jakub@redhat.com>
+	    Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/35907
+	* gcc.target/powerpc/pr35907.c: New test.
+
+2008-04-18  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35724
+	* gfortran.dg/eoshift_2.f90: New test.
+
+2008-04-17  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	PR c/35744
+	* gcc.dg/attr-error-1.c: New test.
+
+	PR c/35436
+	* gcc.dg/format/gcc_gfc-2.c: New test.
+
+2008-04-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35773
+	* g++.dg/overload/autoptr1.C: New.
+
+2008-04-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2008-04-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR target/35944
+	* gfortran.dg/pr35944-1.f90: New test.
+	* gfortran.dg/pr35944-2.f90: Ditto.
+
+2008-04-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35932
+	* gfortran.dg/intrinsic_char_1.f90: New test.
+
+2008-04-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/35739
+	* gcc.dg/dfp/pr35739.c: New test.
+
+	PR tree-optimization/35899
+	* gcc.dg/pr35899.c: New test.
+
+	PR target/35662
+	* gfortran.dg/pr35662.f90: New test.
+
+2008-04-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/loop_optimization1.ad[sb]: New test.
+
+2008-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/35751
+	* gcc.dg/gomp/pr35751.c: New test.
+	* g++.dg/gomp/pr35751.C: New test.
+
+2008-04-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/loop_address2.adb: New test.
+
+2008-04-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35708
+	* g++.dg/ext/complit9.C: New.
+
+2008-04-09  Ira Rosen  <irar@il.ibm.com>
+
+	PR tree-optimization/35821
+	* gcc.dg/vect/pr35821-altivec.c: New.
+	* gcc.dg/vect/pr35821-spu.c: New.
+
+2008-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/namelist_47.f90: New test.
+
+2008-04-08  Richard Guenther  <rguenther@suse.de>
+
+	* gcc.c-torture/execute/20080408-1.c: New testcase.
+
+2008-04-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35734
+	* g++.dg/warn/ctor1.C: New.
+
+2008-04-05  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/35833
+	* gcc.dg/torture/pr35833.c: New testcase.
+
+2008-04-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/35364
+	* g++.dg/gomp/pr35364.C: New test.
+
+	PR c/35440
+	* gcc.dg/pr35440.c: New test.
+
+2008-04-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/35738
+	* gcc.dg/gomp/pr35738.c: New test.
+
+	PR middle-end/35818
+	* gcc.dg/gomp/pr35818.c: New test.
+
+	PR fortran/35786
+	* gfortran.dg/gomp/pr35786-1.f90: New test.
+	* gfortran.dg/gomp/pr35786-2.f90: New test.
+
+	PR c++/35741
+	* g++.dg/other/offsetof5.C: New test.
+
+2008-04-02  Andrew Pinski  <pinskia@gmail.com>
+
+	PR middle-end/35429
+	* gcc.c-torture/compile/complex-5.c: New test.
+
+2008-04-02  Andrew Pinski  <pinskia@gmail.com>
+
+	PR tree-opt/35431
+	* gcc.c-torture/compile/pr35431.c: New testcase.
+
+2008-03-31  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/object_overflow.adb: New test.
+
+2008-03-30  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR c++/35245
+	* g++.dg/other/anon5.C: Skip on hppa*-*-hpux*.
+
+2008-03-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35740
+	* gfortran.dg/transpose_conjg_1.f90: New test.
+
+2008-03-29  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35698
+	* gfortran.dg/allocate_zerosize_3.f: New test.
+
+	PR fortran/35702
+	* gfortran.dg/character_assign_1.f90: New test.
+
+2008-03-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35699
+	* gfortran.dg/direct_io_10.f: New test.
+
+2008-03-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35724
+	* gfortran.dg/cshift_shift_real_2.f90: New test.
+
+2008-03-26  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/uninit-16.c (decode_reloc): Mark static.
+
+2008-03-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35546
+	* g++.dg/ext/attrib33.C: New test.
+
+	PR c++/35332
+	* g++.dg/other/error27.C: New test.
+
+2008-03-25  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-03-19  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35609
+	* gcc.dg/testsuite/uninit-15.c: New testcase.
+	* gcc.dg/testsuite/uninit-16.c: Likewise.
+
+2008-03-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/34813
+	* gfortran.dg/null_3.f90 : New test
+
+	PR fortran/33295
+	* gfortran.dg/module_function_type_1.f90 : New test
+
+2008-03-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2008-03-20  Victor Kaplansky  <victork@gcc.gnu.org>
+		    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR testsuite/34168
+	* lib/target-supports.exp (check_sse2_hw_available): New procedure.
+	* gcc.dg/vect/vect.exp: Set dg-do-what-default to "compile"
+	if SSE2 hardware is not available.
+	* g++.dg/vect/vect.exp: Update target-dependent overrides to match
+	gcc.dg/vect/vect.exp.
+	* gfortran.dg/vect/vect.exp: Ditto.
+	(check_effective_target_lp64_or_vect_no_align): Remove procedure.
+
+	2008-03-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/gomp/pr34692.c: Cleanup gimple dump file.
+
+2008-03-20  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+	PR libfortran/35627
+	* gfortran.dg/namelist_46.f90: New test.
+
+	PR libfortran/35617
+	* gfortran.dg/namelist_45.f90: New test.
+
+2008-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2008-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR testsuite/35621
+	* gcc.target/i386/ssse3-pabsb.c: Add -fno-strict-aliasing.
+	* gcc.target/i386/ssse3-pabsd.c: Likewise.
+	* gcc.target/i386/ssse3-pabsw.c: Likewise.
+	* gcc.target/i386/ssse3-palignr.c: Likewise.
+	* gcc.target/i386/ssse3-phaddd.c: Likewise.
+	* gcc.target/i386/ssse3-phaddsw.c: Likewise.
+	* gcc.target/i386/ssse3-phaddw.c: Likewise.
+	* gcc.target/i386/ssse3-phsubd.c: Likewise.
+	* gcc.target/i386/ssse3-phsubsw.c: Likewise.
+	* gcc.target/i386/ssse3-phsubw.c: Likewise.
+	* gcc.target/i386/ssse3-pmaddubsw.c: Likewise.
+	* gcc.target/i386/ssse3-pmulhrsw.c: Likewise.
+	* gcc.target/i386/ssse3-pshufb.c: Likewise.
+	* gcc.target/i386/ssse3-psignb.c: Likewise.
+	* gcc.target/i386/ssse3-psignd.c: Likewise.
+	* gcc.target/i386/ssse3-psignw.c: Likewise.
+
+2008-03-19  Michael Matz  <matz@suse.de>
+
+	Backport from mainline:
+	2008-03-19  Michael Matz  <matz@suse.de>
+
+	PR middle-end/35616
+	* gcc.dg/pr35616.c: New test.
+
+2008-03-19  Andreas Krebbel  <krebbel1@de.ibm.com>
+
+	* gcc.dg/pr35258.c: New testcase.
+
+2008-03-18  Mikulas Patocka  <mikulas@artax.karlin.mff.cuni.cz>
+
+	PR target/35504
+	* g++.dg/other/pr35504.C: New test.
+
+2008-03-18  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-03-15  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/35593
+	* g++.dg/warn/Warray-bounds-3.C: New testcase.
+
+2008-03-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35548
+	* g++.dg/init/ref16.C: New testcase.
+
+2008-03-14  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-02-19  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/34989
+	* gcc.dg/pr34989-1.c: New testcase.
+	* gcc.dg/pr34989-2.c: Likewise.
+
+2008-03-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/34000
+	PR target/35553
+	* g++.dg/other/i386-3.C: New test.
+	* gcc.target/i386/sse-13.c: Redefine extern instead of static.
+	* gcc.target/i386/sse-14.c: Ditto.
+	* gcc.target/i386/mmx-1.c: Ditto.
+	* gcc.target/i386/mmx-2.c: Ditto.
+	* gcc.target/i386/3dnow-1.c: Ditto.
+	* gcc.target/i386/3dnow-2.c: Ditto.
+	* gcc.target/i386/3dnowA-1.c: Ditto.
+	* gcc.target/i386/3dnowA-2.c: Ditto.
+
+2008-03-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35474
+	* gfortran.dg/module_commons_2.f90 : New test.
+
+2008-03-12  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/35540
+	* gcc.target/i386/pr35540.c: New test.
+
+2008-03-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/inherit/override-attribs.C: Require ilp32 x86 target.
+
+2008-03-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/35526
+	* g++.dg/torture/pr35526.C: New test.
+
+2008-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35328
+	* g++.dg/gomp/pr35328.C: New test.
+
+	PR c++/35337
+	* g++.dg/gomp/pr35337.C: New test.
+
+	PR c/35438
+	PR c/35439
+	* gcc.dg/gomp/pr35438.c: New test.
+	* gcc.dg/gomp/pr35439.c: New test.
+
+	PR middle-end/35099
+	* g++.dg/gomp/pr35099.C: New test.
+
+2008-03-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2008-03-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/35456
+	* gcc.c-torture/execute/pr35456.c: New test.
+
+2008-03-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/frame_overflow.adb: Improve portability.
+
+2008-03-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2008-03-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/35350
+	* gcc.target/i386/isa-1.c: Add -march=x86-64.
+	* gcc.target/i386/isa-2.c: Likewise.
+	* gcc.target/i386/isa-3.c: Likewise.
+	* gcc.target/i386/isa-10.c: Likewise.
+	* gcc.target/i386/isa-11.c: Likewise.
+	* gcc.target/i386/isa-12.c: Likewise.
+	* gcc.target/i386/isa-13.c: Likewise.
+	* gcc.target/i386/isa-14.c: Likewise.
+
+2008-03-07  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2008-03-05  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/35472
+	* gcc.c-torture/execute/pr35472.c: New testcase.
+
+2008-03-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2008-02-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/35189
+	* gcc.target/i386/isa-1.c: New.
+	* gcc.target/i386/isa-2.c: Likewise.
+	* gcc.target/i386/isa-3.c: Likewise.
+	* gcc.target/i386/isa-4.c: Likewise.
+	* gcc.target/i386/isa-5.c: Likewise.
+	* gcc.target/i386/isa-6.c: Likewise.
+	* gcc.target/i386/isa-7.c: Likewise.
+	* gcc.target/i386/isa-8.c: Likewise.
+	* gcc.target/i386/isa-9.c: Likewise.
+	* gcc.target/i386/isa-10.c: Likewise.
+	* gcc.target/i386/isa-11.c: Likewise.
+	* gcc.target/i386/isa-12.c: Likewise.
+	* gcc.target/i386/isa-13.c: Likewise.
+	* gcc.target/i386/isa-14.c: Likewise.
+
+2008-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35028
+	* g++.dg/gomp/pr35028.C: New test.
+
+	PR c++/34964
+	PR c++/35244
+	* gcc.dg/gomp/pr34964.c: New test.
+	* g++.dg/gomp/pr34964.C: New test.
+	* gcc.dg/gomp/pr35244.c: New test.
+	* g++.dg/gomp/pr35244.C: New test.
+
+	PR c++/35078
+	* g++.dg/gomp/pr35078.C: New test.
+
+2008-03-06  Daniel Jacobowitz  <dan@codesourcery.com>
+
+	* gcc.c-torture/execute/20080222-1.c: New test.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/35323
+	* g++.dg/lookup/crash7.C: New.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/35333
+	* g++.dg/other/error26.C: New.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/35338
+	* g++.dg/other/error25.C: New.
+	
 2008-03-05  Release Manager
 
 	* GCC 4.3.0 released.
@@ -140,9 +871,9 @@
 	Revert:
 	2008-02-14  Paolo Carlini  <pcarlini@suse.de>
 
-        PR c++/28743
+	PR c++/28743
 	* g++.dg/template/nontype17.C: New.
-        * g++.dg/template/nontype16.C: Add error.
+	* g++.dg/template/nontype16.C: Add error.
 
 2008-02-21  Michael Matz  <matz@suse.de>
 

@@ -1736,7 +1736,10 @@ finish_stmt_expr (tree stmt_expr, bool has_no_scope)
   tree result;
 
   if (error_operand_p (stmt_expr))
-    return error_mark_node;
+    {
+      pop_stmt_list (stmt_expr);
+      return error_mark_node;
+    }
 
   gcc_assert (TREE_CODE (stmt_expr) == STATEMENT_LIST);
 
@@ -2096,7 +2099,6 @@ finish_unary_op_expr (enum tree_code code, tree expr)
 tree
 finish_compound_literal (tree type, VEC(constructor_elt,gc) *initializer_list)
 {
-  tree var;
   tree compound_literal;
 
   if (!TYPE_OBJ_P (type))
@@ -2115,30 +2117,15 @@ finish_compound_literal (tree type, VEC(constructor_elt,gc) *initializer_list)
       return compound_literal;
     }
 
-  /* Create a temporary variable to represent the compound literal.  */
-  var = create_temporary_var (type);
-  if (!current_function_decl)
-    {
-      /* If this compound-literal appears outside of a function, then
-	 the corresponding variable has static storage duration, just
-	 like the variable in whose initializer it appears.  */
-      TREE_STATIC (var) = 1;
-      /* The variable has internal linkage, since there is no need to
-	 reference it from another translation unit.  */
-      TREE_PUBLIC (var) = 0;
-      /* It must have a name, so that the name mangler can mangle it.  */
-      DECL_NAME (var) = make_anon_name ();
-    }
-  /* We must call pushdecl, since the gimplifier complains if the
-     variable has not been declared via a BIND_EXPR.  */
-  pushdecl (var);
-  /* Initialize the variable as we would any other variable with a
-     brace-enclosed initializer.  */
-  cp_finish_decl (var, compound_literal,
-		  /*init_const_expr_p=*/false,
-		  /*asmspec_tree=*/NULL_TREE,
-		  LOOKUP_ONLYCONVERTING);
-  return var;
+  type = complete_type (type);
+  if (TREE_CODE (type) == ARRAY_TYPE
+      && check_array_initializer (NULL_TREE, type, compound_literal))
+    return error_mark_node;
+  compound_literal = reshape_init (type, compound_literal);
+  if (TREE_CODE (type) == ARRAY_TYPE)
+    cp_complete_array_type (&type, compound_literal, false);
+  compound_literal = digest_init (type, compound_literal);
+  return get_target_expr (compound_literal);
 }
 
 /* Return the declaration for the function-name variable indicated by
@@ -3028,6 +3015,8 @@ finish_offsetof (tree expr)
       error ("cannot apply %<offsetof%> to member function %qD", expr);
       return error_mark_node;
     }
+  if (TREE_CODE (expr) == INDIRECT_REF && REFERENCE_REF_P (expr))
+    expr = TREE_OPERAND (expr, 0);
   return fold_offsetof (expr, NULL_TREE);
 }
 
@@ -3335,6 +3324,31 @@ finalize_nrv (tree *tp, tree var, tree result)
   htab_delete (data.visited);
 }
 
+/* Return the declaration for the function called by CALL_EXPR T,
+   TYPE is the class type of the clause decl.  */
+
+static tree
+omp_clause_info_fndecl (tree t, tree type)
+{
+  tree ret = get_callee_fndecl (t);
+
+  if (ret)
+    return ret;
+
+  gcc_assert (TREE_CODE (t) == CALL_EXPR);
+  t = CALL_EXPR_FN (t);
+  STRIP_NOPS (t);
+  if (TREE_CODE (t) == OBJ_TYPE_REF)
+    {
+      t = cp_fold_obj_type_ref (t, type);
+      if (TREE_CODE (t) == ADDR_EXPR
+	  && TREE_CODE (TREE_OPERAND (t, 0)) == FUNCTION_DECL)
+	return TREE_OPERAND (t, 0);
+    }
+
+  return NULL_TREE;
+}
+
 /* For all elements of CLAUSES, validate them vs OpenMP constraints.
    Remove any elements from the list that are invalid.  */
 
@@ -3400,13 +3414,16 @@ finish_omp_clauses (tree clauses)
 	    {
 	      if (processing_template_decl)
 		break;
-	      error ("%qE is not a variable in clause %<firstprivate%>", t);
+	      if (DECL_P (t))
+		error ("%qD is not a variable in clause %<firstprivate%>", t);
+	      else
+		error ("%qE is not a variable in clause %<firstprivate%>", t);
 	      remove = true;
 	    }
 	  else if (bitmap_bit_p (&generic_head, DECL_UID (t))
 		   || bitmap_bit_p (&firstprivate_head, DECL_UID (t)))
 	    {
-	      error ("%qE appears more than once in data clauses", t);
+	      error ("%qD appears more than once in data clauses", t);
 	      remove = true;
 	    }
 	  else
@@ -3419,13 +3436,16 @@ finish_omp_clauses (tree clauses)
 	    {
 	      if (processing_template_decl)
 		break;
-	      error ("%qE is not a variable in clause %<lastprivate%>", t);
+	      if (DECL_P (t))
+		error ("%qD is not a variable in clause %<lastprivate%>", t);
+	      else
+		error ("%qE is not a variable in clause %<lastprivate%>", t);
 	      remove = true;
 	    }
 	  else if (bitmap_bit_p (&generic_head, DECL_UID (t))
 		   || bitmap_bit_p (&lastprivate_head, DECL_UID (t)))
 	    {
-	      error ("%qE appears more than once in data clauses", t);
+	      error ("%qD appears more than once in data clauses", t);
 	      remove = true;
 	    }
 	  else
@@ -3661,7 +3681,7 @@ finish_omp_clauses (tree clauses)
 					     complete_ctor_identifier,
 					     t, inner_type, LOOKUP_NORMAL);
 
-	      if (targetm.cxx.cdtor_returns_this ())
+	      if (targetm.cxx.cdtor_returns_this () || errorcount)
 		/* Because constructors and destructors return this,
 		   the call will have been cast to "void".  Remove the
 		   cast here.  We would like to use STRIP_NOPS, but it
@@ -3671,8 +3691,7 @@ finish_omp_clauses (tree clauses)
 		if (TREE_CODE (t) == NOP_EXPR)
 		  t = TREE_OPERAND (t, 0);
 
-	      t = get_callee_fndecl (t);
-	      TREE_VEC_ELT (info, 0) = t;
+	      TREE_VEC_ELT (info, 0) = get_callee_fndecl (t);
 	    }
 
 	  if ((need_default_ctor || need_copy_ctor)
@@ -3683,7 +3702,7 @@ finish_omp_clauses (tree clauses)
 	      t = build_special_member_call (t, complete_dtor_identifier,
 					     NULL, inner_type, LOOKUP_NORMAL);
 
-	      if (targetm.cxx.cdtor_returns_this ())
+	      if (targetm.cxx.cdtor_returns_this () || errorcount)
 		/* Because constructors and destructors return this,
 		   the call will have been cast to "void".  Remove the
 		   cast here.  We would like to use STRIP_NOPS, but it
@@ -3693,8 +3712,7 @@ finish_omp_clauses (tree clauses)
 		if (TREE_CODE (t) == NOP_EXPR)
 		  t = TREE_OPERAND (t, 0);
 
-	      t = get_callee_fndecl (t);
-	      TREE_VEC_ELT (info, 1) = t;
+	      TREE_VEC_ELT (info, 1) = omp_clause_info_fndecl (t, inner_type);
 	    }
 
 	  if (need_copy_assignment
@@ -3712,8 +3730,7 @@ finish_omp_clauses (tree clauses)
 	      if (TREE_CODE (t) == INDIRECT_REF)
 		t = TREE_OPERAND (t, 0);
 
-	      t = get_callee_fndecl (t);
-	      TREE_VEC_ELT (info, 2) = t;
+	      TREE_VEC_ELT (info, 2) = omp_clause_info_fndecl (t, inner_type);
 	    }
 
 	  if (errorcount != save_errorcount)
@@ -3742,9 +3759,14 @@ finish_omp_threadprivate (tree vars)
     {
       tree v = TREE_PURPOSE (t);
 
+      if (error_operand_p (v))
+	;
+      else if (TREE_CODE (v) != VAR_DECL)
+	error ("%<threadprivate%> %qD is not file, namespace "
+	       "or block scope variable", v);
       /* If V had already been marked threadprivate, it doesn't matter
 	 whether it had been used prior to this point.  */
-      if (TREE_USED (v)
+      else if (TREE_USED (v)
 	  && (DECL_LANG_SPECIFIC (v) == NULL
 	      || !CP_DECL_THREADPRIVATE_P (v)))
 	error ("%qE declared %<threadprivate%> after first use", v);
@@ -3900,6 +3922,16 @@ finish_omp_for (location_t locus, tree decl, tree init, tree cond,
   if (!DECL_P (decl))
     {
       error ("expected iteration declaration or initialization");
+      return NULL;
+    }
+
+  if (!INTEGRAL_TYPE_P (TREE_TYPE (decl)))
+    {
+      location_t elocus = locus;
+
+      if (EXPR_HAS_LOCATION (init))
+	elocus = EXPR_LOCATION (init);
+      error ("%Hinvalid type for iteration variable %qE", &elocus, decl);
       return NULL;
     }
 
@@ -4154,7 +4186,7 @@ finish_decltype_type (tree expr, bool id_expression_or_member_access_p)
       switch (TREE_CODE (expr))
         {
         case FIELD_DECL:
-          if (DECL_C_BIT_FIELD (expr))
+          if (DECL_BIT_FIELD_TYPE (expr))
             {
               type = DECL_BIT_FIELD_TYPE (expr);
               break;

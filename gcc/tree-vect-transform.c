@@ -1102,8 +1102,12 @@ vect_create_data_ref_ptr (tree stmt, struct loop *at_loop,
   new_temp = vect_create_addr_base_for_vector_ref (stmt, &new_stmt_list,
                                                    offset, loop);
   pe = loop_preheader_edge (loop);
-  new_bb = bsi_insert_on_edge_immediate (pe, new_stmt_list);
-  gcc_assert (!new_bb);
+  if (new_stmt_list)
+    {
+      new_bb = bsi_insert_on_edge_immediate (pe, new_stmt_list);
+      gcc_assert (!new_bb);
+    }
+
   *initial_address = new_temp;
 
   /* Create: p = (vectype *) initial_base  */
@@ -3668,6 +3672,11 @@ vectorizable_assignment (tree stmt, block_stmt_iterator *bsi, tree *vec_stmt,
   VEC(tree,heap) *vec_oprnds = NULL;
   tree vop;
 
+  /* FORNOW: SLP with multiple types is not supported. The SLP analysis verifies
+     this, so we can safely override NCOPIES with 1 here.  */ 
+  if (slp_node)
+    ncopies = 1;
+
   gcc_assert (ncopies >= 1);
   if (ncopies > 1)
     return false; /* FORNOW */
@@ -5441,12 +5450,14 @@ vect_transform_strided_load (tree stmt, VEC(tree,heap) *dr_chain, int size,
 	break;
 
       /* Skip the gaps. Loads created for the gaps will be removed by dead
-       code elimination pass later.
+       code elimination pass later. No need to check for the first stmt in
+       the group, since it always exists.
        DR_GROUP_GAP is the number of steps in elements from the previous
        access (if there is no gap DR_GROUP_GAP is 1). We skip loads that
        correspond to the gaps.
       */
-      if (gap_count < DR_GROUP_GAP (vinfo_for_stmt (next_stmt)))
+      if (next_stmt != first_stmt
+          && gap_count < DR_GROUP_GAP (vinfo_for_stmt (next_stmt)))
       {
         gap_count++;
         continue;

@@ -1275,19 +1275,22 @@ gfc_conv_intrinsic_dprod (gfc_se * se, gfc_expr * expr)
 static void
 gfc_conv_intrinsic_char (gfc_se * se, gfc_expr * expr)
 {
-  tree arg;
+  tree arg[2];
   tree var;
   tree type;
+  unsigned int num_args;
 
-  gfc_conv_intrinsic_function_args (se, expr, &arg, 1);
+  /* We must allow for the KIND argument, even though.... */
+  num_args = gfc_intrinsic_argument_list_length (expr);
+  gfc_conv_intrinsic_function_args (se, expr, arg, num_args);
 
-  /* We currently don't support character types != 1.  */
+  /* .... we currently don't support character types != 1.  */
   gcc_assert (expr->ts.kind == 1);
   type = gfc_character1_type_node;
   var = gfc_create_var (type, "char");
 
-  arg = convert (type, arg);
-  gfc_add_modify_expr (&se->pre, var, arg);
+  arg[0] = convert (type, arg[0]);
+  gfc_add_modify_expr (&se->pre, var, arg[0]);
   se->expr = gfc_build_addr_expr (build_pointer_type (type), var);
   se->string_length = integer_one_node;
 }
@@ -2176,11 +2179,12 @@ gfc_conv_intrinsic_minmaxloc (gfc_se * se, gfc_expr * expr, int op)
 
   /* Remember where we are.  An offset must be added to the loop
      counter to obtain the required position.  */
-  if (loop.temp_dim)
-    tmp = build_int_cst (gfc_array_index_type, 1);
+  if (loop.from[0])
+    tmp = fold_build2 (MINUS_EXPR, gfc_array_index_type,
+		       gfc_index_one_node, loop.from[0]);
   else
-    tmp =fold_build2 (MINUS_EXPR, gfc_array_index_type,
-			 gfc_index_one_node, loop.from[0]);
+    tmp = build_int_cst (gfc_array_index_type, 1);
+  
   gfc_add_modify_expr (&block, offset, tmp);
 
   tmp = build2 (PLUS_EXPR, TREE_TYPE (pos),

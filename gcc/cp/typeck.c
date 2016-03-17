@@ -962,6 +962,8 @@ structural_comptypes (tree t1, tree t2, int strict)
   if (TREE_CODE (t1) != ARRAY_TYPE
       && TYPE_QUALS (t1) != TYPE_QUALS (t2))
     return false;
+  if (TYPE_FOR_JAVA (t1) != TYPE_FOR_JAVA (t2))
+    return false;
 
   /* Allow for two different type nodes which have essentially the same
      definition.  Note that we already checked for equality of the type
@@ -970,9 +972,6 @@ structural_comptypes (tree t1, tree t2, int strict)
   if (TREE_CODE (t1) != ARRAY_TYPE
       && TYPE_MAIN_VARIANT (t1) == TYPE_MAIN_VARIANT (t2))
     return true;
-
-  if (TYPE_FOR_JAVA (t1) != TYPE_FOR_JAVA (t2))
-    return false;
 
   /* Compare the types.  Break out if they could be the same.  */
   switch (TREE_CODE (t1))
@@ -1473,7 +1472,7 @@ is_bitfield_expr_with_lowered_type (const_tree exp)
 	tree field;
 	
 	field = TREE_OPERAND (exp, 1);
-	if (TREE_CODE (field) != FIELD_DECL || !DECL_C_BIT_FIELD (field))
+	if (TREE_CODE (field) != FIELD_DECL || !DECL_BIT_FIELD_TYPE (field))
 	  return NULL_TREE;
 	if (same_type_ignoring_top_level_qualifiers_p
 	    (TREE_TYPE (exp), DECL_BIT_FIELD_TYPE (field)))
@@ -5668,10 +5667,11 @@ build_modify_expr (tree lhs, enum tree_code modifycode, tree rhs)
 	lhs = build2 (TREE_CODE (lhs), TREE_TYPE (lhs),
 		      stabilize_reference (TREE_OPERAND (lhs, 0)),
 		      TREE_OPERAND (lhs, 1));
-      return build2 (COMPOUND_EXPR, lhstype,
-		     lhs,
-		     build_modify_expr (TREE_OPERAND (lhs, 0),
-					modifycode, rhs));
+      newrhs = build_modify_expr (TREE_OPERAND (lhs, 0),
+				  modifycode, rhs);
+      if (newrhs == error_mark_node)
+	return error_mark_node;
+      return build2 (COMPOUND_EXPR, lhstype, lhs, newrhs);
 
       /* Handle (a, b) used as an "lvalue".  */
     case COMPOUND_EXPR:

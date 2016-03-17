@@ -1,3 +1,159 @@
+2008-06-06  Release Manager
+
+	* GCC 4.3.1 released.
+
+2008-05-18  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/36176
+	* target-memory.c (gfc_target_expr_size): Correctly treat
+	substrings.
+	(gfc_target_encode_expr): Likewise.
+	(gfc_interpret_complex): Whitespace change.
+
+2008-05-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline:
+	PR fortran/35184
+	* trans-array.c (gfc_conv_array_index_offset): Remove
+	unnecessary assert.
+
+2008-05-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline:
+	PR fortran/35756
+	PR fortran/35759
+	* trans-stmt.c (gfc_trans_where): Tighten up the dependency
+	check for calling gfc_trans_where_3.
+
+	PR fortran/35743
+	* trans-stmt.c (gfc_trans_where_2): Set the mask size to zero
+	if it is calculated to be negative.
+
+	PR fortran/35745
+	* trans-stmt.c (gfc_trans_where_3, gfc_trans_where_assign): Set
+	ss->where for scalar right hand sides.
+	* trans-array.c (gfc_add_loop_ss_code): If ss->where is set do
+	not evaluate scalars outside the loop.  Clean up whitespace.
+	* trans.h : Add a bitfield 'where' to gfc_ss.
+
+	PR fortran/36233
+	* interface.c (compare_actual_formal): Do not check sizes if the
+	actual is BT_PROCEDURE.
+
+2008-05-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35997
+	* module.c (find_symbol): Do not return a result for a symbol
+	that has been renamed in another module.
+
+2008-05-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35864
+	* expr.c (scalarize_intrinsic_call): Reorder identification of
+	array argument so that if one is not found a segfault does not
+	occur.  Return FAILURE if all scalar arguments.
+
+	PR fortran/35780
+	* expr.c (scalarize_intrinsic_call): Identify which argument is
+	an array and use that as the template.
+	(check_init_expr): Remove tests that first argument is an array
+	in the call to scalarize_intrinsic_call.
+
+2008-04-26  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+	    Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/35994
+	* trans-instrinsic.c (gfc_conv_intrinsic_minmaxloc):
+	Correctly adjust loop counter offset.
+
+2008-04-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35944
+	PR fortran/35946
+	PR fortran/35947
+	* trans_array.c (gfc_trans_array_constructor): Temporarily
+	realign loop, if loop->from is not zero, before creating
+	the temporary array and provide an offset.
+
+	PR fortran/35959
+	* trans-decl.c (gfc_init_default_dt): Add gfc_ prefix to name
+	and allow for NULL body.  Change all references from
+	init_default_dt to gfc_init_default_dt.
+	* trans.h : Add prototype for gfc_init_default_dt.
+	* trans-array.c (gfc_trans_deferred_vars): After nullification
+	call gfc_init_default_dt for derived types with allocatable
+	components.
+
+2008-04-18  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35724
+	* iresolve.c (gfc_resolve_eoshift): Check for NULL symtree in
+	test for optional argument attribute.
+
+2008-04-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35932
+	* trans-intrinsic.c (gfc_conv_intrinsic_char): Even though KIND
+	is not used, the argument must be converted.
+
+2008-04-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/35662
+	* f95-lang.c (gfc_init_builtin_functions): Make sure
+	BUILT_IN_SINCOS{,F,L} types aren't varargs.
+
+2008-04-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/35786
+	* openmp.c (resolve_omp_clauses): Diagnose if a clause symbol
+	isn't a variable.
+
+2008-04-01  Joseph Myers  <joseph@codesourcery.com>
+
+	* gfortran.texi: Include gpl_v3.texi instead of gpl.texi
+	* Make-lang.in (GFORTRAN_TEXI): Include gpl_v3.texi instead of
+	gpl.texi.
+
+2008-03-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35740
+	* resolve.c (resolve_function, resolve_call): If the procedure
+	is elemental do not look for noncopying intrinsics.
+
+2008-03-29  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35698
+	* trans-array.c (gfc_array_init_size): Set 'size' zero if
+	negative in one dimension.
+
+	PR fortran/35702
+	* trans-expr.c (gfc_trans_string_copy): Only assign a char
+	directly if the lhs and rhs types are the same.
+
+2008-03-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/35724
+	* iresolve.c (gfc_resolve_cshift): Check for NULL symtree in
+	test for optional argument attribute.
+
+2008-03-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/34813
+	* resolve.c (resolve_structure_cons): It is an error to assign
+	NULL to anything other than a pointer or allocatable component.
+
+	PR fortran/33295
+	* resolve.c (resolve_symbol): If the symbol is a derived type,
+	resolve the derived type.  If the symbol is a derived type
+	function, ensure that the derived type is visible in the same
+	namespace as the function.
+
+2008-03-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35474
+	* module.c (mio_symtree_ref): After providing a symbol for a
+	missing equivalence member, resolve and NULL the fixups.
+
 2008-03-05  Release Manager
 
 	* GCC 4.3.0 released.

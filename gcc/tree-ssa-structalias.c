@@ -4180,11 +4180,15 @@ push_fields_onto_fieldstack (tree type, VEC(fieldoff_s,heap) **fieldstack,
 		        (DECL_NONADDRESSABLE_P (field)
 		         ? addressable_type
 		         : TREE_TYPE (field))))
-		     && DECL_SIZE (field)
-		     && !integer_zerop (DECL_SIZE (field)))
-	      /* Empty structures may have actual size, like in C++. So
+		     && ((DECL_SIZE (field)
+			  && !integer_zerop (DECL_SIZE (field)))
+			 || (!DECL_SIZE (field)
+			     && TREE_CODE (TREE_TYPE (field)) == ARRAY_TYPE)))
+	      /* Empty structures may have actual size, like in C++.  So
 	         see if we didn't push any subfields and the size is
-	         nonzero, push the field onto the stack */
+	         nonzero, push the field onto the stack.  Trailing flexible
+		 array members also need a representative to be able to
+		 treat taking their address in PTA.  */
 	      push = true;
 
 	    if (push)
@@ -4753,7 +4757,19 @@ set_uids_in_ptset (tree ptr, bitmap into, bitmap from, bool is_derefed,
 	  /* Variables containing unions may need to be converted to
 	     their SFT's, because SFT's can have unions and we cannot.  */
 	  for (i = 0; VEC_iterate (tree, sv, i, subvar); ++i)
-	    bitmap_set_bit (into, DECL_UID (subvar));
+	    {
+	      /* Pointed-to SFTs are needed by the operand scanner
+		 to adjust offsets when adding operands to memory
+		 expressions that dereference PTR.  This means
+		 that memory partitioning may not partition
+		 this SFT because the operand scanner will not
+		 be able to find the other SFTs next to this
+		 one.  But we only need to do this if the pointed
+		 to type is aggregate.  */
+	      if (SFT_BASE_FOR_COMPONENTS_P (subvar))
+		SFT_UNPARTITIONABLE_P (subvar) = true;
+	      bitmap_set_bit (into, DECL_UID (subvar));
+	    }
 	}
       else if (TREE_CODE (vi->decl) == VAR_DECL
 	       || TREE_CODE (vi->decl) == PARM_DECL

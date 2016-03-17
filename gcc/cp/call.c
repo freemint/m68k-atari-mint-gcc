@@ -1145,7 +1145,8 @@ reference_binding (tree rto, tree rfrom, tree expr, bool c_cast_p, int flags)
      const and rvalue references to rvalues of compatible class type. */
   if (compatible_p
       && (lvalue_p
-	  || ((CP_TYPE_CONST_NON_VOLATILE_P(to) || TYPE_REF_IS_RVALUE (rto))
+	  || (!(flags & LOOKUP_NO_TEMP_BIND)
+	      && (CP_TYPE_CONST_NON_VOLATILE_P(to) || TYPE_REF_IS_RVALUE (rto))
 	      && CLASS_TYPE_P (from))))
     {
       /* [dcl.init.ref]
@@ -2632,7 +2633,22 @@ build_user_type_conversion_1 (tree totype, tree expr, int flags)
 				       flags);
 
       if (cand)
-	cand->second_conv = build_identity_conv (totype, NULL_TREE);
+	{
+	  cand->second_conv = build_identity_conv (totype, NULL_TREE);
+
+	  /* If totype isn't a reference, and LOOKUP_NO_TEMP_BIND isn't
+	     set, then this is copy-initialization.  In that case, "The
+	     result of the call is then used to direct-initialize the
+	     object that is the destination of the copy-initialization."
+	     [dcl.init]
+
+	     We represent this in the conversion sequence with an
+	     rvalue conversion, which means a constructor call.  */
+	  if (TREE_CODE (totype) != REFERENCE_TYPE
+	      && !(convflags & LOOKUP_NO_TEMP_BIND))
+	    cand->second_conv
+	      = build_conv (ck_rvalue, totype, cand->second_conv);
+	}
     }
 
   if (conv_fns)
@@ -2683,6 +2699,20 @@ build_user_type_conversion_1 (tree totype, tree expr, int flags)
 				       TREE_TYPE (TREE_TYPE (cand->fn)),
 				       0,
 				       /*c_cast_p=*/false, convflags);
+
+	      /* If LOOKUP_NO_TEMP_BIND isn't set, then this is
+		 copy-initialization.  In that case, "The result of the
+		 call is then used to direct-initialize the object that is
+		 the destination of the copy-initialization."  [dcl.init]
+
+		 We represent this in the conversion sequence with an
+		 rvalue conversion, which means a constructor call.  But
+		 don't add a second rvalue conversion if there's already
+		 one there.  Which there really shouldn't be, but it's
+		 harmless since we'd add it here anyway. */
+	      if (ics && IS_AGGR_TYPE (totype) && ics->kind != ck_rvalue
+		  && !(convflags & LOOKUP_NO_TEMP_BIND))
+		ics = build_conv (ck_rvalue, totype, ics);
 
 	      cand->second_conv = ics;
 
@@ -4372,38 +4402,6 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	if (DECL_CONSTRUCTOR_P (convfn))
 	  expr = build_cplus_new (totype, expr);
 
-	/* The result of the call is then used to direct-initialize the object
-	   that is the destination of the copy-initialization.  [dcl.init]
-
-	   Note that this step is not reflected in the conversion sequence;
-	   it affects the semantics when we actually perform the
-	   conversion, but is not considered during overload resolution.
-
-	   If the target is a class, that means call a ctor.  */
-	if (IS_AGGR_TYPE (totype)
-	    && (inner >= 0 || !lvalue_p (expr)))
-	  {
-	    expr = (build_temp
-		    (expr, totype,
-		     /* Core issue 84, now a DR, says that we don't
-			allow UDCs for these args (which deliberately
-			breaks copy-init of an auto_ptr<Base> from an
-			auto_ptr<Derived>).  */
-		     LOOKUP_NORMAL|LOOKUP_ONLYCONVERTING|LOOKUP_NO_CONVERSION,
-		     &diagnostic_fn));
-
-	    if (diagnostic_fn)
-	      {
-		if (fn)
-		  diagnostic_fn
-		    ("  initializing argument %P of %qD from result of %qD",
-		     argnum, fn, convfn);
-		else
-		 diagnostic_fn
-		   ("  initializing temporary from result of %qD",  convfn);
-	      }
-	    expr = build_cplus_new (totype, expr);
-	  }
 	return expr;
       }
     case ck_identity:
@@ -4464,7 +4462,8 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
       flags = LOOKUP_NORMAL|LOOKUP_ONLYCONVERTING;
       if (convs->user_conv_p)
 	/* This conversion is being done in the context of a user-defined
-	   conversion, so don't allow any more.  */
+	   conversion (i.e. the second step of copy-initialization), so
+	   don't allow any more.  */
 	flags |= LOOKUP_NO_CONVERSION;
       expr = build_temp (expr, totype, flags, &diagnostic_fn);
       if (diagnostic_fn && fn)
@@ -4519,7 +4518,10 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 		return error_mark_node;
 	      }
 	    if (lvalue & clk_bitfield)
-	      expr = convert_bitfield_to_declared_type (expr);
+	      {
+		expr = convert_bitfield_to_declared_type (expr);
+		expr = fold_convert (type, expr);
+	      }
 	    expr = build_target_expr_with_type (expr, type);
 	  }
 

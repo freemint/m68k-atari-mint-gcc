@@ -540,6 +540,10 @@ set_initial_properties (struct alias_info *ai)
   tree var;
   tree ptr;
   bitmap queued;
+  bool any_pt_anything = false;
+  enum escape_type pt_anything_mask = 0;
+  bitmap_iterator bi;
+  unsigned int j;
 
   /* Temporary bitmap to avoid quadratic behavior in marking
      call clobbers.  */
@@ -568,7 +572,7 @@ set_initial_properties (struct alias_info *ai)
     {
       struct ptr_info_def *pi = SSA_NAME_PTR_INFO (ptr);
       tree tag = symbol_mem_tag (SSA_NAME_VAR (ptr));
-      
+
       if (pi->value_escapes_p)
 	{
 	  /* If PTR escapes then its associated memory tags and
@@ -581,8 +585,6 @@ set_initial_properties (struct alias_info *ai)
 
 	  if (pi->pt_vars)
 	    {
-	      bitmap_iterator bi;
-	      unsigned int j;	      
 	      EXECUTE_IF_SET_IN_BITMAP (pi->pt_vars, 0, j, bi)
 		{
 		  tree alias = referenced_var (j);
@@ -593,25 +595,22 @@ set_initial_properties (struct alias_info *ai)
 		     in order to allow C/C++ tricks that involve
 		     pointer arithmetic to work.  */
 		  if (TREE_CODE (alias) == STRUCT_FIELD_TAG)
-		    bitmap_set_bit (queued, DECL_UID (SFT_PARENT_VAR (alias)));
+		    {
+		      alias = SFT_PARENT_VAR (alias);
+		      if (!unmodifiable_var_p (alias))
+			{
+			  bitmap_set_bit (queued, DECL_UID (alias));
+			  var_ann (alias)->escape_mask |= pi->escape_mask;
+			}
+		    }
 		  else if (!unmodifiable_var_p (alias))
 		    mark_call_clobbered (alias, pi->escape_mask);
 		}
-	      /* Process variables we need to clobber all parts of.  */
-	      if (!bitmap_empty_p (queued))
-		{
-		  EXECUTE_IF_SET_IN_BITMAP (queued, 0, j, bi)
-		    {
-		      subvar_t svars = get_subvars_for_var (referenced_var (j));
-		      unsigned int i;
-		      tree subvar;
-
-		      for (i = 0; VEC_iterate (tree, svars, i, subvar); ++i)
-			if (!unmodifiable_var_p (subvar))
-			  mark_call_clobbered (subvar, pi->escape_mask);
-		    }
-		  bitmap_clear (queued);
-		}
+	    }
+	  else if (pi->pt_anything)
+	    {
+	      any_pt_anything = true;
+	      pt_anything_mask |= pi->escape_mask;
 	    }
 	}
 
@@ -644,6 +643,41 @@ set_initial_properties (struct alias_info *ai)
 	  mark_call_clobbered (tag, ESCAPE_IS_GLOBAL);
 	  MTAG_GLOBAL (tag) = true;
 	}
+    }
+
+  /* If a pointer to anything escaped we need to mark all addressable
+     variables call clobbered.  */
+  if (any_pt_anything)
+    {
+      EXECUTE_IF_SET_IN_BITMAP (gimple_addressable_vars (cfun),
+				0, j, bi)
+	{
+	  tree var = referenced_var (j);
+	  if (TREE_CODE (var) == STRUCT_FIELD_TAG)
+	    {
+	      var = SFT_PARENT_VAR (var);
+	      if (!unmodifiable_var_p (var))
+		{
+		  bitmap_set_bit (queued, DECL_UID (var));
+		  var_ann (var)->escape_mask |= pt_anything_mask;
+		}
+	    }
+	  else if (!unmodifiable_var_p (var))
+	    mark_call_clobbered (var, pt_anything_mask);
+	}
+    }
+
+  /* Process variables we need to clobber all parts of.  */
+  EXECUTE_IF_SET_IN_BITMAP (queued, 0, j, bi)
+    {
+      tree var = referenced_var (j);
+      subvar_t svars = get_subvars_for_var (var);
+      unsigned int i;
+      tree subvar;
+      enum escape_type mask = var_ann (var)->escape_mask;
+
+      for (i = 0; VEC_iterate (tree, svars, i, subvar); ++i)
+	mark_call_clobbered (subvar, mask);
     }
 
   BITMAP_FREE (queued);
@@ -3199,8 +3233,11 @@ get_smt_for (tree ptr, struct alias_info *ai)
   TREE_THIS_VOLATILE (tag) |= TREE_THIS_VOLATILE (tag_type);
 
   /* Make sure that the symbol tag has the same alias set as the
-     pointed-to type.  */
-  gcc_assert (tag_set == get_alias_set (tag));
+     pointed-to type or at least accesses through the pointer will
+     alias that set.  The latter can happen after the vectorizer
+     created pointers of vector type.  */
+  gcc_assert (tag_set == get_alias_set (tag)
+	      || alias_set_subset_of (tag_set, get_alias_set (tag)));
 
   return tag;
 }
@@ -3672,7 +3709,6 @@ new_type_alias (tree ptr, tree var, tree expr)
     }
 
   set_symbol_mem_tag (ptr, ali);
-  TREE_READONLY (tag) = TREE_READONLY (var);
   MTAG_GLOBAL (tag) = is_global_var (var);
 }
 

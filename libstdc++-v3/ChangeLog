@@ -1,3 +1,326 @@
+2008-06-06  Release Manager
+
+	* GCC 4.3.1 released.
+
+2008-06-05  Johannes Singler  <singler@ira.uka.de>
+
+        * include/parallel/random_shuffle.h:
+        (parallel_random_shuffle_drs) Get the actual number of
+        threads after entering the parallel region. Indentation.
+        * include/parallel/algo.h: (random_shuffle(begin, end))
+        Add namespace qualification to avoid ambiguity.
+
+2008-05-15  Johannes Singler  <singler@ira.uka.de>
+
+        * doc/xml/manual/parallel_mode.xml:
+        General revision, correct wrong doc and make it more 
+        readable. 
+
+2008-05-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Revert:
+	2008-05-10  Roberto Bagnara  <bagnara@cs.unipr.it>
+	    	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/debug/vector (vector<>::_M_requires_reallocation): Fix macro.
+	* testsuite/23_containers/vector/debug_mode_requires_reallocation.cc:
+	New.
+
+2008-05-10  Roberto Bagnara  <bagnara@cs.unipr.it>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/debug/vector (vector<>::_M_requires_reallocation): Fix macro.
+	* testsuite/23_containers/vector/debug_mode_requires_reallocation.cc:
+	New.
+
+2008-05-07  Johannes Singler  <singler@ira.uka.de>
+
+	* include/parallel/quicksort.h (parallel_sort_qs_conquer):
+	Explicitly request number of threads in the parallel clause.
+	(parallel_sort_qs): Remove setting the number of threads globally. 
+
+2008-05-06  Johannes Singler  <singler@ira.uka.de>
+
+        * include/parallel/multiway_merge.h (multiway_merge_*_unguarded):
+        Pass sentinel directly, to allow correct determination.
+        (multiway_merge_loser_tree_unguarded): Remove over-cautious assertion.
+        (calls to multiway_merge_*_splitting): Parametrize with type that
+	is correct in all cases.
+        * include/parallel/losertree.h (delete_min_insert (in many classes)):
+        Correct and standardize assertions.
+
+2008-05-05  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* 20_util/make_signed/requirements/typedefs-1.cc: Correct requirements.
+	* 20_util/make_unsigned/requirements/typedefs-1.cc: Same.
+	
+2008-04-29  Benjamin Kosnik  <bkoz@redhat.com>
+
+	PR libstdc++/35922
+	* include/std/unordered_map: Include debug/unordered_map if
+	_GLIBCXX_DEBUG.
+	* testsuite/23_containers/unordered_map/requirements/debug.cc: Move...
+	* testsuite/23_containers/unordered_map/requirements/
+	debug_container.cc: ...here.
+	* testsuite/23_containers/unordered_map/requirements/debug_mode.cc: New.
+	* testsuite/23_containers/unordered_set/requirements/debug.cc: Move...
+	* testsuite/23_containers/unordered_set/requirements/
+	debug_container.cc: ...here.
+	* testsuite/23_containers/unordered_set/requirements/debug_mode.cc: New.
+
+2008-04-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* Makefile.am (install-html, install-pdf): Add dummy targets.
+	* Makefile.in: Regenerate.
+	* doc/Makefile.am (install-html, install-pdf): Remove.
+	* doc/Makefile.in: Regenerate.
+
+2008-04-28  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* include/Makefile.am: Fix most stamp rules to regenerate
+	the links for all sources newer than the stamp file.
+	* include/Makefile.in: Regenerate.
+
+2008-05-25  Benjamin Kosnik  <bkoz@redhat.com>
+
+        Revert PR libstdc++/35887 
+        * configure.ac: Revert.
+        * acinclude.m4: Same.
+        * configure: Regenerate.
+        * include/Makefile.am: Revert.
+        * include/Makefile.in: Regenerate.
+	
+2008-04-24  Benjamin Kosnik  <bkoz@redhat.com>
+
+        PR libstdc++/35887 
+        * configure.ac: Add default argument to GLIBCXX_ENABLE_PARALLEL.
+        * acinclude.m4 (GLIBCXX_ENABLE_PARALLEL): Check for --disable-libgomp.
+        * configure: Regenerate.
+        * include/Makefile.am (parallel_headers): Make conditional on
+        ENABLE_PARALLEL.
+        * include/Makefile.in: Regenerate.
+
+2008-04-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR libstdc++/35954
+	* include/Makefile.am (pch*_output): Do not touch pch*_output_anchor.
+	Call 'mkdir -p' unconditionally, but ignore its return value.
+	* include/Makefile.in: Regenerate.
+
+2008-04-23  Johannes Singler  <singler@ira.uka.de>
+
+        * include/parallel/multiway_merge.h
+        (multiway_merge_loser_tree):
+        Leave checks to callers, add precondition instead.
+        (multiway_merge_loser_tree_unguarded): Likewise.
+        (multiway_merge_loser_tree_sentinel): Likewise.
+        (sequential_multiway_merge): Added checks for total length 0.
+        (parallel_multiway_merge): Skip empty sequences.
+        (multiway_merge, all variants):
+        Remove temporary variable, return directly.
+        (stable_multiway_merge, all variants): Likewise.
+        (multiway_merge_sentinels, all variants):  Likewise.
+        (stable_multiway_merge_sentinels, all variants): Likewise.
+        * include/parallel/multiseq_selection.h
+        (multiseq_partition): More detailed assertions.
+
+2008-04-14  Benjamin Kosnik  <bkoz@redhat.com>
+
+	PR libstdc++/35816
+	* acinclude.m4 (GLIBCXX_ENABLE_ATOMIC_BUILTINS): Set CXXFLAGS to
+	-O0 when checking for atomic builtins.
+	* configure: Regenerate.
+
+2008-04-10  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* doc/html/*: Regenerate.
+	
+2008-04-10  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* doc/xml/manual/bitmap_allocator.xml: Improve wording a bit.
+	* doc/xml/authors.xml: Fix typos.
+	* doc/xml/faq.xml: Likewise.
+	* doc/xml/manual/abi.xml: Likewise.
+	* doc/xml/manual/allocator.xml: Likewise.
+	* doc/xml/manual/appendix_contributing.xml: Likewise.
+	* doc/xml/manual/backwards_compatibility.xml: Likewise.
+	* doc/xml/manual/build_hacking.xml: Likewise.
+	* doc/xml/manual/codecvt.xml: Likewise.
+	* doc/xml/manual/concurrency.xml: Likewise.
+	* doc/xml/manual/ctype.xml: Likewise.
+	* doc/xml/manual/debug_mode.xml: Likewise.
+	* doc/xml/manual/diagnostics.xml: Likewise.
+	* doc/xml/manual/evolution.xml: Likewise.
+	* doc/xml/manual/extensions.xml: Likewise.
+	* doc/xml/manual/locale.xml: Likewise.
+	* doc/xml/manual/messages.xml: Likewise.
+	* doc/xml/manual/parallel_mode.xml: Likewise.
+	* doc/xml/manual/status_cxx200x.xml: Likewise.
+	* doc/xml/manual/strings.xml: Likewise.
+	* doc/xml/manual/support.xml: Likewise.
+	* doc/xml/manual/test.xml: Likewise.
+	* doc/xml/manual/using.xml: Likewise.
+
+2008-04-10  Benjamin Kosnik  <bkoz@redhat.com>
+	    Johannes Singler  <singler@ira.uka.de>
+
+	* doc/xml/manual/parallel_mode.xml: Remove map/set bulk
+	insertors. Correct omp_set_num_threads example.
+	
+2008-04-07  Johannes Singler  <singler@ira.uka.de>
+
+	* include/parallel/multiway_merge.h: Moved decisions to
+	compile-time instead of run-time.
+	* include/parallel/losertree.h: Removed obsolete variants, added
+	variant that uses pointers in the loser tree.
+	* include/parallel/types.h: Remove obsolete settings options from enum.
+	* include/parallel/features.h: Remove obsolete compile-time switches.
+	* include/parallel/compiletime_settings.h: Remove obsolete variant
+	that copies back *after* sorting.
+	* include/parallel/tags.h: Add one new tag for compile-time switch.
+	* include/parallel/merge.h: Adapt to changes in multiway_merge.h.
+	* include/parallel/multiway_mergesort.h: Adapt to changes in
+	multiway_merge.h. Factor out splitting variants. Remove obsolete
+	variant that copies back *after* sorting.
+	* include/parallel/sort.h: Adapt to changes in multiway_mergesort.h.
+	* testsuite/25_algorithms/sort/35588.cc: Added test case from /
+	for PR 35588.
+
+2008-03-29  Paolo Carlini  <pcarlini@suse.de>
+
+	PR libstdc++/35725
+	* include/bits/stl_algobase.h (__fill_a(_ForwardIterator,
+	_ForwardIterator, _Tp), __fill_a(_Tp*, _Tp*, _Tp),
+	__fill_n_a(_OutputIterator, _Size, _Tp), __fill_n_a(_Tp*, _Size,
+	_Tp)): Fix signatures.
+	* testsuite/25_algorithms/fill/35725.cc: New.
+	* testsuite/25_algorithms/fill_n/35725.cc: Likewise.
+
+2008-03-29  Matthias Klose  <doko@ubuntu.com>
+
+	* config/abi/post/s390-linux-gnu/baseline_symbols.txt: Update.
+	* config/abi/post/ia64-linux-gnu/baseline_symbols.txt: Likewise.
+	* config/abi/post/mips-linux-gnu/baseline_symbols.txt: Likewise.
+	* config/abi/post/sparc-linux-gnu/baseline_symbols.txt: Likewise.
+
+2008-03-25  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* scripts/run_doxygen: Remove html_output_dir. Downgrade to
+	Doxygen 1.5.1.
+	* doc/doxygen/style.css: Delete.
+	* doc/doxygen/user.cfg.in: Regenerate with Doxygen 1.5.1.
+	(INPUT): Update.
+	(PREDEFINED): Update.
+	(HTML_OUTPUT): Remove html_output_dir, use html.
+	(HTML_STYLESHEET): Remove style.css.
+	* doc/doxygen/tables.html: Remove style.css use.
+	* doc/doxygen/mainpage.html: Nested lists for Namespaces and Classes.
+	* doc/doxygen/doxygroups.cc: Namespace edits.
+	* doc/doxygen/Intro.3: Correct typo.
+
+	* doc/xml/api.xml: Add gcc-4.3 links.
+	* doc/html/api.html: Regenerate.	
+	
+	* include/debug/debug.h: Document namepaces here.
+	* include/parallel/base.h: Same.
+	* include/ext/typelist.h: Same.
+	* include/ext/pb_ds/tag_and_trait.hpp: Same.
+	
+	* include/tr1_impl/random: Adjust line break.
+	* include/tr1_impl/unordered_map: Correct and or add markup.
+	* include/tr1_impl/boost_shared_ptr.h: Correct and or add markup.
+	* include/tr1_impl/functional_hash.h: Same.
+	* include/tr1_impl/cmath: Same.
+	* include/tr1_impl/functional: Same.
+	* include/tr1_impl/unordered_set: Same.
+	* include/tr1_impl/complex: Same.
+	* include/tr1_impl/type_traits: Same.
+	* include/tr1_impl/regex: Same.
+	* include/tr1_impl/array: Same.
+	* include/std/tuple: Same.
+	* include/std/date_time: Same.
+	* include/std/system_error: Same.
+	* include/std/type_traits: Same.
+	* include/ext/enc_filebuf.h: Same.
+	* include/ext/throw_allocator.h: Same.
+	* include/ext/pool_allocator.h: Same.
+	* include/ext/bitmap_allocator.h: Same.
+	* include/ext/concurrence.h: Same.
+	* include/ext/codecvt_specializations.h: Same.
+	* include/ext/stdio_sync_filebuf.h: Same.
+	* include/ext/array_allocator.h: Same.
+	* include/ext/mt_allocator.h: Same.
+	* include/bits/locale_classes.h: Same.
+	* include/bits/locale_facets.h: Same.
+	* include/bits/codecvt.h: Same.
+	* include/bits/char_traits.h: Same.
+	* include/bits/allocator.h: Same.
+	* include/bits/locale_facets_nonio.h: Same.
+	* include/tr1/poly_laguerre.tcc: Same.
+	* include/tr1/riemann_zeta.tcc: Same.
+	* include/tr1/beta_function.tcc: Same.
+	* include/tr1/tuple: Same.
+	* include/tr1/exp_integral.tcc: Same.
+	* include/tr1/gamma.tcc: Same.
+	* include/tr1/hypergeometric.tcc: Same.
+	* include/tr1/modified_bessel_func.tcc: Same.
+	* include/tr1/legendre_function.tcc: Same.
+	* include/tr1/type_traits: Same.
+	* include/tr1/special_function_util.h: Same.
+	* include/tr1/bessel_function.tcc: Same.
+	* include/tr1/cmath: Same.
+	* include/tr1/poly_hermite.tcc: Same.
+	* include/tr1/ell_integral.tcc: Same.
+	* config/abi/compatibility.h: Adjust file name.
+
+	* testsuite/19_diagnostics/error_category/cons/copy_neg.cc: Adjust
+	line numbers.	
+	* testsuite/20_util/make_signed/requirements/typedefs_neg.cc: Same.
+	* testsuite/20_util/make_unsigned/requirements/typedefs_neg.cc: Same.
+
+2008-03-23  Paolo Carlini  <pcarlini@suse.de>
+
+	* doc/xml/faq.xml: Fix various links.
+	* doc/xml/api.xml: Likewise.
+	* doc/xml/manual/parallel_mode.xml: Likewise.
+	* doc/html/faq.html: Regenerate.
+	* doc/html/api.html: Likewise.
+	* doc/html/manual/bk01pt12ch31s03.html: Likewise.
+
+2008-03-20  Paolo Carlini  <pcarlini@suse.de>
+
+	PR libstdc++/35637
+	* include/tr1_impl/type_traits (struct __in_array): Add back.
+	(is_function): Use it.
+	* testsuite/tr1/4_metaprogramming/is_function/35637.cc: New.
+
+2008-03-19  Benjamin Kosnik  <bkoz@redhat.com>
+
+	PR libstdc++/35256
+	* doc/xml/manual/parallel_mode.xml: Correct configuration documentation.
+	* doc/html/manual/bk01pt12ch31s04.html: Regenerate.
+
+2008-03-13  Dennis Czeremin  <dennis.czeremin@smiths-heimann.com>
+
+	PR libstdc++/35566
+	* include/bits/stl_multimap.h (multimap<>::multimap(_InputIterator,
+	_InputIterator)): Forward to _M_insert_equal, not _M_insert_unique.
+
+2008-03-13  Paolo Carlini  <pcarlini@suse.de>
+
+	PR libstdc++/35541
+	* include/debug/functions.h (__check_sorted_set_aux): Fix signature.
+	* testsuite/25_algorithms/set_difference/35541.cc: New.
+
+2008-03-06  Chris Jefferson  <chris@bubblescope.net>
+	    Paolo Carlini  <pcarlini@suse.de>
+
+	PR libstdc++/35480
+	* include/tr1/tuple (operator==, operator<): Fix.
+	* include/std/tuple (operator==, operator<): Likewise.
+	* testsuite/tr1/6_containers/tuple/comparison_operators/35480.cc: New.
+	* testsuite/20_util/tuple/comparison_operators/35480.cc: Likewise.
+
 2008-03-05  Release Manager
 
 	* GCC 4.3.0 released.

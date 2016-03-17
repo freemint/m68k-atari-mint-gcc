@@ -1,3 +1,207 @@
+2008-06-06  Release Manager
+
+	* GCC 4.3.1 released.
+
+2008-05-27  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR c++/35909
+	* call.c (convert_like_real): Convert bitfield to desired type
+	before creating temporary.
+
+2008-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/36237
+	* cp-gimplify.c (cxx_omp_clause_apply_fn): Call
+	fold_build_cleanup_point_expr on build_call_a results.
+
+	PR c++/36308
+	* semantics.c (omp_clause_info_fndecl): New function.
+	(finish_omp_clauses): Use it.
+
+2008-05-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/36023
+	* cp-tree.h (check_array_initializer): New prototype.
+	* decl.c (check_array_initializer): New function.
+	(check_initializer): Call it.
+	* semantics.c (finish_compound_literal): Call it for ARRAY_TYPEs.
+
+2008-05-11  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* parser.c (cp_parser_omp_clause_reduction): Add missing "expected"
+	in error message.
+	(cp_parser_omp_clause_schedule): Remove superfluous "expected"
+	in error message.
+
+	PR c++/35578
+	* parser.c (cp_parser_decl_specifier_seq): Add location to error
+	message.
+
+2008-04-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35986
+	* pt.c (more_specialized_fn): Stop the loop even if there are no
+	arguments before ellipsis.
+
+2008-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35650
+	* parser.c (cp_parser_lookup_name): Look through single function
+	OVERLOAD.
+
+	PR c++/35987
+	* typeck.c (build_modify_expr) <case PREINCREMENT_EXPR>: Don't build
+	COMPOUND_EXPR if the second argument would be error_mark_node.
+
+2008-04-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35758
+	* cp-tree.h (cp_reconstruct_complex_type): New prototype.
+	* cp-objcp-common.h (LANG_HOOKS_RECONSTRUCT_COMPLEX_TYPE): Define.
+	* decl2.c (is_late_template_attribute): Only make vector_size
+	late tmpl attribute if argument is type or value dependent.
+	(cp_reconstruct_complex_type): New function.
+
+2008-04-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35316
+	* semantics.c (finish_decltype_type): Check DECL_BIT_FIELD_TYPE
+	to see if DECL_BIT_FIELD_TYPE should be used, not some other flag.
+	* typeck.c (is_bitfield_expr_with_lowered_type): Likewise.
+
+2008-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35747
+	* semantics.c (finish_stmt_expr): Call pop_stmt_list even if the stmt
+	expression is errorneous.
+
+2008-04-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35325
+	* tree.c (cp_tree_equal): Handle FIXED_CST.
+
+	PR c++/35678
+	* pt.c (template_template_parm_bindings_ok_p): Set 
+	processing_template_decl while in this function.
+
+2008-04-18  Jason Merrill  <jason@redhat.com>
+
+	PR c++/33486
+	* name-lookup.c (arg_assoc_namespace): Look down into inline 
+	namespaces, too.
+
+2008-04-17  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* parser.c (cp_parser_asm_specification_opt): Print CPP_CLOSE_PAREN
+	as `)', not as `('.
+
+2008-04-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35773
+	* call.c (build_user_type_conversion_1): Represent second step of 
+	copy-init with an rvalue conversion.
+	(convert_like_real) [ck_user]: Don't implicitly add it here.
+
+2008-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/35751
+	* decl.c (layout_var_decl): If extern or static var has variable
+	size, set TREE_TYPE (decl) to error_mark_node.
+
+2008-04-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35708
+	* semantics.c (finish_compound_literal): Return a TARGET_EXPR, 
+	not a pushed variable.
+
+2008-04-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35734
+	* class.c (type_has_user_nondefault_constructor): A template 
+	counts as a nondefault constructor.
+
+2008-04-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35741
+	* semantics.c (finish_offsetof): Undo effect of convert_from_reference
+	before calling fold_offsetof.
+
+2008-03-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35546
+	* pt.c (apply_late_template_attributes): Don't call tsubst on
+	first attribute argument if it is IDENTIFIER_NODE.
+
+	PR c++/35332
+	* error.c (dump_expr): Pass {,UN}ORDERED_EXPR, UN{LT,LE,GT,GE,EQ}_EXPR
+	and LTGT_EXPR to pp_expression.
+
+2008-03-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35548
+	* call.c (reference_binding): Check LOOKUP_NO_TEMP_BIND when binding
+	a temp directly to a reference as per DR391.
+
+2008-03-12  Richard Guenther  <rguenther@suse.de>
+
+	PR c++/35469
+	Revert:
+	2008-02-04  Richard Guenther  <rguenther@suse.de>
+
+        PR java/35035
+        * decl.c (record_builtin_java_type): Make jboolean a
+        integer type again where its mode doesn't match that of bool.
+
+	2008-01-25  Richard Guenther  <rguenther@suse.de>
+
+        PR c++/33887
+        * decl.c (record_builtin_java_type): Make __java_boolean
+        a variant of bool.
+        * typeck.c (structural_comptypes): Move TYPE_FOR_JAVA check
+        after TYPE_MAIN_VARIANT check.
+
+2008-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35328
+	* semantics.c (finish_omp_clauses): Look through NOP_EXPR even
+	if errorcount.
+
+	PR c++/35337
+	* semantics.c (finish_omp_clauses): Use %qD instead of %qE for
+	DECL_P in not a variable and appears more than once error messages.
+
+2008-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/35028
+	* cp-gimplify.c (cxx_omp_clause_apply_fn): Handle vararg copy ctors.
+
+	PR c++/34964
+	PR c++/35244
+	* semantics.c (finish_omp_threadprivate): Do nothing for error_operand_p
+	vars.  Afterwards ensure v is VAR_DECL.
+
+	PR c++/35078
+	* parser.c (cp_parser_omp_for_loop): If DECL has REFERENCE_TYPE, don't
+	call cp_finish_decl.
+	* semantics.c (finish_omp_for): Fail if DECL doesn't have integral type
+	early.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+        PR c++/35323
+        * name-lookup.c (arg_assoc_type): Handle FIXED_POINT_TYPE.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+        PR c++/35333
+        * error.c (dump_expr): Handle CONJ_EXPR.
+
+2008-03-06  Paolo Carlini  <pcarlini@suse.de>
+
+        PR c++/35338
+        * error.c (dump_type): Handle FIXED_POINT_TYPE.
+	(dump_expr): Handle FIXED_CST.
+	
 2008-03-05  Release Manager
 
 	* GCC 4.3.0 released.

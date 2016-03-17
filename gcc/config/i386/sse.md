@@ -3916,44 +3916,6 @@
   DONE;
 })
 
-(define_expand "vec_widen_smult_hi_v4si"
-  [(match_operand:V2DI 0 "register_operand" "")
-   (match_operand:V4SI 1 "register_operand" "")
-   (match_operand:V4SI 2 "register_operand" "")]
-  "TARGET_SSE2"
-{
-  rtx op1, op2, t1, t2;
-
-  op1 = operands[1];
-  op2 = operands[2];
-  t1 = gen_reg_rtx (V4SImode);
-  t2 = gen_reg_rtx (V4SImode);
-
-  emit_insn (gen_vec_interleave_highv4si (t1, op1, op1));
-  emit_insn (gen_vec_interleave_highv4si (t2, op2, op2));
-  emit_insn (gen_sse2_umulv2siv2di3 (operands[0], t1, t2));
-  DONE;
-})
-
-(define_expand "vec_widen_smult_lo_v4si"
-  [(match_operand:V2DI 0 "register_operand" "")
-   (match_operand:V4SI 1 "register_operand" "")
-   (match_operand:V4SI 2 "register_operand" "")]
-  "TARGET_SSE2"
-{
-  rtx op1, op2, t1, t2;
-
-  op1 = operands[1];
-  op2 = operands[2];
-  t1 = gen_reg_rtx (V4SImode);
-  t2 = gen_reg_rtx (V4SImode);
-
-  emit_insn (gen_vec_interleave_lowv4si (t1, op1, op1));
-  emit_insn (gen_vec_interleave_lowv4si (t2, op2, op2));
-  emit_insn (gen_sse2_umulv2siv2di3 (operands[0], t1, t2));
-  DONE;
-})
-
 (define_expand "vec_widen_umult_hi_v4si"
   [(match_operand:V2DI 0 "register_operand" "")
    (match_operand:V4SI 1 "register_operand" "")
@@ -5044,7 +5006,7 @@
 	    (match_operand:DI 2 "nonimmediate_operand" "rm"))
 	  (match_operand:V2DI 1 "register_operand" "0")
 	  (match_operand:SI 3 "const_pow2_1_to_2_operand" "n")))]
-  "TARGET_SSE4_1"
+  "TARGET_SSE4_1 && TARGET_64BIT"
 {
   operands[3] = GEN_INT (exact_log2 (INTVAL (operands[3])));
   return "pinsrq\t{%3, %2, %0|%0, %2, %3}";
@@ -6402,7 +6364,7 @@
 	  (mult:V8HI
 	    (zero_extend:V8HI
 	      (vec_select:V4QI
-		(match_operand:V16QI 1 "nonimmediate_operand" "%0")
+		(match_operand:V16QI 1 "nonimmediate_operand" "0")
 		(parallel [(const_int 0)
 			   (const_int 2)
 			   (const_int 4)
@@ -6456,7 +6418,7 @@
 	  (mult:V4HI
 	    (zero_extend:V4HI
 	      (vec_select:V4QI
-		(match_operand:V8QI 1 "nonimmediate_operand" "%0")
+		(match_operand:V8QI 1 "nonimmediate_operand" "0")
 		(parallel [(const_int 0)
 			   (const_int 2)
 			   (const_int 4)

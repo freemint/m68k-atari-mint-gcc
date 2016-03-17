@@ -1768,35 +1768,65 @@ int ix86_isa_flags = TARGET_64BIT_DEFAULT | TARGET_SUBTARGET_ISA_DEFAULT;
    was set or cleared on the command line.  */
 static int ix86_isa_flags_explicit;
 
-/* Define a set of ISAs which aren't available for a given ISA. MMX
-   and SSE ISAs are handled separately.  */
+/* Define a set of ISAs which are available when a given ISA is
+   enabled.  MMX and SSE ISAs are handled separately.  */
 
-#define OPTION_MASK_ISA_MMX_UNSET \
-  (OPTION_MASK_ISA_3DNOW | OPTION_MASK_ISA_3DNOW_UNSET)
-#define OPTION_MASK_ISA_3DNOW_UNSET OPTION_MASK_ISA_3DNOW_A
+#define OPTION_MASK_ISA_MMX_SET OPTION_MASK_ISA_MMX
+#define OPTION_MASK_ISA_3DNOW_SET \
+  (OPTION_MASK_ISA_3DNOW | OPTION_MASK_ISA_MMX_SET)
 
-#define OPTION_MASK_ISA_SSE_UNSET \
-  (OPTION_MASK_ISA_SSE2 | OPTION_MASK_ISA_SSE2_UNSET)
-#define OPTION_MASK_ISA_SSE2_UNSET \
-  (OPTION_MASK_ISA_SSE3 | OPTION_MASK_ISA_SSE3_UNSET)
-#define OPTION_MASK_ISA_SSE3_UNSET \
-  (OPTION_MASK_ISA_SSSE3 | OPTION_MASK_ISA_SSSE3_UNSET)
-#define OPTION_MASK_ISA_SSSE3_UNSET \
-  (OPTION_MASK_ISA_SSE4_1 | OPTION_MASK_ISA_SSE4_1_UNSET)
-#define OPTION_MASK_ISA_SSE4_1_UNSET \
-  (OPTION_MASK_ISA_SSE4_2 | OPTION_MASK_ISA_SSE4_2_UNSET)
-#define OPTION_MASK_ISA_SSE4_2_UNSET OPTION_MASK_ISA_SSE4A
+#define OPTION_MASK_ISA_SSE_SET OPTION_MASK_ISA_SSE
+#define OPTION_MASK_ISA_SSE2_SET \
+  (OPTION_MASK_ISA_SSE2 | OPTION_MASK_ISA_SSE_SET)
+#define OPTION_MASK_ISA_SSE3_SET \
+  (OPTION_MASK_ISA_SSE3 | OPTION_MASK_ISA_SSE2_SET)
+#define OPTION_MASK_ISA_SSSE3_SET \
+  (OPTION_MASK_ISA_SSSE3 | OPTION_MASK_ISA_SSE3_SET)
+#define OPTION_MASK_ISA_SSE4_1_SET \
+  (OPTION_MASK_ISA_SSE4_1 | OPTION_MASK_ISA_SSSE3_SET)
+#define OPTION_MASK_ISA_SSE4_2_SET \
+  (OPTION_MASK_ISA_SSE4_2 | OPTION_MASK_ISA_SSE4_1_SET)
 
 /* SSE4 includes both SSE4.1 and SSE4.2. -msse4 should be the same
-   as -msse4.1 -msse4.2.  -mno-sse4 should the same as -mno-sse4.1. */
-#define OPTION_MASK_ISA_SSE4 \
-  (OPTION_MASK_ISA_SSE4_1 | OPTION_MASK_ISA_SSE4_2)
+   as -msse4.2.  */
+#define OPTION_MASK_ISA_SSE4_SET OPTION_MASK_ISA_SSE4_2_SET
+
+#define OPTION_MASK_ISA_SSE4A_SET \
+  (OPTION_MASK_ISA_SSE4A | OPTION_MASK_ISA_SSE3_SET)
+#define OPTION_MASK_ISA_SSE5_SET \
+  (OPTION_MASK_ISA_SSE5 | OPTION_MASK_ISA_SSE4A_SET)
+
+/* Define a set of ISAs which aren't available when a given ISA is
+   disabled.  MMX and SSE ISAs are handled separately.  */
+
+#define OPTION_MASK_ISA_MMX_UNSET \
+  (OPTION_MASK_ISA_MMX | OPTION_MASK_ISA_3DNOW_UNSET)
+#define OPTION_MASK_ISA_3DNOW_UNSET \
+  (OPTION_MASK_ISA_3DNOW | OPTION_MASK_ISA_3DNOW_A_UNSET)
+#define OPTION_MASK_ISA_3DNOW_A_UNSET OPTION_MASK_ISA_3DNOW_A
+
+#define OPTION_MASK_ISA_SSE_UNSET \
+  (OPTION_MASK_ISA_SSE | OPTION_MASK_ISA_SSE2_UNSET)
+#define OPTION_MASK_ISA_SSE2_UNSET \
+  (OPTION_MASK_ISA_SSE2 | OPTION_MASK_ISA_SSE3_UNSET)
+#define OPTION_MASK_ISA_SSE3_UNSET \
+  (OPTION_MASK_ISA_SSE3 \
+   | OPTION_MASK_ISA_SSSE3_UNSET \
+   | OPTION_MASK_ISA_SSE4A_UNSET )
+#define OPTION_MASK_ISA_SSSE3_UNSET \
+  (OPTION_MASK_ISA_SSSE3 | OPTION_MASK_ISA_SSE4_1_UNSET)
+#define OPTION_MASK_ISA_SSE4_1_UNSET \
+  (OPTION_MASK_ISA_SSE4_1 | OPTION_MASK_ISA_SSE4_2_UNSET)
+#define OPTION_MASK_ISA_SSE4_2_UNSET OPTION_MASK_ISA_SSE4_2
+
+/* SSE4 includes both SSE4.1 and SSE4.2.  -mno-sse4 should the same
+   as -mno-sse4.1. */
 #define OPTION_MASK_ISA_SSE4_UNSET OPTION_MASK_ISA_SSE4_1_UNSET
 
-#define OPTION_MASK_ISA_SSE4A_UNSET OPTION_MASK_ISA_SSE4
+#define OPTION_MASK_ISA_SSE4A_UNSET \
+  (OPTION_MASK_ISA_SSE4A | OPTION_MASK_ISA_SSE5_UNSET)
 
-#define OPTION_MASK_ISA_SSE5_UNSET \
-  (OPTION_MASK_ISA_3DNOW | OPTION_MASK_ISA_3DNOW_UNSET)
+#define OPTION_MASK_ISA_SSE5_UNSET OPTION_MASK_ISA_SSE5
 
 /* Vectorization library interface and handlers.  */
 tree (*ix86_veclib_handler)(enum built_in_function, tree, tree) = NULL;
@@ -1810,8 +1840,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
   switch (code)
     {
     case OPT_mmmx:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_MMX;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_MMX_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_MMX_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_MMX_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_MMX_UNSET;
@@ -1819,8 +1853,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_m3dnow:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_3DNOW;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_3DNOW_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_3DNOW_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_3DNOW_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_3DNOW_UNSET;
@@ -1831,8 +1869,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return false;
 
     case OPT_msse:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE_UNSET;
@@ -1840,8 +1882,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse2:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE2;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE2_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE2_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE2_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE2_UNSET;
@@ -1849,8 +1895,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse3:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE3;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE3_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE3_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE3_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE3_UNSET;
@@ -1858,8 +1908,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_mssse3:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSSE3;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSSE3_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSSE3_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSSE3_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSSE3_UNSET;
@@ -1867,8 +1921,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse4_1:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_1;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE4_1_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_1_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE4_1_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_1_UNSET;
@@ -1876,8 +1934,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse4_2:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_2;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE4_2_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_2_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE4_2_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_2_UNSET;
@@ -1885,8 +1947,8 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse4:
-      ix86_isa_flags |= OPTION_MASK_ISA_SSE4;
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4;
+      ix86_isa_flags |= OPTION_MASK_ISA_SSE4_SET;
+      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4_SET;
       return true;
 
     case OPT_mno_sse4:
@@ -1895,8 +1957,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse4a:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4A;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE4A_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4A_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE4A_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE4A_UNSET;
@@ -1904,8 +1970,12 @@ ix86_handle_option (size_t code, const char *arg ATTRIBUTE_UNUSED, int value)
       return true;
 
     case OPT_msse5:
-      ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE5;
-      if (!value)
+      if (value)
+	{
+	  ix86_isa_flags |= OPTION_MASK_ISA_SSE5_SET;
+	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE5_SET;
+	}
+      else
 	{
 	  ix86_isa_flags &= ~OPTION_MASK_ISA_SSE5_UNSET;
 	  ix86_isa_flags_explicit |= OPTION_MASK_ISA_SSE5_UNSET;
@@ -2530,44 +2600,12 @@ override_options (void)
   if (!TARGET_80387)
     target_flags |= MASK_NO_FANCY_MATH_387;
 
-  /* Turn on SSE4A bultins for -msse5.  */
-  if (TARGET_SSE5)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE4A;
-
-  /* Turn on SSE4.1 builtins for -msse4.2.  */
-  if (TARGET_SSE4_2)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE4_1;
-
-  /* Turn on SSSE3 builtins for -msse4.1.  */
-  if (TARGET_SSE4_1)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSSE3;
-
-  /* Turn on SSE3 builtins for -mssse3.  */
-  if (TARGET_SSSE3)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE3;
-
-  /* Turn on SSE3 builtins for -msse4a.  */
-  if (TARGET_SSE4A)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE3;
-
-  /* Turn on SSE2 builtins for -msse3.  */
-  if (TARGET_SSE3)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE2;
-
-  /* Turn on SSE builtins for -msse2.  */
-  if (TARGET_SSE2)
-    ix86_isa_flags |= OPTION_MASK_ISA_SSE;
-
   /* Turn on MMX builtins for -msse.  */
   if (TARGET_SSE)
     {
       ix86_isa_flags |= OPTION_MASK_ISA_MMX & ~ix86_isa_flags_explicit;
       x86_prefetch_sse = true;
     }
-
-  /* Turn on MMX builtins for 3Dnow.  */
-  if (TARGET_3DNOW)
-    ix86_isa_flags |= OPTION_MASK_ISA_MMX;
 
   /* Turn on popcnt instruction for -msse4.2 or -mabm.  */
   if (TARGET_SSE4_2 || TARGET_ABM)
@@ -2695,6 +2733,12 @@ override_options (void)
      can be optimized to ap = __builtin_next_arg (0).  */
   if (!TARGET_64BIT || TARGET_64BIT_MS_ABI)
     targetm.expand_builtin_va_start = NULL;
+
+#ifdef USE_IX86_CLD
+  /* Use -mcld by default for 32-bit code if configured with --enable-cld.  */
+  if (!TARGET_64BIT)
+    target_flags |= MASK_CLD & ~target_flags_explicit;
+#endif
 }
 
 /* Return true if this goes in large data/bss.  */
@@ -3463,7 +3507,7 @@ init_cumulative_args (CUMULATIVE_ARGS *cum,  /* Argument info to initialize */
     {
       /* If there are variable arguments, then we won't pass anything
          in registers in 32-bit mode. */
-      if (cum->maybe_vaarg)
+      if (stdarg_p (fntype))
 	{
 	  cum->nregs = 0;
 	  cum->sse_nregs = 0;
@@ -4466,12 +4510,12 @@ ix86_pass_by_reference (CUMULATIVE_ARGS *cum ATTRIBUTE_UNUSED,
 }
 
 /* Return true when TYPE should be 128bit aligned for 32bit argument passing
-   ABI.  Only called if TARGET_SSE.  */
+   ABI.  */
 static bool
-contains_128bit_aligned_vector_p (tree type)
+contains_aligned_value_p (tree type)
 {
   enum machine_mode mode = TYPE_MODE (type);
-  if (SSE_REG_MODE_P (mode)
+  if (((TARGET_SSE && SSE_REG_MODE_P (mode)) || mode == TDmode)
       && (!TYPE_USER_ALIGN (type) || TYPE_ALIGN (type) > 128))
     return true;
   if (TYPE_ALIGN (type) < 128)
@@ -4492,7 +4536,7 @@ contains_128bit_aligned_vector_p (tree type)
 	    for (field = TYPE_FIELDS (type); field; field = TREE_CHAIN (field))
 	      {
 		if (TREE_CODE (field) == FIELD_DECL
-		    && contains_128bit_aligned_vector_p (TREE_TYPE (field)))
+		    && contains_aligned_value_p (TREE_TYPE (field)))
 		  return true;
 	      }
 	    break;
@@ -4500,7 +4544,7 @@ contains_128bit_aligned_vector_p (tree type)
 
 	case ARRAY_TYPE:
 	  /* Just for use if some languages passes arrays by value.  */
-	  if (contains_128bit_aligned_vector_p (TREE_TYPE (type)))
+	  if (contains_aligned_value_p (TREE_TYPE (type)))
 	    return true;
 	  break;
 
@@ -4524,7 +4568,8 @@ ix86_function_arg_boundary (enum machine_mode mode, tree type)
     align = GET_MODE_ALIGNMENT (mode);
   if (align < PARM_BOUNDARY)
     align = PARM_BOUNDARY;
-  if (!TARGET_64BIT)
+  /* In 32bit, only _Decimal128 is aligned to its natural boundary.  */
+  if (!TARGET_64BIT && mode != TDmode)
     {
       /* i386 ABI defines all arguments to be 4 byte aligned.  We have to
 	 make an exception for SSE modes since these require 128bit
@@ -4533,16 +4578,14 @@ ix86_function_arg_boundary (enum machine_mode mode, tree type)
 	 The handling here differs from field_alignment.  ICC aligns MMX
 	 arguments to 4 byte boundaries, while structure fields are aligned
 	 to 8 byte boundaries.  */
-      if (!TARGET_SSE)
-	align = PARM_BOUNDARY;
-      else if (!type)
+      if (!type)
 	{
-	  if (!SSE_REG_MODE_P (mode))
+	  if (!(TARGET_SSE && SSE_REG_MODE_P (mode)) && mode != TDmode)
 	    align = PARM_BOUNDARY;
 	}
       else
 	{
-	  if (!contains_128bit_aligned_vector_p (type))
+	  if (!contains_aligned_value_p (type))
 	    align = PARM_BOUNDARY;
 	}
     }
@@ -6448,6 +6491,10 @@ ix86_expand_prologue (void)
 	emit_insn (gen_prologue_use (pic_offset_table_rtx));
       emit_insn (gen_blockage ());
     }
+
+  /* Emit cld instruction if stringops are used in the function.  */
+  if (TARGET_CLD && ix86_current_function_needs_cld)
+    emit_insn (gen_cld ());
 }
 
 /* Emit code to restore saved registers using MOV insns.  First register
@@ -16736,7 +16783,8 @@ ia32_multipass_dfa_lookahead (void)
 int
 ix86_constant_alignment (tree exp, int align)
 {
-  if (TREE_CODE (exp) == REAL_CST)
+  if (TREE_CODE (exp) == REAL_CST || TREE_CODE (exp) == VECTOR_CST
+      || TREE_CODE (exp) == INTEGER_CST)
     {
       if (TYPE_MODE (TREE_TYPE (exp)) == DFmode && align < 64)
 	return 64;
@@ -17826,10 +17874,10 @@ static const struct builtin_description bdesc_pcmpistr[] =
 static const struct builtin_description bdesc_crc32[] =
 {
   /* SSE4.2 */
-  { OPTION_MASK_ISA_SSE4_2 | OPTION_MASK_ISA_64BIT, CODE_FOR_sse4_2_crc32qi, 0, IX86_BUILTIN_CRC32QI, UNKNOWN, 0 },
+  { OPTION_MASK_ISA_SSE4_2, CODE_FOR_sse4_2_crc32qi, 0, IX86_BUILTIN_CRC32QI, UNKNOWN, 0 },
   { OPTION_MASK_ISA_SSE4_2, CODE_FOR_sse4_2_crc32hi, 0, IX86_BUILTIN_CRC32HI, UNKNOWN, 0 },
   { OPTION_MASK_ISA_SSE4_2, CODE_FOR_sse4_2_crc32si, 0, IX86_BUILTIN_CRC32SI, UNKNOWN, 0 },
-  { OPTION_MASK_ISA_SSE4_2, CODE_FOR_sse4_2_crc32di, 0, IX86_BUILTIN_CRC32DI, UNKNOWN, 0 },
+  { OPTION_MASK_ISA_SSE4_2 | OPTION_MASK_ISA_64BIT, CODE_FOR_sse4_2_crc32di, 0, IX86_BUILTIN_CRC32DI, UNKNOWN, 0 },
 };
 
 /* SSE builtins with 3 arguments and the last argument must be an immediate or xmm0.  */
@@ -19464,7 +19512,7 @@ ix86_init_mmx_sse_builtins (void)
 				    long_long_unsigned_type_node,
 				    long_long_unsigned_type_node,
 				    NULL_TREE);
-  def_builtin_const (OPTION_MASK_ISA_SSE4_2, "__builtin_ia32_crc32di", ftype, IX86_BUILTIN_CRC32DI);
+  def_builtin_const (OPTION_MASK_ISA_SSE4_2 | OPTION_MASK_ISA_64BIT, "__builtin_ia32_crc32di", ftype, IX86_BUILTIN_CRC32DI);
 
   /* AMDFAM10 SSE4A New built-ins  */
   def_builtin (OPTION_MASK_ISA_SSE4A, "__builtin_ia32_movntsd", void_ftype_pdouble_v2df, IX86_BUILTIN_MOVNTSD);
@@ -22630,6 +22678,7 @@ x86_this_parameter (tree function)
 {
   tree type = TREE_TYPE (function);
   bool aggr = aggregate_value_p (TREE_TYPE (type), type) != 0;
+  int nregs;
 
   if (TARGET_64BIT)
     {
@@ -22642,11 +22691,25 @@ x86_this_parameter (tree function)
       return gen_rtx_REG (DImode, parm_regs[aggr]);
     }
 
-  if (ix86_function_regparm (type, function) > 0 && !stdarg_p (type))
+  nregs = ix86_function_regparm (type, function);
+
+  if (nregs > 0 && !stdarg_p (type))
     {
-      int regno = AX_REG;
+      int regno;
+
       if (lookup_attribute ("fastcall", TYPE_ATTRIBUTES (type)))
-	regno = CX_REG;
+	regno = aggr ? DX_REG : CX_REG;
+      else
+        {
+	  regno = AX_REG;
+	  if (aggr)
+	    {
+	      regno = DX_REG;
+	      if (nregs == 1)
+		return gen_rtx_MEM (SImode,
+				    plus_constant (stack_pointer_rtx, 4));
+	    }
+	}
       return gen_rtx_REG (SImode, regno);
     }
 
