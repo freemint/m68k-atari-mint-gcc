@@ -10477,6 +10477,12 @@ cp_parser_template_argument_list (cp_parser* parser)
          argument pack. */
       if (cp_lexer_next_token_is (parser->lexer, CPP_ELLIPSIS))
         {
+	  if (argument == error_mark_node)
+	    {
+	      cp_token *token = cp_lexer_peek_token (parser->lexer);
+	      error ("%Hexpected parameter pack before %<...%>",
+		     &token->location);
+	    }
           /* Consume the `...' token. */
           cp_lexer_consume_token (parser->lexer);
 
@@ -13290,13 +13296,6 @@ cp_parser_direct_declarator (cp_parser* parser,
 						 &non_constant_p);
 	      if (!non_constant_p)
 		bounds = fold_non_dependent_expr (bounds);
-	      else if (processing_template_decl)
-		{
-		  /* Remember this wasn't a constant-expression.  */
-		  bounds = build_nop (TREE_TYPE (bounds), bounds);
-		  TREE_SIDE_EFFECTS (bounds) = 1;
-		}
-
 	      /* Normally, the array bound must be an integral constant
 		 expression.  However, as an extension, we allow VLAs
 		 in function scopes.  */
@@ -13305,6 +13304,12 @@ cp_parser_direct_declarator (cp_parser* parser,
 		  error ("%Harray bound is not an integer constant",
 			 &token->location);
 		  bounds = error_mark_node;
+		}
+	      else if (processing_template_decl && !error_operand_p (bounds))
+		{
+		  /* Remember this wasn't a constant-expression.  */
+		  bounds = build_nop (TREE_TYPE (bounds), bounds);
+		  TREE_SIDE_EFFECTS (bounds) = 1;
 		}
 	    }
 	  else
@@ -13803,8 +13808,17 @@ cp_parser_type_id_1 (cp_parser* parser, bool is_template_arg)
   if (type_specifier_seq.type
       && type_uses_auto (type_specifier_seq.type))
     {
-      error ("invalid use of %<auto%>");
-      return error_mark_node;
+      /* A type-id with type 'auto' is only ok if the abstract declarator
+	 is a function declarator with a late-specified return type.  */
+      if (abstract_declarator
+	  && abstract_declarator->kind == cdk_function
+	  && abstract_declarator->u.function.late_return_type)
+	/* OK */;
+      else
+	{
+	  error ("invalid use of %<auto%>");
+	  return error_mark_node;
+	}
     }
   
   return groktypename (&type_specifier_seq, abstract_declarator,

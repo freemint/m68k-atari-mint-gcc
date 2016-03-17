@@ -19141,6 +19141,8 @@ test -d gnu/java/nio/channels || mkdir gnu/java/nio/channels
 
 
 # Likewise for natVMSecureRandom.cc
+test -d gnu/java/security || mkdir gnu/java/security
+test -d gnu/java/security/jce || mkdir gnu/java/security/jce
 test -d gnu/java/security/jce/prng || mkdir gnu/java/security/jce/prng
           ac_config_links="$ac_config_links gnu/java/security/jce/prng/natVMSecureRandom.cc:gnu/java/security/jce/prng/natVMSecureRandom${FILE-${PLATFORM}}.cc"
 
@@ -28310,7 +28312,7 @@ echo "${ECHO_T}arch directory: ${host_cpu}" >&6
 
 fi
 
-                                                                                                              ac_config_files="$ac_config_files Makefile libgcj.pc libgcj.spec libgcj-test.spec gcj/Makefile include/Makefile testsuite/Makefile contrib/aotcompile.py contrib/aot-compile contrib/aot-compile-rpm contrib/rebuild-gcj-db"
+                                                                                                                        ac_config_files="$ac_config_files Makefile libgcj.pc libgcj.spec libgcj-test.spec gcj/Makefile include/Makefile testsuite/Makefile contrib/aotcompile.py contrib/aot-compile contrib/aot-compile-rpm contrib/generate-cacerts.pl contrib/rebuild-gcj-db"
 
 
 if test ${multilib} = yes; then
@@ -29560,6 +29562,7 @@ do
   "contrib/aotcompile.py" ) CONFIG_FILES="$CONFIG_FILES contrib/aotcompile.py" ;;
   "contrib/aot-compile" ) CONFIG_FILES="$CONFIG_FILES contrib/aot-compile" ;;
   "contrib/aot-compile-rpm" ) CONFIG_FILES="$CONFIG_FILES contrib/aot-compile-rpm" ;;
+  "contrib/generate-cacerts.pl" ) CONFIG_FILES="$CONFIG_FILES contrib/generate-cacerts.pl" ;;
   "contrib/rebuild-gcj-db" ) CONFIG_FILES="$CONFIG_FILES contrib/rebuild-gcj-db" ;;
   "scripts/jar" ) CONFIG_FILES="$CONFIG_FILES scripts/jar" ;;
   "include/platform.h" ) CONFIG_LINKS="$CONFIG_LINKS include/platform.h:include/$PLATFORMH" ;;

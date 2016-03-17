@@ -199,6 +199,15 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 	      print_gimple_stmt (vect_dump, stmt, 0, TDF_SLIM);
 	    }
 
+          if (gimple_has_volatile_ops (stmt))
+            {
+              if (vect_print_dump_info (REPORT_UNVECTORIZED_LOOPS))
+                fprintf (vect_dump, "not vectorized: stmt has volatile"
+                                    " operands");
+
+              return false;
+            }
+
 	  gcc_assert (stmt_info);
 
 	  /* skip stmts which do not need to be vectorized.  */
@@ -2187,7 +2196,7 @@ vect_analyze_group_access (struct data_reference *dr)
       tree next_step;
       tree prev_init = DR_INIT (data_ref);
       gimple prev = stmt;
-      HOST_WIDE_INT diff, count_in_bytes;
+      HOST_WIDE_INT diff, count_in_bytes, gaps = 0;
 
       while (next)
         {
@@ -2249,6 +2258,8 @@ vect_analyze_group_access (struct data_reference *dr)
 		    fprintf (vect_dump, "interleaved store with gaps");
 		  return false;
 		}
+
+              gaps += diff - 1;
 	    }
 
           /* Store the gap from the previous member of the group. If there is no
@@ -2265,8 +2276,9 @@ vect_analyze_group_access (struct data_reference *dr)
          the type to get COUNT_IN_BYTES.  */
       count_in_bytes = type_size * count;
 
-      /* Check that the size of the interleaving is not greater than STEP.  */
-      if (dr_step < count_in_bytes)
+      /* Check that the size of the interleaving (including gaps) is not greater
+         than STEP.  */
+      if (dr_step && dr_step < count_in_bytes + gaps * type_size)
         {
           if (vect_print_dump_info (REPORT_DETAILS))
             {

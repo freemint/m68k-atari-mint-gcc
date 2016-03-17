@@ -929,6 +929,17 @@ decls_match (tree newdecl, tree olddecl)
       tree p1 = TYPE_ARG_TYPES (f1);
       tree p2 = TYPE_ARG_TYPES (f2);
 
+      /* Specializations of different templates are different functions
+	 even if they have the same type.  */
+      tree t1 = (DECL_USE_TEMPLATE (newdecl)
+		 ? DECL_TI_TEMPLATE (newdecl)
+		 : NULL_TREE);
+      tree t2 = (DECL_USE_TEMPLATE (olddecl)
+		 ? DECL_TI_TEMPLATE (olddecl)
+		 : NULL_TREE);
+      if (t1 != t2)
+	return 0;
+
       if (CP_DECL_CONTEXT (newdecl) != CP_DECL_CONTEXT (olddecl)
 	  && ! (DECL_EXTERN_C_P (newdecl)
 		&& DECL_EXTERN_C_P (olddecl)))
@@ -5533,7 +5544,9 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
 	  TREE_TYPE (decl) = error_mark_node;
 	  return;
 	}
-      else if (describable_type (init))
+      if (TREE_CODE (init) == TREE_LIST)
+	init = build_x_compound_expr_from_list (init, "initializer");
+      if (describable_type (init))
 	{
 	  type = TREE_TYPE (decl) = do_auto_deduction (type, init, auto_node);
 	  if (type == error_mark_node)
@@ -11001,7 +11014,7 @@ start_enum (tree name, tree underlying_type, bool scoped_enum_p)
           TYPE_UNSIGNED (enumtype) = TYPE_UNSIGNED (underlying_type);
           ENUM_UNDERLYING_TYPE (enumtype) = underlying_type;
         }
-      else
+      else if (!dependent_type_p (underlying_type))
         error ("underlying type %<%T%> of %<%T%> must be an integral type", 
                underlying_type, enumtype);
     }
@@ -11047,6 +11060,8 @@ finish_enum (tree enumtype)
 	TREE_TYPE (TREE_VALUE (values)) = enumtype;
       if (at_function_scope_p ())
 	add_stmt (build_min (TAG_DEFN, enumtype));
+      if (SCOPED_ENUM_P (enumtype))
+	finish_scope ();
       return;
     }
 
@@ -11362,7 +11377,7 @@ build_enumerator (tree name, tree value, tree enumtype)
   TREE_READONLY (decl) = 1;
   DECL_INITIAL (decl) = value;
 
-  if (context && context == current_class_type)
+  if (context && context == current_class_type && !SCOPED_ENUM_P (enumtype))
     /* In something like `struct S { enum E { i = 7 }; };' we put `i'
        on the TYPE_FIELDS list for `S'.  (That's so that you can say
        things like `S::i' later.)  */

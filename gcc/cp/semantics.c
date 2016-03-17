@@ -1801,9 +1801,12 @@ perform_koenig_lookup (tree fn, tree args)
   tree identifier = NULL_TREE;
   tree functions = NULL_TREE;
   tree tmpl_args = NULL_TREE;
+  bool template_id = false;
 
   if (TREE_CODE (fn) == TEMPLATE_ID_EXPR)
     {
+      /* Use a separate flag to handle null args.  */
+      template_id = true;
       tmpl_args = TREE_OPERAND (fn, 1);
       fn = TREE_OPERAND (fn, 0);
     }
@@ -1835,8 +1838,8 @@ perform_koenig_lookup (tree fn, tree args)
 	fn = unqualified_fn_lookup_error (identifier);
     }
 
-  if (fn && tmpl_args)
-    fn = build_nt (TEMPLATE_ID_EXPR, fn, tmpl_args);
+  if (fn && template_id)
+    fn = build2 (TEMPLATE_ID_EXPR, unknown_type_node, fn, tmpl_args);
   
   return fn;
 }
@@ -2838,16 +2841,16 @@ finish_id_expression (tree id_expression,
 						     done, address_p,
 						     template_p,
 						     template_arg_p);
-		  else if (dependent_scope_p (scope))
-		    decl = build_qualified_name (/*type=*/NULL_TREE,
-						 scope,
-						 id_expression,
-						 template_p);
-		  else if (DECL_P (decl))
-		    decl = build_qualified_name (TREE_TYPE (decl),
-						 scope,
-						 id_expression,
-						 template_p);
+		  else
+		    {
+		      tree type = NULL_TREE;
+		      if (DECL_P (decl) && !dependent_scope_p (scope))
+			type = TREE_TYPE (decl);
+		      decl = build_qualified_name (type,
+						   scope,
+						   id_expression,
+						   template_p);
+		    }
 		}
 	      if (TREE_TYPE (decl))
 		decl = convert_from_reference (decl);

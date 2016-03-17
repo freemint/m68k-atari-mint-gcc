@@ -1,3 +1,210 @@
+2009-07-22  Release Manager
+
+	* GCC 4.4.1 released.
+
+2009-07-15  Janis Johnson  <janis187@us.ibm.com>
+
+	PR libstdc++/40691
+	* include/bits/valarray_after.h (_Expr::operator!): Fix return type.
+	* testsuite/26_numerics/valarray/40691.cc: New test.
+
+2009-07-13  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* testsuite/29_atomics/atomic_address/cons/aggregate.cc: Remove xfail.
+
+2009-06-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40600
+	* testsuite/25_algorithms/minmax/2.cc: Fix consistently with
+	std::minmax return type.
+	* testsuite/25_algorithms/minmax/3.cc: Likewise.
+
+2009-06-24  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/40297
+	* include/bits/atomic_0.h: Reverse debug assertions.
+	* include/bits/atomic_2.h: Likewise.
+
+2009-06-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* Revert last Change.
+
+2009-06-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40497
+	* include/bits/stl_iterator_base_funcs.h (next, prev): Fix the
+	signature per the current C++1x draft (N2857).
+	* testsuite/24_iterators/operations/40497.cc: Add.
+
+2009-06-16  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* libsupc++/exception_ptr.h (exception_ptr::swap(exception_ptr&&)):
+	Remove.
+	(exception_ptr::operator=(exception_ptr&&)): Cast source to
+	rvalue-reference so that move constructor is called.
+	* testsuite/18_support/exception_ptr/move.cc: New.
+
+2009-06-16  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* include/std/thread (~thread(), operator=(thread&&)): Call terminate
+	if joinable.
+
+2009-06-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40296
+	* libsupc++/exception_ptr.h (exception_ptr::operator!,
+	exception_ptr::operator __safe_bool): Only declare when
+	_GLIBCXX_EH_PTR_COMPAT is undefined.
+	* libsupc++/eh_ptr.cc: Define _GLIBCXX_EH_PTR_COMPAT before including
+	exception_ptr.
+	* testsuite/18_support/exception_ptr/40296.cc: New.
+	* testsuite/18_support/exception_ptr/current_exception.cc: Adjust.
+
+2009-06-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40299
+	* include/ext/memory: Fully qualify calls with __gnu_cxx.
+	* testsuite/ext/rope/40299.cc: New.
+
+2009-05-21  David Billinghurst <billingd@gcc.gnu.org>
+
+	Backport from mainline:
+	PR libstdc++/36211
+	* testsuite/lib/libstdc++.exp(v3_target_compile):  Add
+	cxxldflags to additional_flags rather than cxx_final.
+
+2009-05-18  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40192
+	* include/bits/stl_construct.h (struct _Destroy_aux): Add.
+	(_Destroy(_ForwardIterator, _ForwardIterator)): Use the latter.
+	* testsuite/23_containers/vector/40192.cc: New.
+
+2009-05-13  Ben Elliston  <bje@au.ibm.com>
+
+	Backport from mainline:
+	* include/Makefile.am (PCHFLAGS): Remove -Winvalid-pch.
+	* include/Makefile.in: Likewise.
+
+2009-05-12  Johannes Singler  <singler@ira.uka.de>
+
+        PR libstdc++/39546
+        * include/parallel/algo.h (find_switch):
+        Parametrize binder2nd with const T& instead of T.
+        * testsuite/25_algorithms/find/39546.cc: new test case
+
+2009-05-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* configure.ac: Bump libtool_VERSION to 6:12:0.
+	* configure: Regenerate.
+
+2009-05-07  Matthias Klose  <doko@ubuntu.com>
+
+	PR libstdc++/40038
+	* src/math_stubs_long_double.cc: Add ceill.
+
+2009-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Revert:
+	2009-05-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* acinclude.m4 ([GLIBCXX_ENABLE_ATOMIC_BUILTINS]): Do link tests when
+	possible.
+	* configure: Regenerate.
+
+2009-05-05  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/39909
+	* include/std/mutex (__get_once_functor_lock, __get_once_mutex,
+	__set_once_functor_lock_ptr): Replace global lock object with local
+	locks on global mutex.
+	* src/mutex.cc (__get_once_functor_lock, __get_once_mutex,
+	__set_once_functor_lock_ptr): Likewise, keeping old function to
+	preserve ABI.
+	(__once_proxy): Use pointer to local lock if set, global lock
+	otherwise.
+	* config/abi/pre/gnu.ver: Add new symbols to new ABI version.
+	* testsuite/util/testsuite_abi.cc: Add GLIBCX_3.4.12 version.
+	* testsuite/30_threads/call_once/39909.cc: New.
+
+2009-05-05  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* acinclude.m4 ([GLIBCXX_ENABLE_ATOMIC_BUILTINS]): Do link tests when
+	possible.
+	* configure: Regenerate.
+
+2009-04-30  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* scripts/create_testsuite_files: Remove thread directory.
+
+2009-04-29  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * xml/authors.xml: Add space.
+        * xml/faq.xml: Update links.
+        * xml/manual/intro.xml: Same.
+        * xml/manual/abi.xml: Update.
+        * xml/manual/appendix_contributing.xml: Fix typo.
+        * xml/manual/status_cxxtr1.xml: Update links.
+        * xml/manual/status_cxx1998.xml: Same.
+        * xml/manual/status_cxx200x.xml: Same.
+
+2009-04-28  Benjamin Kosnik  <bkoz@redhat.com>
+
+        PR libstdc++/39868
+        * scripts/run_doxygen: Uncomment removal of includes.
+        (problematic): Rewrite __cxxabiv1 namespace to abi.
+
+2009-04-28  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/39880
+	PR libstdc++/39881
+	PR libstdc++/39882
+	* include/std/system_error (is_error_code_enum<errc>): Remove.
+	(error_condition<>::error_condition(_ErrorCodeEnum,)
+	error_condition<>::operator=(_ErrorCodeEnum)): Use make_error_condition.
+	(error_code<>::error_code(_ErrorCodeEnum,),
+	error_code<>::operator=(_ErrorCodeEnum)): Use make_error_code.
+	* testsuite/19_diagnostics/system_error/39880.cc: New.
+	* testsuite/19_diagnostics/error_condition/modifiers/39881.cc:
+	Likewise.
+	* testsuite/19_diagnostics/error_condition/cons/39881.cc: Likewise.
+	* testsuite/19_diagnostics/error_code/modifiers/39882.cc: Likewise.
+	* testsuite/19_diagnostics/error_code/cons/39882.cc: Likewise.
+	* testsuite/27_io/basic_ostream/inserters_other/char/error_code.cc:
+	Adjust.
+	* testsuite/27_io/basic_ostream/inserters_other/wchar_t/error_code.cc:
+	Likewise.
+	* testsuite/19_diagnostics/error_code/cons/1.cc: Likewise.
+	* testsuite/19_diagnostics/error_code/operators/bool.cc: Likewise.
+	* testsuite/19_diagnostics/error_code/operators/equal.cc: Likewise.
+	* testsuite/19_diagnostics/error_code/operators/not_equal.cc:
+	Likewise.
+	* testsuite/19_diagnostics/error_category/cons/copy_neg.cc: Likewise.
+	* testsuite/19_diagnostics/system_error/cons-1.cc: Likewise.
+	* testsuite/19_diagnostics/system_error/what-4.cc: Likewise.
+	* testsuite/30_threads/unique_lock/locking/2.cc: Likewise.
+
+2009-04-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Revert the last commit.
+
+2009-04-25  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* include/std/mutex (__get_once_functor_lock, __get_once_mutex):
+	Replace global lock object with local locks on global mutex.
+	* src/mutex.cc: Likewise.
+	* config/abi/pre/gnu.ver: Adjust.
+	* testsuite/30_threads/call_once/call_once2.cc: New.
+
+2009-04-21  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/39802
+	* include/bits/locale_facets.tcc (num_get<>::_M_extract_int
+	(_InIter, _InIter, ios_base&, ios_base::iostate&, _ValueT&)):
+	Always accept negative values, for unsigned types too.
+	* testsuite/22_locale/num_get/get/char/39802.cc: New.
+	* testsuite/22_locale/num_get/get/wchar_t/39802.cc: Likewise.
+
 2009-04-21  Release Manager
 
 	* GCC 4.4.0 released.

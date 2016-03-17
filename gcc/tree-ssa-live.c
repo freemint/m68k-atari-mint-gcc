@@ -582,7 +582,25 @@ remove_unused_scope_block_p (tree scope)
    /* For terse debug info we can eliminate info on unused variables.  */
    else if (debug_info_level == DINFO_LEVEL_NONE
 	    || debug_info_level == DINFO_LEVEL_TERSE)
-     ;
+     {
+       /* Even for -g0/-g1 don't prune outer scopes from artificial
+	  functions, otherwise diagnostics using tree_nonartificial_location
+	  will not be emitted properly.  */
+       if (inlined_function_outer_scope_p (scope))
+	 {
+	   tree ao = scope;
+
+	   while (ao
+		  && TREE_CODE (ao) == BLOCK
+		  && BLOCK_ABSTRACT_ORIGIN (ao) != ao)
+	     ao = BLOCK_ABSTRACT_ORIGIN (ao);
+	   if (ao
+	       && TREE_CODE (ao) == FUNCTION_DECL
+	       && DECL_DECLARED_INLINE_P (ao)
+	       && lookup_attribute ("artificial", DECL_ATTRIBUTES (ao)))
+	     unused = false;
+	 }
+     }
    else if (BLOCK_VARS (scope) || BLOCK_NUM_NONLOCALIZED_VARS (scope))
      unused = false;
    /* See if this block is important for representation of inlined function.
@@ -595,6 +613,8 @@ remove_unused_scope_block_p (tree scope)
    /* Verfify that only blocks with source location set
       are entry points to the inlined functions.  */
      gcc_assert (BLOCK_SOURCE_LOCATION (scope) == UNKNOWN_LOCATION);
+
+   TREE_USED (scope) = !unused;
    return unused;
 }
 
@@ -678,6 +698,12 @@ remove_unused_locals (void)
   var_ann_t ann;
   bitmap global_unused_vars = NULL;
 
+  /* Removing declarations from lexical blocks when not optimizing is
+     not only a waste of time, it actually causes differences in stack
+     layout.  */
+  if (!optimize)
+    return;
+
   mark_scope_block_unused (DECL_INITIAL (current_function_decl));
 
   /* Assume all locals are unused.  */
@@ -740,8 +766,7 @@ remove_unused_locals (void)
 
       if (TREE_CODE (var) != FUNCTION_DECL
 	  && (!(ann = var_ann (var))
-	      || !ann->used)
-	  && (optimize || DECL_ARTIFICIAL (var)))
+	      || !ann->used))
 	{
 	  if (is_global_var (var))
 	    {
@@ -802,8 +827,7 @@ remove_unused_locals (void)
 	&& TREE_CODE (t) != RESULT_DECL
 	&& !(ann = var_ann (t))->used
 	&& !ann->symbol_mem_tag
-	&& !TREE_ADDRESSABLE (t)
-	&& (optimize || DECL_ARTIFICIAL (t)))
+	&& !TREE_ADDRESSABLE (t))
       remove_referenced_var (t);
   remove_unused_scope_block_p (DECL_INITIAL (current_function_decl));
   if (dump_file && (dump_flags & TDF_DETAILS))

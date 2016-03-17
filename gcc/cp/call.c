@@ -240,7 +240,7 @@ check_dtor_name (tree basetype, tree name)
       return false;
     }
 
-  if (!name)
+  if (!name || name == error_mark_node)
     return false;
   return same_type_p (TYPE_MAIN_VARIANT (basetype), TYPE_MAIN_VARIANT (name));
 }
@@ -1384,9 +1384,37 @@ implicit_conversion (tree to, tree from, tree expr, bool c_cast_p,
   if (conv)
     return conv;
 
-  if (is_std_init_list (to) && expr
-      && BRACE_ENCLOSED_INITIALIZER_P (expr))
-    return build_list_conv (to, expr, flags);
+  if (expr && BRACE_ENCLOSED_INITIALIZER_P (expr))
+    {
+      if (is_std_init_list (to))
+	return build_list_conv (to, expr, flags);
+
+      /* Allow conversion from an initializer-list with one element to a
+	 scalar type.  */
+      if (SCALAR_TYPE_P (to))
+	{
+	  int nelts = CONSTRUCTOR_NELTS (expr);
+	  tree elt;
+
+	  if (nelts == 0)
+	    elt = integer_zero_node;
+	  else if (nelts == 1)
+	    elt = CONSTRUCTOR_ELT (expr, 0)->value;
+	  else
+	    elt = error_mark_node;
+
+	  conv = implicit_conversion (to, TREE_TYPE (elt), elt,
+				      c_cast_p, flags);
+	  if (conv)
+	    {
+	      conv->check_narrowing = true;
+	      if (BRACE_ENCLOSED_INITIALIZER_P (elt))
+		/* Too many levels of braces, i.e. '{{1}}'.  */
+		conv->bad_p = true;
+	      return conv;
+	    }
+	}
+    }
 
   if (expr != NULL_TREE
       && (MAYBE_CLASS_TYPE_P (from)
@@ -4069,8 +4097,20 @@ build_new_op (enum tree_code code, int flags, tree arg1, tree arg2, tree arg3,
 	default:
 	  if ((flags & LOOKUP_COMPLAIN) && (complain & tf_error))
 	    {
-	      op_error (code, code2, arg1, arg2, arg3, "no match");
-	      print_z_candidates (candidates);
+		/* If one of the arguments of the operator represents
+		   an invalid use of member function pointer, try to report
+		   a meaningful error ...  */
+		if (invalid_nonstatic_memfn_p (arg1, tf_error)
+		    || invalid_nonstatic_memfn_p (arg2, tf_error)
+		    || invalid_nonstatic_memfn_p (arg3, tf_error))
+		  /* We displayed the error message.  */;
+		else
+		  {
+		    /* ... Otherwise, report the more generic
+		       "no matching operator found" error */
+		    op_error (code, code2, arg1, arg2, arg3, "no match");
+		    print_z_candidates (candidates);
+		  }
 	    }
 	  result = error_mark_node;
 	  break;
@@ -4517,12 +4557,21 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 
   if (convs->bad_p
       && convs->kind != ck_user
+      && convs->kind != ck_list
       && convs->kind != ck_ambig
       && convs->kind != ck_ref_bind
       && convs->kind != ck_rvalue
       && convs->kind != ck_base)
     {
       conversion *t = convs;
+
+      /* Give a helpful error if this is bad because of excess braces.  */
+      if (BRACE_ENCLOSED_INITIALIZER_P (expr)
+	  && SCALAR_TYPE_P (totype)
+	  && CONSTRUCTOR_NELTS (expr) > 0
+	  && BRACE_ENCLOSED_INITIALIZER_P (CONSTRUCTOR_ELT (expr, 0)->value))
+	permerror (input_location, "too many braces around initializer for %qT", totype);
+
       for (; t; t = convs->u.next)
 	{
 	  if (t->kind == ck_user || !t->bad_p)
@@ -4596,6 +4645,17 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	return expr;
       }
     case ck_identity:
+      if (BRACE_ENCLOSED_INITIALIZER_P (expr))
+	{
+	  int nelts = CONSTRUCTOR_NELTS (expr);
+	  if (nelts == 0)
+	    expr = integer_zero_node;
+	  else if (nelts == 1)
+	    expr = CONSTRUCTOR_ELT (expr, 0)->value;
+	  else
+	    gcc_unreachable ();
+	}
+
       if (type_unknown_p (expr))
 	expr = instantiate_type (totype, expr, complain);
       /* Convert a constant to its underlying value, unless we are
@@ -7301,7 +7361,7 @@ initialize_reference (tree type, tree expr, tree decl, tree *cleanup)
 	expr = error_mark_node;
       else
 	{
-	  if (!real_lvalue_p (expr))
+	  if (!lvalue_or_rvalue_with_address_p (expr))
 	    {
 	      tree init;
 	      var = set_up_extended_ref_temp (decl, expr, cleanup, &init);

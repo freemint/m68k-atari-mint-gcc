@@ -260,6 +260,19 @@ cp_common_type (tree t1, tree t2)
   enum tree_code code2 = TREE_CODE (t2);
   tree attributes;
 
+  /* In what follows, we slightly generalize the rules given in [expr] so
+     as to deal with `long long' and `complex'.  First, merge the
+     attributes.  */
+  attributes = (*targetm.merge_type_attributes) (t1, t2);
+
+  if (SCOPED_ENUM_P (t1) || SCOPED_ENUM_P (t2))
+    {
+      if (TYPE_MAIN_VARIANT (t1) == TYPE_MAIN_VARIANT (t2))
+	return build_type_attribute_variant (t1, attributes);
+      else
+	return NULL_TREE;
+    }
+
   /* FIXME: Attributes.  */
   gcc_assert (ARITHMETIC_TYPE_P (t1)
 	      || TREE_CODE (t1) == VECTOR_TYPE
@@ -267,11 +280,6 @@ cp_common_type (tree t1, tree t2)
   gcc_assert (ARITHMETIC_TYPE_P (t2)
 	      || TREE_CODE (t2) == VECTOR_TYPE
 	      || UNSCOPED_ENUM_P (t2));
-
-  /* In what follows, we slightly generalize the rules given in [expr] so
-     as to deal with `long long' and `complex'.  First, merge the
-     attributes.  */
-  attributes = (*targetm.merge_type_attributes) (t1, t2);
 
   /* If one type is complex, form the common type of the non-complex
      components, then make that complex.  Use T1 or T2 if it is the
@@ -1508,7 +1516,7 @@ cxx_sizeof_or_alignof_expr (tree e, enum tree_code op, bool complain)
 bool
 invalid_nonstatic_memfn_p (const_tree expr, tsubst_flags_t complain)
 {
-  if (DECL_NONSTATIC_MEMBER_FUNCTION_P (expr))
+  if (expr && DECL_NONSTATIC_MEMBER_FUNCTION_P (expr))
     {
       if (complain & tf_error)
         error ("invalid use of non-static member function");
@@ -2437,6 +2445,10 @@ build_x_indirect_ref (tree expr, const char *errorstring,
 
   if (processing_template_decl)
     {
+      /* Retain the type if we know the operand is a pointer so that
+	 describable_type doesn't make auto deduction break.  */
+      if (TREE_TYPE (expr) && POINTER_TYPE_P (TREE_TYPE (expr)))
+	return build_min (INDIRECT_REF, TREE_TYPE (TREE_TYPE (expr)), expr);
       if (type_dependent_expression_p (expr))
 	return build_min_nt (INDIRECT_REF, expr);
       expr = build_non_dependent_expr (expr);
@@ -3589,9 +3601,9 @@ cp_build_binary_op (location_t location,
 
       build_type = boolean_type_node;
       if ((code0 == INTEGER_TYPE || code0 == REAL_TYPE
-	   || code0 == COMPLEX_TYPE)
+	   || code0 == COMPLEX_TYPE || code0 == ENUMERAL_TYPE)
 	  && (code1 == INTEGER_TYPE || code1 == REAL_TYPE
-	      || code1 == COMPLEX_TYPE))
+	      || code1 == COMPLEX_TYPE || code1 == ENUMERAL_TYPE))
 	short_compare = 1;
       else if ((code0 == POINTER_TYPE && code1 == POINTER_TYPE)
 	       || (TYPE_PTRMEM_P (type0) && TYPE_PTRMEM_P (type1)))
@@ -3863,9 +3875,10 @@ cp_build_binary_op (location_t location,
       break;
     }
 
-  if (((code0 == INTEGER_TYPE || code0 == REAL_TYPE || code0 == COMPLEX_TYPE)
+  if (((code0 == INTEGER_TYPE || code0 == REAL_TYPE || code0 == COMPLEX_TYPE
+	|| code0 == ENUMERAL_TYPE)
        && (code1 == INTEGER_TYPE || code1 == REAL_TYPE
-	   || code1 == COMPLEX_TYPE)))
+	   || code1 == COMPLEX_TYPE || code1 == ENUMERAL_TYPE)))
     arithmetic_types_p = 1;
   else
     {
@@ -5967,8 +5980,11 @@ cp_build_modify_expr (tree lhs, enum tree_code modifycode, tree rhs,
 
   if (modifycode == INIT_EXPR)
     {
-      if (TREE_CODE (rhs) == CONSTRUCTOR)
+      if (BRACE_ENCLOSED_INITIALIZER_P (rhs))
+	/* Do the default thing.  */;
+      else if (TREE_CODE (rhs) == CONSTRUCTOR)
 	{
+	  /* Compound literal.  */
 	  if (! same_type_p (TREE_TYPE (rhs), lhstype))
 	    /* Call convert to generate an error; see PR 11063.  */
 	    rhs = convert (lhstype, rhs);
@@ -6075,8 +6091,11 @@ cp_build_modify_expr (tree lhs, enum tree_code modifycode, tree rhs,
     {
       int from_array;
 
-      if (!same_or_base_type_p (TYPE_MAIN_VARIANT (lhstype),
-				TYPE_MAIN_VARIANT (TREE_TYPE (rhs))))
+      if (BRACE_ENCLOSED_INITIALIZER_P (rhs))
+	rhs = digest_init (lhstype, rhs);
+
+      else if (!same_or_base_type_p (TYPE_MAIN_VARIANT (lhstype),
+				     TYPE_MAIN_VARIANT (TREE_TYPE (rhs))))
 	{
 	  if (complain & tf_error)
 	    error ("incompatible types in assignment of %qT to %qT",
@@ -6085,7 +6104,8 @@ cp_build_modify_expr (tree lhs, enum tree_code modifycode, tree rhs,
 	}
 
       /* Allow array assignment in compiler-generated code.  */
-      if (!current_function_decl || !DECL_ARTIFICIAL (current_function_decl))
+      else if (!current_function_decl
+	       || !DECL_ARTIFICIAL (current_function_decl))
 	{
           /* This routine is used for both initialization and assignment.
              Make sure the diagnostic message differentiates the context.  */

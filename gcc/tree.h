@@ -5088,7 +5088,7 @@ extern tree tree_overlaps_hard_reg_set (tree, HARD_REG_SET *);
 
 /* Generate a new label for the CFI info to refer to.  */
 
-extern char *dwarf2out_cfi_label (void);
+extern char *dwarf2out_cfi_label (bool);
 
 /* Entry point to update the canonical frame address (CFA).  */
 
@@ -5255,6 +5255,9 @@ extern unsigned HOST_WIDE_INT highest_pow2_factor (const_tree);
 /* In tree-inline.c.  */
 
 void init_inline_once (void);
+
+/* In ipa-reference.c.  Used for parsing attributes of asm code.  */
+extern GTY(()) tree memory_identifier_string;
 
 /* Compute the number of operands in an expression node NODE.  For 
    tcc_vl_exp nodes like CALL_EXPRs, this is stored in the node itself,

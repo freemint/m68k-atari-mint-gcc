@@ -1,3 +1,14 @@
+2009-07-22  Release Manager
+
+	* GCC 4.4.1 released.
+
+2009-06-22  Steven Bosscher  <steven@gcc.gnu.org>
+	    Matthias Klose  <doko@ubuntu.com>
+
+	PR objc/28050
+	* objc-act.c (objc_build_message_args): Return if ARGS is the
+	error_mark_node.
+	
 2009-04-21  Release Manager
 
 	* GCC 4.4.0 released.

@@ -1,3 +1,166 @@
+2009-07-22  Release Manager
+
+	* GCC 4.4.1 released.
+
+2009-07-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40740
+	* semantics.c (perform_koenig_lookup): Handle empty template args.
+
+2009-07-12  Jason Merrill  <jason@redhat.com>
+
+	PR c++/36628
+	* tree.c (rvalue): Use lvalue_or_rvalue_with_address_p.
+
+	PR c++/37206
+	* cp-tree.h (enum cp_lvalue_kind_flags): Add clk_rvalueref.
+	* tree.c (lvalue_p_1): Return it.  Remove
+	treat_class_rvalues_as_lvalues parm.
+	(real_lvalue_p): Disallow pseudo-lvalues here.
+	(lvalue_or_rvalue_with_address_p): New fn.
+	* call.c (initialize_reference): Use it instead of real_lvalue_p.
+
+	PR c++/40689
+	* init.c (build_new_1): Handle initializer list as array initializer.
+	(build_vec_init): Likewise.
+	* typeck.c (cp_build_modify_expr): Likewise.
+	* typeck2.c (process_init_constructor_array): Error rather than abort
+	if too many initializers.
+
+2009-07-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/40502
+	* error.c (cp_print_error_function): Check for NULL block.
+
+2009-07-09  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/40684
+	* pt.c (type_unification_real): Use tsubst_template_arg instead
+	of tsubst to substitute default template arguments.
+
+2009-07-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35828
+	* pt.c (tsubst_decl): Don't abort if we didn't change anything
+	in a TEMPLATE_DECL's args.
+
+	PR c++/37816
+	* decl.c (build_enumerator): Don't add enumerators for a
+	scoped enum to the enclosing class.
+
+	PR c++/40639
+	* decl.c (start_enum): Allow dependent underlying type.
+
+	PR c++/40633
+	* decl.c (finish_enum): Finish scope even in a template.
+
+2009-07-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40619
+	* tree.c (cp_tree_equal) [PARM_DECL]: Don't check parm index.
+
+2009-06-30  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40595
+	* pt.c (tsubst_pack_expansion): Handle unexpanded packs in an
+	EXPR_PACK_EXPANSION.
+
+2009-06-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40342
+	* decl.c (decls_match): Check DECL_TI_TEMPLATE too.
+	* class.c (resolve_address_of_overloaded_function): Fix typo.
+
+2009-06-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40381
+	* decl2.c (mark_used): Return after complaining about deleted fn.
+
+2009-06-08  Jason Merrill  <jason@redhat.com>
+
+	* parser.c (cp_parser_type_id_1): 'auto' type is ok with a
+	late-specified return type.
+
+2009-06-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/40373
+	* call.c (check_dtor_name): Return false even if
+	get_type_value (name) is error_mark_node.
+
+	PR c++/40370
+	PR c++/40372
+	* parser.c (cp_parser_direct_declarator): Don't set TREE_SIDE_EFFECTS
+	on error_mark_node.  Check for VLAs outside of function context
+	before check whether to wrap bounds into a NOP_EXPR with
+	TREE_SIDE_EFFECTS.
+
+2009-06-02  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40308
+	PR c++/40311
+	* typeck.c (cp_build_modify_expr): Always pass init-lists to the
+	conversion code.
+	* call.c (implicit_conversion): Allow init-list conversion to scalar
+	during direct-initialization, too.  Mark the conversion bad if it
+	has too many levels of braces.
+	(convert_like_real): And give a helpful error.
+
+	PR c++/40306
+	PR c++/40307
+	* decl.c (cp_finish_decl): Handle auto deduction from ().
+	* typeck.c (build_x_indirect_ref): Handle dereferencing an operand
+	with dependent type that is known to be a pointer.
+
+2009-05-27  Jason Merrill  <jason@redhat.com>
+
+	* call.c (implicit_conversion): Handle conversion from
+	initializer-list to scalar.
+	(convert_like_real): Likewise.  Avoid crashing on list
+	initialization with bad conversions.
+
+2009-05-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38064
+	* typeck.c (cp_build_binary_op): Allow ENUMERAL_TYPE in
+	arithmetic comparisons.
+	(cp_common_type): Handle scoped enums.
+
+2009-05-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40139
+	* semantics.c (finish_id_expression): Fix logic.
+
+2009-05-06  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/17395
+	* pt.c (tsubst_copy) <case PARM_DECL>: We don't want to tsubst the
+	whole list of PARM_DECLs, just the current one.
+
+2009-05-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/40013
+	* pt.c (tsubst): If magic NOP_EXPR with side-effects has no type,
+	set it from its operand's type after tsubst_expr.
+
+2009-04-23  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/38228
+	* pt.c (unify): Do not allow the result of a template argument
+	deduction to be a METHOD_TYPE.
+	* cvt.c (cp_convert): Report a meaningful error for non-valid use
+	of pointer to member functions during conversions.
+	* call.c (build_new_op): Report a meaningful error for non-valid
+	use of pointer to member functions in binary expressions.
+	* typeck.c (invalid_nonstatic_memfn_p): Do not crash when EXPR is
+	NULL;
+
+2009-04-22  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/39639
+	* parser.c (cp_parser_template_argument_list): Display an error
+	when an ellipsis is not preceded by a parameter pack. Also, warn
+	about variadic templates usage without -std=c++0x.
+
 2009-04-21  Release Manager
 
 	* GCC 4.4.0 released.

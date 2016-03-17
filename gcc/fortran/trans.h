@@ -310,9 +310,6 @@ void gfc_conv_intrinsic_function (gfc_se *, gfc_expr *);
 /* Does an intrinsic map directly to an external library call.  */
 int gfc_is_intrinsic_libcall (gfc_expr *);
 
-/* Used to call the elemental subroutines used in operator assignments.  */
-tree gfc_conv_operator_assign (gfc_se *, gfc_se *, gfc_symbol *);
-
 /* Also used to CALL subroutines.  */
 int gfc_conv_function_call (gfc_se *, gfc_symbol *, gfc_actual_arglist *,
 			    tree);
@@ -594,6 +591,8 @@ extern GTY(()) tree gfor_fndecl_convert_char4_to_char1;
 extern GTY(()) tree gfor_fndecl_size0;
 extern GTY(()) tree gfor_fndecl_size1;
 extern GTY(()) tree gfor_fndecl_iargc;
+extern GTY(()) tree gfor_fndecl_clz128;
+extern GTY(()) tree gfor_fndecl_ctz128;
 
 /* Implemented in Fortran.  */
 extern GTY(()) tree gfor_fndecl_sc_kind;

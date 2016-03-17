@@ -121,7 +121,7 @@ namespace std
       exception_ptr& 
       operator=(exception_ptr&& __o) throw()
       {
-        exception_ptr(__o).swap(*this);
+        exception_ptr(static_cast<exception_ptr&&>(__o)).swap(*this);
         return *this;
       }
 #endif
@@ -131,18 +131,11 @@ namespace std
       void 
       swap(exception_ptr&) throw();
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-      void 
-      swap(exception_ptr &&__o) throw()
-      {
-        void *__tmp = _M_exception_object;
-        _M_exception_object = __o._M_exception_object;
-        __o._M_exception_object = __tmp;
-      }
-#endif
-
+#ifdef _GLIBCXX_EH_PTR_COMPAT
+      // Retained for compatibility with CXXABI_1.3.
       bool operator!() const throw();
       operator __safe_bool() const throw();
+#endif
 
       friend bool 
       operator==(const exception_ptr&, const exception_ptr&) throw();

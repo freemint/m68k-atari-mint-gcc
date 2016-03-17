@@ -694,14 +694,15 @@ add_cfi (dw_cfi_ref *list_head, dw_cfi_ref cfi)
   *p = cfi;
 }
 
-/* Generate a new label for the CFI info to refer to.  */
+/* Generate a new label for the CFI info to refer to.  FORCE is true
+   if a label needs to be output even when using .cfi_* directives.  */
 
 char *
-dwarf2out_cfi_label (void)
+dwarf2out_cfi_label (bool force)
 {
   static char label[20];
 
-  if (dwarf2out_do_cfi_asm ())
+  if (!force && dwarf2out_do_cfi_asm ())
     {
       /* In this case, we will be emitting the asm directive instead of
 	 the label, so just return a placeholder to keep the rest of the
@@ -729,11 +730,59 @@ add_fde_cfi (const char *label, dw_cfi_ref cfi)
     {
       if (label)
 	{
-	  output_cfi_directive (cfi);
+	  dw_fde_ref fde = current_fde ();
+
+	  gcc_assert (fde != NULL);
 
 	  /* We still have to add the cfi to the list so that
-	     lookup_cfa works later on.  */
-	  list_head = &current_fde ()->dw_fde_cfi;
+	     lookup_cfa works later on.  When -g2 and above we
+	     even need to force emitting of CFI labels and
+	     add to list a DW_CFA_set_loc for convert_cfa_to_fb_loc_list
+	     purposes.  */
+	  switch (cfi->dw_cfi_opc)
+	    {
+	    case DW_CFA_def_cfa_offset:
+	    case DW_CFA_def_cfa_offset_sf:
+	    case DW_CFA_def_cfa_register:
+	    case DW_CFA_def_cfa:
+	    case DW_CFA_def_cfa_sf:
+	    case DW_CFA_def_cfa_expression:
+	    case DW_CFA_restore_state:
+	      if (write_symbols != DWARF2_DEBUG
+		  && write_symbols != VMS_AND_DWARF2_DEBUG)
+		break;
+	      if (debug_info_level <= DINFO_LEVEL_TERSE)
+		break;
+
+	      if (*label == 0 || strcmp (label, "<do not output>") == 0)
+		label = dwarf2out_cfi_label (true);
+
+	      if (fde->dw_fde_current_label == NULL
+		  || strcmp (label, fde->dw_fde_current_label) != 0)
+		{
+		  dw_cfi_ref xcfi;
+
+		  label = xstrdup (label);
+
+		  /* Set the location counter to the new label.  */
+		  xcfi = new_cfi ();
+		  /* It doesn't metter whether DW_CFA_set_loc
+		     or DW_CFA_advance_loc4 is added here, those aren't
+		     emitted into assembly, only looked up by
+		     convert_cfa_to_fb_loc_list.  */
+		  xcfi->dw_cfi_opc = DW_CFA_set_loc;
+		  xcfi->dw_cfi_oprnd1.dw_cfi_addr = label;
+		  add_cfi (&fde->dw_fde_cfi, xcfi);
+		  fde->dw_fde_current_label = label;
+		}
+	      break;
+	    default:
+	      break;
+	    }
+
+	  output_cfi_directive (cfi);
+
+	  list_head = &fde->dw_fde_cfi;
 	}
       /* ??? If this is a CFI for the CIE, we don't emit.  This
 	 assumes that the standard CIE contents that the assembler
@@ -748,7 +797,7 @@ add_fde_cfi (const char *label, dw_cfi_ref cfi)
       gcc_assert (fde != NULL);
 
       if (*label == 0)
-	label = dwarf2out_cfi_label ();
+	label = dwarf2out_cfi_label (false);
 
       if (fde->dw_fde_current_label == NULL
 	  || strcmp (label, fde->dw_fde_current_label) != 0)
@@ -1464,7 +1513,7 @@ dwarf2out_stack_adjust (rtx insn, bool after_p)
   if (offset == 0)
     return;
 
-  label = dwarf2out_cfi_label ();
+  label = dwarf2out_cfi_label (false);
   dwarf2out_args_size_adjust (offset, label);
 }
 
@@ -2417,7 +2466,7 @@ dwarf2out_frame_debug (rtx insn, bool after_p)
       return;
     }
 
-  label = dwarf2out_cfi_label ();
+  label = dwarf2out_cfi_label (false);
   src = find_reg_note (insn, REG_FRAME_RELATED_EXPR, NULL_RTX);
   if (src)
     insn = XEXP (src, 0);
@@ -2731,42 +2780,42 @@ output_cfi_directive (dw_cfi_ref cfi)
     case DW_CFA_offset:
     case DW_CFA_offset_extended:
     case DW_CFA_offset_extended_sf:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_offset %lu, "HOST_WIDE_INT_PRINT_DEC"\n",
 	       r, cfi->dw_cfi_oprnd2.dw_cfi_offset);
       break;
 
     case DW_CFA_restore:
     case DW_CFA_restore_extended:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_restore %lu\n", r);
       break;
 
     case DW_CFA_undefined:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_undefined %lu\n", r);
       break;
 
     case DW_CFA_same_value:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_same_value %lu\n", r);
       break;
 
     case DW_CFA_def_cfa:
     case DW_CFA_def_cfa_sf:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_def_cfa %lu, "HOST_WIDE_INT_PRINT_DEC"\n",
 	       r, cfi->dw_cfi_oprnd2.dw_cfi_offset);
       break;
 
     case DW_CFA_def_cfa_register:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_def_cfa_register %lu\n", r);
       break;
 
     case DW_CFA_register:
-      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 0);
-      r2 = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd2.dw_cfi_reg_num, 0);
+      r = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd1.dw_cfi_reg_num, 1);
+      r2 = DWARF2_FRAME_REG_OUT (cfi->dw_cfi_oprnd2.dw_cfi_reg_num, 1);
       fprintf (asm_out_file, "\t.cfi_register %lu, %lu\n", r, r2);
       break;
 
@@ -14645,6 +14694,12 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
 
       /* Prevent broken recursion; we can't hand off to the same type.  */
       gcc_assert (DECL_ORIGINAL_TYPE (TYPE_NAME (type)) != type);
+
+      /* Use the DIE of the containing namespace as the parent DIE of
+         the type description DIE we want to generate.  */
+      if (DECL_CONTEXT (TYPE_NAME (type))
+	  && TREE_CODE (DECL_CONTEXT (TYPE_NAME (type))) == NAMESPACE_DECL)
+	context_die = lookup_decl_die (DECL_CONTEXT (TYPE_NAME (type)));
 
       TREE_ASM_WRITTEN (type) = 1;
       gen_decl_die (TYPE_NAME (type), NULL, context_die);

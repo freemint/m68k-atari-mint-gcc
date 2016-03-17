@@ -305,8 +305,15 @@ libgcj_la_LINK = $(LIBLINK)
 ## compiled.
 EXTRA_libgcj_la_SOURCES = java/lang/Object.java
 
+# We compile libgcj_tools with -findirect-dispatch so that they can
+# depend on external classes: in particular, gjdoc uses antlr.  In
+# addition, -fno-bootstrap-classes ensures that the tools are loaded
+# by the system class loader rather than the bootstrap class loader:
+# only core library classes should be loaded by the bootstrap loader.
 libgcj_tools_la_SOURCES = classpath/tools/tools.zip
-libgcj_tools_la_GCJFLAGS = $(AM_GCJFLAGS) -findirect-dispatch -fno-indirect-classes  -fsource-filename=$(here)/classpath/tools/all-classes.lst
+libgcj_tools_la_GCJFLAGS = $(AM_GCJFLAGS) -findirect-dispatch \
+ -fno-bootstrap-classes -fno-indirect-classes \
+ -fsource-filename=$(here)/classpath/tools/all-classes.lst
 libgcj_tools_la_LDFLAGS = -rpath $(toolexeclibdir) \
  -version-info `grep -v '^\#' $(srcdir)/libtool-version` \
  $(LIBGCJ_LD_SYMBOLIC_FUNCTIONS)
@@ -667,7 +674,7 @@ if CREATE_JAVA_HOME
 	ln -sf $$RELATIVE/libgcj-tools-$(gcc_version).jar \
 	  $(DESTDIR)$(SDK_LIB_DIR)/tools.jar; \
 	for headername in jawt jni; do \
-	  DIRECTORY=$$(dirname $$($(DESTDIR)$(bindir)/gcj \
+	  DIRECTORY=$$(dirname $$($(DESTDIR)$(bindir)/`echo gcj | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'` \
 	    -print-file-name=include/$$headername.h)); \
 	  RELATIVE=$$(relative $$DIRECTORY \
 	    $(DESTDIR)$(SDK_INCLUDE_DIR)); \
@@ -675,7 +682,7 @@ if CREATE_JAVA_HOME
 	    $(DESTDIR)$(SDK_INCLUDE_DIR)/$$headername.h; \
 	done; \
 	for headername in jawt_md jni_md; do \
-	  DIRECTORY=$$(dirname $$($(DESTDIR)$(bindir)/gcj \
+	  DIRECTORY=$$(dirname $$($(DESTDIR)$(bindir)/`echo gcj | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'` \
 	    -print-file-name=include/$$headername.h)); \
 	  RELATIVE=$$(relative $$DIRECTORY \
 	    $(DESTDIR)$(SDK_INCLUDE_DIR)/linux); \

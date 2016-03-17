@@ -1,3 +1,32 @@
+2009-07-22  Release Manager
+
+	* GCC 4.4.1 released.
+
+2009-05-11  Matthias Klose  <doko@ubuntu.com>
+
+	* Makefile.am (install-data-local): Fix symlinks to header files.
+	Don't create a symlink for javac.
+	* Makefile.in: Regenerate.
+
+2009-04-28  Andrew Haley  <aph@redhat.com>
+
+	PR libgcj/39899
+	* Makefile.am (libgcj_tools_la_LDFLAGS): Add
+	-fno-bootstrap-classes to libgcj_tools_la_GCJFLAGS.
+	* Makefile.in: Regenerate.
+
+2009-04-26  Matthias Klose <doko@ubuntu.com>
+
+	* contrib/aot-compile.in: Print diagnostics for malformed or invalid
+	class files.
+	* contrib/generate-cacerts.pl.in: New.
+	* configure.ac (AC_CONFIG_FILES): Add generate-cacerts.pl.
+
+2009-04-24  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Create missing directory gnu/java/security/jce/prng.
+	* configure: Regenerate.
+
 2009-04-21  Release Manager
 
 	* GCC 4.4.0 released.

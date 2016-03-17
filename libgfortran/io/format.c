@@ -58,7 +58,7 @@ format_data;
 static const fnode colon_node = { FMT_COLON, 0, NULL, NULL, {{ 0, 0, 0 }}, 0,
 				  NULL };
 
-/* Error messages */
+/* Error messages. */
 
 static const char posint_required[] = "Positive width required in format",
   period_required[] = "Period required in format",
@@ -85,7 +85,8 @@ next_char (format_data *fmt, int literal)
 	return -1;
 
       fmt->format_string_len--;
-      fmt->error_element = c = toupper (*fmt->format_string++);
+      c = toupper (*fmt->format_string++);
+      fmt->error_element = c;
     }
   while ((c == ' ' || c == '\t') && !literal);
 
@@ -179,6 +180,14 @@ format_lex (format_data *fmt)
 
   switch (c)
     {
+    case '(':
+      token = FMT_LPAREN;
+      break;
+
+    case ')':
+      token = FMT_RPAREN;
+      break;
+
     case '-':
       negative_flag = 1;
       /* Fall Through */
@@ -269,14 +278,6 @@ format_lex (format_data *fmt)
 	  break;
 	}
 
-      break;
-
-    case '(':
-      token = FMT_LPAREN;
-      break;
-
-    case ')':
-      token = FMT_RPAREN;
       break;
 
     case 'X':
@@ -994,6 +995,33 @@ format_error (st_parameter_dt *dtp, const fnode *f, const char *message)
 }
 
 
+/* revert()-- Do reversion of the format.  Control reverts to the left
+ * parenthesis that matches the rightmost right parenthesis.  From our
+ * tree structure, we are looking for the rightmost parenthesis node
+ * at the second level, the first level always being a single
+ * parenthesis node.  If this node doesn't exit, we use the top
+ * level. */
+
+static void
+revert (st_parameter_dt *dtp)
+{
+  fnode *f, *r;
+  format_data *fmt = dtp->u.p.fmt;
+
+  dtp->u.p.reversion_flag = 1;
+
+  r = NULL;
+
+  for (f = fmt->array.array[0].u.child; f; f = f->next)
+    if (f->format == FMT_LPAREN)
+      r = f;
+
+  /* If r is NULL because no node was found, the whole tree will be used */
+
+  fmt->array.array[0].current = r;
+  fmt->array.array[0].count = 0;
+}
+
 /* parse_format()-- Parse a format string.  */
 
 void
@@ -1033,34 +1061,6 @@ parse_format (st_parameter_dt *dtp)
 
   if (fmt->error)
     format_error (dtp, NULL, fmt->error);
-}
-
-
-/* revert()-- Do reversion of the format.  Control reverts to the left
- * parenthesis that matches the rightmost right parenthesis.  From our
- * tree structure, we are looking for the rightmost parenthesis node
- * at the second level, the first level always being a single
- * parenthesis node.  If this node doesn't exit, we use the top
- * level. */
-
-static void
-revert (st_parameter_dt *dtp)
-{
-  fnode *f, *r;
-  format_data *fmt = dtp->u.p.fmt;
-
-  dtp->u.p.reversion_flag = 1;
-
-  r = NULL;
-
-  for (f = fmt->array.array[0].u.child; f; f = f->next)
-    if (f->format == FMT_LPAREN)
-      r = f;
-
-  /* If r is NULL because no node was found, the whole tree will be used */
-
-  fmt->array.array[0].current = r;
-  fmt->array.array[0].count = 0;
 }
 
 

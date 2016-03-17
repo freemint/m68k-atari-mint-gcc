@@ -1526,48 +1526,6 @@ gfc_conv_function_val (gfc_se * se, gfc_symbol * sym)
 }
 
 
-/* Translate the call for an elemental subroutine call used in an operator
-   assignment.  This is a simplified version of gfc_conv_function_call.  */
-
-tree
-gfc_conv_operator_assign (gfc_se *lse, gfc_se *rse, gfc_symbol *sym)
-{
-  tree args;
-  tree tmp;
-  gfc_se se;
-  stmtblock_t block;
-
-  /* Only elemental subroutines with two arguments.  */
-  gcc_assert (sym->attr.elemental && sym->attr.subroutine);
-  gcc_assert (sym->formal->next->next == NULL);
-
-  gfc_init_block (&block);
-
-  gfc_add_block_to_block (&block, &lse->pre);
-  gfc_add_block_to_block (&block, &rse->pre);
-
-  /* Build the argument list for the call, including hidden string lengths.  */
-  args = gfc_chainon_list (NULL_TREE, build_fold_addr_expr (lse->expr));
-  args = gfc_chainon_list (args, build_fold_addr_expr (rse->expr));
-  if (lse->string_length != NULL_TREE)
-    args = gfc_chainon_list (args, lse->string_length);
-  if (rse->string_length != NULL_TREE)
-    args = gfc_chainon_list (args, rse->string_length);    
-
-  /* Build the function call.  */
-  gfc_init_se (&se, NULL);
-  gfc_conv_function_val (&se, sym);
-  tmp = TREE_TYPE (TREE_TYPE (TREE_TYPE (se.expr)));
-  tmp = build_call_list (tmp, se.expr, args);
-  gfc_add_expr_to_block (&block, tmp);
-
-  gfc_add_block_to_block (&block, &lse->post);
-  gfc_add_block_to_block (&block, &rse->post);
-
-  return gfc_finish_block (&block);
-}
-
-
 /* Initialize MAPPING.  */
 
 void
@@ -2765,6 +2723,7 @@ gfc_conv_function_call (gfc_se * se, gfc_symbol * sym,
 	 dealt with in trans-array.c(gfc_conv_array_parameter).  */
       if (e && e->ts.type == BT_DERIVED
 	    && e->ts.derived->attr.alloc_comp
+	    && !(e->symtree && e->symtree->n.sym->attr.pointer)
 	    && (e->expr_type != EXPR_VARIABLE && !e->rank))
         {
 	  int parm_rank;
@@ -2782,7 +2741,18 @@ gfc_conv_function_call (gfc_se * se, gfc_symbol * sym,
 	      break;
 	    }
 
+	  if (e->expr_type == EXPR_OP
+		&& e->value.op.op == INTRINSIC_PARENTHESES
+		&& e->value.op.op1->expr_type == EXPR_VARIABLE)
+	    {
+	      tree local_tmp;
+	      local_tmp = gfc_evaluate_now (tmp, &se->pre);
+	      local_tmp = gfc_copy_alloc_comp (e->ts.derived, local_tmp, tmp, parm_rank);
+	      gfc_add_expr_to_block (&se->post, local_tmp);
+	    }
+
 	  tmp = gfc_deallocate_alloc_comp (e->ts.derived, tmp, parm_rank);
+
 	  gfc_add_expr_to_block (&se->post, tmp);
         }
 
@@ -4286,6 +4256,7 @@ gfc_trans_arrayfunc_assign (gfc_expr * expr1, gfc_expr * expr2)
   gfc_ss *ss;
   gfc_ref * ref;
   bool seen_array_ref;
+  bool c = false;
 
   /* The caller has already checked rank>0 and expr_type == EXPR_FUNCTION.  */
   if (expr2->value.function.isym && !gfc_is_intrinsic_libcall (expr2))
@@ -4294,6 +4265,10 @@ gfc_trans_arrayfunc_assign (gfc_expr * expr1, gfc_expr * expr2)
   /* Elemental functions don't need a temporary anyway.  */
   if (expr2->value.function.esym != NULL
       && expr2->value.function.esym->attr.elemental)
+    return NULL;
+
+  /* Fail if rhs is not FULL or a contiguous section.  */
+  if (expr1->ref && !(gfc_full_array_ref_p (expr1->ref, &c) || c))
     return NULL;
 
   /* Fail if EXPR1 can't be expressed as a descriptor.  */
@@ -4430,11 +4405,14 @@ gfc_trans_zero_assign (gfc_expr * expr)
   len = fold_build2 (MULT_EXPR, gfc_array_index_type, len,
 		     fold_convert (gfc_array_index_type, tmp));
 
-  /* Convert arguments to the correct types.  */
+  /* If we are zeroing a local array avoid taking its address by emitting
+     a = {} instead.  */
   if (!POINTER_TYPE_P (TREE_TYPE (dest)))
-    dest = gfc_build_addr_expr (pvoid_type_node, dest);
-  else
-    dest = fold_convert (pvoid_type_node, dest);
+    return build2 (MODIFY_EXPR, void_type_node,
+		   dest, build_constructor (TREE_TYPE (dest), NULL));
+
+  /* Convert arguments to the correct types.  */
+  dest = fold_convert (pvoid_type_node, dest);
   len = fold_convert (size_type_node, len);
 
   /* Construct call to __builtin_memset.  */
@@ -4749,7 +4727,7 @@ copyable_array_p (gfc_expr * expr)
   if (expr->rank < 1 || !expr->ref || expr->ref->next)
     return false;
 
-  if (!gfc_full_array_ref_p (expr->ref))
+  if (!gfc_full_array_ref_p (expr->ref, NULL))
     return false;
 
   /* Next check that it's of a simple enough type.  */
