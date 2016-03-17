@@ -80,8 +80,10 @@
       information must be installed.
 
       <p>
-      The configure option --enable-clocale can be used force a
-      particular behavior.
+      Note however that the sanity checks involving the de_DE locale are
+      skipped when an explicit --enable-clocale=gnu configure option is
+      used: only the basic checks are carried out, defending against
+      misconfigurations.
       </p>
 
       <p>

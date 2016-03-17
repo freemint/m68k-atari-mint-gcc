@@ -1,3 +1,54 @@
+2007-07-19  Release Manager
+
+	* GCC 4.2.1 released.
+
+2007-07-10  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	Backport from trunk:
+	PR fortran/31823
+	* intrinsic.texi (CMPLX): Document result kind.
+	(COMPLEX): Add documentation.
+
+2007-06-20  Daniel Franke  <franke.daniel@gmail.com>
+
+	Backport from trunk:
+	PR fortran/32002
+	* resolve.c (resolve_actual_arglist): Resolve actual argument after
+	being identified as variable.
+
+2007-06-20  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/32302
+	* trans-common.c (build_common_decl): If resizing of common
+	decl is needed, update the TREE_TYPE.
+
+2007-05-31  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/31483
+	* trans-expr.c (gfc_conv_function_call): Give a dummy
+	procedure the correct type if it has alternate returns.
+	
+
+	PR fortran/31540
+	* resolve.c (resolve_fl_procedure): Resolve constant character
+	lengths.
+
+	PR fortran/31867
+	PR fortran/31994
+	* trans-array.c (gfc_conv_expr_descriptor): Obtain the stored
+	offset for non-descriptor, source arrays and correct for stride
+	not equal to one before writing to field of output descriptor.
+
+2007-05-17  Tobias Burnus  <burnus@net-b.de>
+
+	* gfortran.texi (GFORTRAN_CONVERT_UNIT): Improve documentation.
+
+2007-05-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/31725
+	* trans-expr.c (gfc_conv_substring): Evaluate substring bounds
+	only once.
+
 2007-05-13  Release Manager
 
 	* GCC 4.2.0 released.

@@ -1,3 +1,64 @@
+2007-07-19  Release Manager
+
+	* GCC 4.2.1 released.
+
+2007-07-07  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/32554
+	Backport from trunk.
+	* io/write.c (output_float): Set edigits to a fixed size, avoiding
+	variation in field width calculation and eliminate buffer overrun.
+
+2007-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/31964
+	Backport from trunk.
+	* intrinsics/ishftc.c (ishftc4, ishftc8, ishftc16): Fix mask to handle
+	shift of bit-size number of bits.
+
+2007-05-23  Tobias Burnus <burnus@net-b.de>
+
+	PR fortran/31917
+	Backport from trunk.
+	* runtime/environ.c (mark_range): Fix setting default convert unit.
+
+2007-05-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/31051
+	Backport from trunk.
+	* io/transfer.c (formatted_transfer_scalar): Adjust position for pending
+	spaces when in writing mode.  Clean up some formatting.
+	
+2007-05-22  Tobias Burnus  <burnus@net-b.de>
+
+	PR libfortran/31915
+	Backport from trunk.
+	* io/transfer.c (unformatted_read): Use proper size for real(10).
+	  (unformatted_write): Ditto.
+
+2007-05-20  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/31395
+	Backport from 4.3.
+	* io/format.c (parse_format_list): Fix parsing. Regression against g77.
+
+2007-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/31618
+	Backport from trunk.
+	* io/transfer.c (read_block_direct):  Instead of calling us_read,
+	set dtp->u.p.current_unit->current_record = 0 so that pre_position
+	will read the record marker.
+	(data_transfer_init):  For different error conditions, call
+	generate_error, then return.
+
+2007-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/31196
+	Backport from trunk.
+	* intrinsics/reshape_generic.c (reshape_internal):  Increment
+	correct variable.
+
 2007-05-13  Release Manager
 
 	* GCC 4.2.0 released.

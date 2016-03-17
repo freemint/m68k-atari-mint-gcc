@@ -1,3 +1,272 @@
+2007-07-19  Release Manager
+
+	* GCC 4.2.1 released.
+
+2007-07-11  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/31027
+	* g++.dg/inherit/virtual4.C: New.
+
+2007-07-08  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/c99-math-double-1.c, gcc.dg/c99-math-float-1.c,
+	c99-math-long-double-1.c, c99-math.h: Test subnormals.
+
+2007-07-07  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/32554
+	* gfortran.dg/fmt_p_1.f90: New test.
+
+2007-07-07  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/32232
+	* g++.dg/template/overload9.C: New test.
+
+2007-07-06  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/32245
+	* g++.dg/init/ptrmem4.C: New test.
+
+	PR c++/32251
+	* g++.dg/init/new21.C: Likewise.
+
+	PR c++/31992
+	* g++.dg/template/static30.C: Likewise.
+
+2007-07-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/32450
+	* gcc.dg/pr32450.c: New runtime test.
+
+2007-07-03  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/31338
+	* g++.dg/ext/complex2.C: New test.
+
+2007-07-04  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/32500
+	* gcc.c-torture/execute/pr32500.c: New testcase.
+
+2007-07-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR tree-optimization/31966
+	PR tree-optimization/32533
+	* gcc.dg/tree-ssa/pr31966.c: New runtime test.
+	* gfortran.dg/pr32533.f90: Ditto.
+
+2007-07-02  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/c99-math.h: Fix typo.
+
+2007-07-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libgomp/32468
+	* gcc.dg/gomp/pr32468-1.c: New test.
+
+	PR c++/31748
+	* g++.dg/gomp/pr31748.C: New test.
+
+2007-06-30  Alexandre Oliva  <aoliva@redhat.com>
+
+	* g++.dg/ext/interface4.C, g++.dg/ext/interface4.h: New.
+
+2007-06-28  Seongbae Park  <seongbae.park@gmail.com>
+
+	* gcc.target/arm/stack-corruption.c: New test.
+
+2007-06-27  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/27492
+	* g++.dg/inherit/covariant15.C: New test.
+
+2007-06-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/32389
+	* gcc.target/i386/pr32389.c New test.
+
+2007-06-20  Daniel Franke  <franke.daniel@gmail.com>
+
+	Backport from trunk:
+	PR fortran/32002
+	* gfortran.dg/compliant_elemental_intrinsics_2.f90: New test.
+
+2007-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR inline-asm/32109
+	* g++.dg/ext/asm10.C: New test.
+
+	PR middle-end/32285
+	* gcc.c-torture/execute/20070614-1.c: New test.
+
+2007-06-20  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/32302
+	* gfortran.dg/common_resize_1.f90: New test.
+
+2007-06-19  Richard Guenther  <rguenther@suse.de>
+	Michael Matz  <matz@suse.de>
+
+	PR tree-optimization/30252
+	* g++.dg/opt/pr30252.C: New testcase.
+
+2007-06-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/32353
+	* g++.dg/opt/nrv13.C: New test.
+
+2007-06-15  Mark Mitchell  <mark@codesourcery.com>
+
+	* g++.dg/lookup/anon6.C: New test.
+
+2007-06-17  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.target/sparc/align.c: Use 'unsigned char' as element type.
+	* gcc.target/sparc/combined-2.c: Likewise.
+	* gcc.target/sparc/fexpand.c : Likewise.
+	* gcc.target/sparc/fnot.c: Likewise.  Fix a couple of prototypes.
+	* gcc.target/sparc/fpack16.c : Likewise.
+	* gcc.target/sparc/fpmerge.c : Likewise.
+	* gcc.target/sparc/fpmul.c : Likewise.
+	* gcc.target/sparc/noresult.c : Likewise.
+	* gcc.target/sparc/pdist.c: Likewise.
+
+2007-06-15  Diego Novillo  <dnovillo@google.com>
+
+	PR 32327
+	* g++.dg/tree-ssa/pr32327-1.C: New test.
+	* g++.dg/tree-ssa/pr32327.C: New test.
+
+2007-06-13  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.target/sparc/mfpu.c: New test.
+
+2007-06-09  Ian Lance Taylor  <iant@google.com>
+
+	PR tree-optimization/32169
+	* gcc.c-torture/compile/pr32169.c: New test.
+
+2007-06-08  Dirk Mueller  <dmueller@suse.de>
+
+	PR c++/31809
+	Backport from mainline:
+	2007-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/opt/static5.C: New test.
+
+2007-06-06  Ian Lance Taylor  <iant@google.com>
+
+	* g++.dg/conversion/enum1.C: New test.
+
+2007-06-05  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.dg/Wstrict-overflow-19.c: New test.
+
+2007-06-04  Ian Lance Taylor  <iant@google.com>
+
+	* gcc.dg/Wstrict-overflow-18.c: New test.
+
+2007-05-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2007-05-25  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/sse2-check.h: New.
+	* gcc.target/i386/sse2-vec-1.c: Likewise.
+	* gcc.target/i386/sse2-vec-2.c: Likewise.
+	* gcc.target/i386/sse2-vec-3.c: Likewise.
+	* gcc.target/i386/sse2-vec-4.c: Likewise.
+	* gcc.target/i386/sse2-vec-5.c: Likewise.
+	* gcc.target/i386/sse2-vec-6.c: Likewise.
+
+2007-05-31  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/31483
+	* gfortran.dg/altreturn_5.f90: New test.
+
+	PR fortran/31540
+	* gfortran.dg/char_result_5.f90: New test.
+
+	PR fortran/31867
+	* gfortran.dg/char_length_5.f90: New test.
+
+	PR fortran/31994
+	* gfortran.dg/array_reference_1.f90: New test.
+
+2007-05-22  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/31559
+	Backport from mainline.
+	* primary.c (match_variable): External functions
+	are no variables.
+
+2007-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/31769
+	* g++.dg/gomp/pr31769.C: New test.
+
+2007-05-28  Andrew Pinski  <andrew_pinski@playstation.sony.com>
+
+	PR tree-opt/32100
+	* gcc.c-torture/execute/vrp-7.c: New test.
+	 
+2007-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/31964
+	* gfortran.fortran-torture/execute/intrinsic_bitops.f90: Update.
+
+2007-05-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/31051
+	* gfortran.dg/fmt_t_3.f90: New.
+
+2007-05-22  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	* gfortran.dg/unf_io_convert_3.f90: Fix dg directive.
+
+2007-05-22  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/31559
+	Backport from mainline.
+	* func_assign.f90: New test.
+
+2007-05-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/31167
+	Backport from mainline.
+	* gcc.target/i386/pr31167.c: New test.
+
+2007-05-20  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/31395
+	* gfortran.dg/fmt_colon.f90: New test.
+
+2007-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/31618
+	Backport from trunk.
+	* gfortran.dg/backspace_8.f:  New test case.
+
+2007-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/31196
+	Backport from trunk.
+	* gfortran.dg/reshape_transpose_1.f90:  New test.
+
+2007-05-17  Ian Lance Taylor  <iant@google.com>
+
+	PR tree-optimization/31953
+	* gcc.c-torture/compile/pr31953.c: New test.
+
+2007-05-17  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.c-torture/execute/20070517-1.c: New test.
+
+2007-05-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/31725
+	* gfortran.dg/substr_4.f: New test.
+
 2007-05-13  Release Manager
 
 	* GCC 4.2.0 released.

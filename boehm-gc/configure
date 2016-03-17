@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS multi_basedir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os target_noncanonical mkinstalldirs INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CFLAGS CXXFLAGS CCAS CCASFLAGS AS ac_ct_AS AR ac_ct_AR RANLIB ac_ct_RANLIB MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT GC_CFLAGS LN_S LIBTOOL CXXCPP CPPFLAGS THREADLIBS POWERPC_DARWIN_TRUE POWERPC_DARWIN_FALSE EXTRA_TEST_LIBS target_all CPLUSPLUS_TRUE CPLUSPLUS_FALSE AM_CPPFLAGS addobjs addincludes addlibs addtests CPP EGREP MY_CFLAGS toolexecdir toolexeclibdir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS multi_basedir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os target_noncanonical mkinstalldirs INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CFLAGS CXXFLAGS CCAS CCASFLAGS AS ac_ct_AS AR ac_ct_AR RANLIB ac_ct_RANLIB MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT GC_CFLAGS LN_S LIBTOOL CXXCPP CPPFLAGS THREADLIBS POWERPC_DARWIN_TRUE POWERPC_DARWIN_FALSE extra_ldflags_libgc EXTRA_TEST_LIBS target_all CPLUSPLUS_TRUE CPLUSPLUS_FALSE AM_CPPFLAGS addobjs addincludes addlibs addtests CPP EGREP MY_CFLAGS toolexecdir toolexeclibdir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -5492,14 +5492,14 @@ _ACEOF
      *-*-solaris*)
 
 cat >>confdefs.h <<\_ACEOF
-#define GC_SOLARIS_THREADS 1
-_ACEOF
-
-
-cat >>confdefs.h <<\_ACEOF
 #define GC_SOLARIS_PTHREADS 1
 _ACEOF
 
+	# Need to use alternate thread library, otherwise gctest hangs
+	# on Solaris 8.
+	multi_os_directory=`$CC -print-multi-os-directory`
+	THREADLIBS="-L/usr/lib/lwp/$multi_os_directory \
+		    -R/usr/lib/lwp/$multi_os_directory -lpthread -lthread -lrt"
 	;;
      *-*-irix*)
 
@@ -5741,7 +5741,7 @@ echo "${ECHO_T}$ac_cv_member_ppc_thread_state_t_r0" >&6
 if test $ac_cv_member_ppc_thread_state_t_r0 = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_PPC_THREAD_STATE_R0
+#define HAS_PPC_THREAD_STATE_R0 1
 _ACEOF
 
 fi
@@ -5852,7 +5852,7 @@ echo "${ECHO_T}$ac_cv_member_ppc_thread_state_t___r0" >&6
 if test $ac_cv_member_ppc_thread_state_t___r0 = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_PPC_THREAD_STATE___R0
+#define HAS_PPC_THREAD_STATE___R0 1
 _ACEOF
 
 fi
@@ -5963,7 +5963,7 @@ echo "${ECHO_T}$ac_cv_member_ppc_thread_state64_t_r0" >&6
 if test $ac_cv_member_ppc_thread_state64_t_r0 = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_PPC_THREAD_STATE64_R0
+#define HAS_PPC_THREAD_STATE64_R0 1
 _ACEOF
 
 fi
@@ -6074,16 +6074,16 @@ echo "${ECHO_T}$ac_cv_member_ppc_thread_state64_t___r0" >&6
 if test $ac_cv_member_ppc_thread_state64_t___r0 = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_PPC_THREAD_STATE64___R0
+#define HAS_PPC_THREAD_STATE64___R0 1
 _ACEOF
 
 fi
 
     ;;
   i?86*-*-darwin*)
-    echo "$as_me:$LINENO: checking for i386_thread_state_t.eax" >&5
-echo $ECHO_N "checking for i386_thread_state_t.eax... $ECHO_C" >&6
-if test "${ac_cv_member_i386_thread_state_t_eax+set}" = set; then
+    echo "$as_me:$LINENO: checking for x86_thread_state32_t.eax" >&5
+echo $ECHO_N "checking for x86_thread_state32_t.eax... $ECHO_C" >&6
+if test "${ac_cv_member_x86_thread_state32_t_eax+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -6093,12 +6093,12 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/cdefs.h>
-#include <mach/thread_status.h>
+      #include <mach/thread_status.h>
 
 int
 main ()
 {
-static i386_thread_state_t ac_aggr;
+static x86_thread_state32_t ac_aggr;
 if (ac_aggr.eax)
 return 0;
   ;
@@ -6127,7 +6127,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_member_i386_thread_state_t_eax=yes
+  ac_cv_member_x86_thread_state32_t_eax=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -6139,12 +6139,12 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/cdefs.h>
-#include <mach/thread_status.h>
+      #include <mach/thread_status.h>
 
 int
 main ()
 {
-static i386_thread_state_t ac_aggr;
+static x86_thread_state32_t ac_aggr;
 if (sizeof ac_aggr.eax)
 return 0;
   ;
@@ -6173,30 +6173,30 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_member_i386_thread_state_t_eax=yes
+  ac_cv_member_x86_thread_state32_t_eax=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_member_i386_thread_state_t_eax=no
+ac_cv_member_x86_thread_state32_t_eax=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-echo "$as_me:$LINENO: result: $ac_cv_member_i386_thread_state_t_eax" >&5
-echo "${ECHO_T}$ac_cv_member_i386_thread_state_t_eax" >&6
-if test $ac_cv_member_i386_thread_state_t_eax = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_member_x86_thread_state32_t_eax" >&5
+echo "${ECHO_T}$ac_cv_member_x86_thread_state32_t_eax" >&6
+if test $ac_cv_member_x86_thread_state32_t_eax = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_I386_THREAD_STATE_EAX
+#define HAS_X86_THREAD_STATE32_EAX 1
 _ACEOF
 
 fi
 
-    echo "$as_me:$LINENO: checking for i386_thread_state_t.__eax" >&5
-echo $ECHO_N "checking for i386_thread_state_t.__eax... $ECHO_C" >&6
-if test "${ac_cv_member_i386_thread_state_t___eax+set}" = set; then
+    echo "$as_me:$LINENO: checking for x86_thread_state32_t.__eax" >&5
+echo $ECHO_N "checking for x86_thread_state32_t.__eax... $ECHO_C" >&6
+if test "${ac_cv_member_x86_thread_state32_t___eax+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -6206,12 +6206,12 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/cdefs.h>
-#include <mach/thread_status.h>
+      #include <mach/thread_status.h>
 
 int
 main ()
 {
-static i386_thread_state_t ac_aggr;
+static x86_thread_state32_t ac_aggr;
 if (ac_aggr.__eax)
 return 0;
   ;
@@ -6240,7 +6240,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_member_i386_thread_state_t___eax=yes
+  ac_cv_member_x86_thread_state32_t___eax=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -6252,12 +6252,12 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <sys/cdefs.h>
-#include <mach/thread_status.h>
+      #include <mach/thread_status.h>
 
 int
 main ()
 {
-static i386_thread_state_t ac_aggr;
+static x86_thread_state32_t ac_aggr;
 if (sizeof ac_aggr.__eax)
 return 0;
   ;
@@ -6286,28 +6286,256 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_member_i386_thread_state_t___eax=yes
+  ac_cv_member_x86_thread_state32_t___eax=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_member_i386_thread_state_t___eax=no
+ac_cv_member_x86_thread_state32_t___eax=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-echo "$as_me:$LINENO: result: $ac_cv_member_i386_thread_state_t___eax" >&5
-echo "${ECHO_T}$ac_cv_member_i386_thread_state_t___eax" >&6
-if test $ac_cv_member_i386_thread_state_t___eax = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_member_x86_thread_state32_t___eax" >&5
+echo "${ECHO_T}$ac_cv_member_x86_thread_state32_t___eax" >&6
+if test $ac_cv_member_x86_thread_state32_t___eax = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAS_I386_THREAD_STATE___EAX
+#define HAS_X86_THREAD_STATE32___EAX 1
 _ACEOF
 
 fi
 
     ;;
+  x86_64-*-darwin*)
+    echo "$as_me:$LINENO: checking for x86_thread_state64_t.rax" >&5
+echo $ECHO_N "checking for x86_thread_state64_t.rax... $ECHO_C" >&6
+if test "${ac_cv_member_x86_thread_state64_t_rax+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/cdefs.h>
+      #include <mach/thread_status.h>
+
+int
+main ()
+{
+static x86_thread_state64_t ac_aggr;
+if (ac_aggr.rax)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_x86_thread_state64_t_rax=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/cdefs.h>
+      #include <mach/thread_status.h>
+
+int
+main ()
+{
+static x86_thread_state64_t ac_aggr;
+if (sizeof ac_aggr.rax)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_x86_thread_state64_t_rax=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_x86_thread_state64_t_rax=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_x86_thread_state64_t_rax" >&5
+echo "${ECHO_T}$ac_cv_member_x86_thread_state64_t_rax" >&6
+if test $ac_cv_member_x86_thread_state64_t_rax = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAS_X86_THREAD_STATE64_RAX 1
+_ACEOF
+
+fi
+
+    echo "$as_me:$LINENO: checking for x86_thread_state64_t.__rax" >&5
+echo $ECHO_N "checking for x86_thread_state64_t.__rax... $ECHO_C" >&6
+if test "${ac_cv_member_x86_thread_state64_t___rax+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/cdefs.h>
+      #include <mach/thread_status.h>
+
+int
+main ()
+{
+static x86_thread_state64_t ac_aggr;
+if (ac_aggr.__rax)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_x86_thread_state64_t___rax=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/cdefs.h>
+      #include <mach/thread_status.h>
+
+int
+main ()
+{
+static x86_thread_state64_t ac_aggr;
+if (sizeof ac_aggr.__rax)
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_member_x86_thread_state64_t___rax=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_member_x86_thread_state64_t___rax=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_member_x86_thread_state64_t___rax" >&5
+echo "${ECHO_T}$ac_cv_member_x86_thread_state64_t___rax" >&6
+if test $ac_cv_member_x86_thread_state64_t___rax = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAS_X86_THREAD_STATE64___RAX 1
+_ACEOF
+
+fi
+
+     ;;
   *) ;;
 esac
 
@@ -6391,6 +6619,14 @@ fi
 
     ;;
 esac
+
+# extra LD Flags which are required for targets
+case "${host}" in
+  *-*-darwin*)
+    extra_ldflags_libgc=-Wl,-single_module
+    ;;
+esac
+
 
 
 
@@ -8246,6 +8482,7 @@ s,@CPPFLAGS@,$CPPFLAGS,;t t
 s,@THREADLIBS@,$THREADLIBS,;t t
 s,@POWERPC_DARWIN_TRUE@,$POWERPC_DARWIN_TRUE,;t t
 s,@POWERPC_DARWIN_FALSE@,$POWERPC_DARWIN_FALSE,;t t
+s,@extra_ldflags_libgc@,$extra_ldflags_libgc,;t t
 s,@EXTRA_TEST_LIBS@,$EXTRA_TEST_LIBS,;t t
 s,@target_all@,$target_all,;t t
 s,@CPLUSPLUS_TRUE@,$CPLUSPLUS_TRUE,;t t

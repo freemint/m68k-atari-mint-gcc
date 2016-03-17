@@ -883,7 +883,8 @@ void GC_thr_init()
 #       if defined(GC_HPUX_THREADS)
 	  GC_nprocs = pthread_num_processors_np();
 #       endif
-#	if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS)
+#	if defined(GC_OSF1_THREADS) || defined(GC_AIX_THREADS) \
+	   || defined(GC_SOLARIS_PTHREADS)
 	  GC_nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	  if (GC_nprocs <= 0) GC_nprocs = 1;
 #	endif
@@ -1135,7 +1136,13 @@ GC_PTR GC_get_thread_stack_base()
   size_t stack_size;
   
   my_pthread = pthread_self();  
-  pthread_getattr_np (my_pthread, &attr);
+  if (pthread_getattr_np (my_pthread, &attr) != 0)
+    {
+#   ifdef DEBUG_THREADS
+      GC_printf1("Can not determine stack base for attached thread");
+#   endif
+      return 0;
+    }
   pthread_attr_getstack (&attr, (void **) &stack_addr, &stack_size);
   pthread_attr_destroy (&attr);
   

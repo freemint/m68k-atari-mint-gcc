@@ -173,8 +173,12 @@ case "$THREADS" in
 	THREADLIBS=-pthread
       	;;
      *-*-solaris*)
-	AC_DEFINE(GC_SOLARIS_THREADS,1,[support for Solaris (thr_) threads])
 	AC_DEFINE(GC_SOLARIS_PTHREADS,1,[support for Solaris pthreads])
+	# Need to use alternate thread library, otherwise gctest hangs
+	# on Solaris 8.
+	multi_os_directory=`$CC -print-multi-os-directory`
+	THREADLIBS="-L/usr/lib/lwp/$multi_os_directory \
+		    -R/usr/lib/lwp/$multi_os_directory -lpthread -lthread -lrt"
 	;;
      *-*-irix*)
 	AC_DEFINE(GC_IRIX_THREADS,1,[support for Irix pthreads])
@@ -248,33 +252,46 @@ AM_CONDITIONAL(POWERPC_DARWIN,test x$powerpc_darwin = xtrue)
 case "$host" in
   powerpc*-*-darwin*)
     AC_CHECK_MEMBER(ppc_thread_state_t.r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE_R0,,[ppc_thread_state_t has field r0]),,
+      AC_DEFINE(HAS_PPC_THREAD_STATE_R0,1,
+	[ppc_thread_state_t has field r0]),,
       [#include <mach/thread_status.h>])
     AC_CHECK_MEMBER(ppc_thread_state_t.__r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE___R0,,dnl
-        [ppc_thread_state_t has field __r0]),,
+      AC_DEFINE(HAS_PPC_THREAD_STATE___R0,1,dnl
+	[ppc_thread_state_t has field __r0]),,
       [#include <mach/thread_status.h>])
     AC_CHECK_MEMBER(ppc_thread_state64_t.r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE64_R0,,dnl
-        [ppc_thread_state64_t has field r0]),,
+      AC_DEFINE(HAS_PPC_THREAD_STATE64_R0,1,dnl
+	[ppc_thread_state64_t has field r0]),,
       [#include <mach/thread_status.h>])
     AC_CHECK_MEMBER(ppc_thread_state64_t.__r0,
-      AC_DEFINE(HAS_PPC_THREAD_STATE64___R0,,dnl
-        [ppc_thread_state64_t has field __r0]),,
+      AC_DEFINE(HAS_PPC_THREAD_STATE64___R0,1,dnl
+	[ppc_thread_state64_t has field __r0]),,
       [#include <mach/thread_status.h>])
     ;;
   i?86*-*-darwin*)
-    AC_CHECK_MEMBER(i386_thread_state_t.eax,
-      AC_DEFINE(HAS_I386_THREAD_STATE_EAX,,dnl
-        [i386_thread_state_t has field eax]),,
+    AC_CHECK_MEMBER(x86_thread_state32_t.eax,
+      AC_DEFINE(HAS_X86_THREAD_STATE32_EAX,1,dnl
+	[x86_thread_state32_t has field eax]),,
       [#include <sys/cdefs.h>
-#include <mach/thread_status.h>])
-    AC_CHECK_MEMBER(i386_thread_state_t.__eax,
-      AC_DEFINE(HAS_I386_THREAD_STATE___EAX,,dnl
-        [i386_thread_state_t has field __eax]),,
+      #include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(x86_thread_state32_t.__eax,
+      AC_DEFINE(HAS_X86_THREAD_STATE32___EAX,1,dnl
+	[x86_thread_state32_t has field __eax]),,
       [#include <sys/cdefs.h>
-#include <mach/thread_status.h>])
+      #include <mach/thread_status.h>])
     ;;
+  x86_64-*-darwin*)
+    AC_CHECK_MEMBER(x86_thread_state64_t.rax,
+      AC_DEFINE(HAS_X86_THREAD_STATE64_RAX,1,dnl
+	[x86_thread_state64_t has field rax]),,
+      [#include <sys/cdefs.h>
+      #include <mach/thread_status.h>])
+    AC_CHECK_MEMBER(x86_thread_state64_t.__rax,
+      AC_DEFINE(HAS_X86_THREAD_STATE64___RAX,1,dnl
+	[x86_thread_state64_t has field __rax]),,
+      [#include <sys/cdefs.h>
+      #include <mach/thread_status.h>])
+     ;;
   *) ;;
 esac
 
@@ -286,6 +303,14 @@ case "$host" in
     AC_CHECK_LIB(dl, dlopen, EXTRA_TEST_LIBS="$EXTRA_TEST_LIBS -ldl")
     ;;
 esac
+
+# extra LD Flags which are required for targets
+case "${host}" in
+  *-*-darwin*)
+    extra_ldflags_libgc=-Wl,-single_module
+    ;;
+esac
+AC_SUBST(extra_ldflags_libgc)
 
 AC_SUBST(EXTRA_TEST_LIBS)
 

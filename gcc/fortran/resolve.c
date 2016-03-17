@@ -1006,6 +1006,13 @@ resolve_actual_arglist (gfc_actual_arglist * arg, procedure_type ptype)
 	  e->ref->u.ar.as = sym->as;
 	}
 
+      /* Expressions are assigned a default ts.type of BT_PROCEDURE in
+	 primary.c (match_actual_arg). If above code determines that it
+	 is a  variable instead, it needs to be resolved as it was not
+	 done at the beginning of this function.  */
+      if (gfc_resolve_expr (e) != SUCCESS)
+	return FAILURE;
+
     argument_list:
       /* Check argument list functions %VAL, %LOC and %REF.  There is
 	 nothing to do for %REF.  */
@@ -5742,6 +5749,11 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
   if (sym->ts.type == BT_CHARACTER)
     {
       gfc_charlen *cl = sym->ts.cl;
+
+      if (cl && cl->length && gfc_is_constant_expr (cl->length)
+	     && resolve_charlen (cl) == FAILURE)
+	return FAILURE;
+
       if (!cl || !cl->length || cl->length->expr_type != EXPR_CONSTANT)
 	{
 	  if (sym->attr.proc == PROC_ST_FUNCTION)
