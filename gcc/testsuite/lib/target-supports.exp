@@ -1084,7 +1084,8 @@ proc check_effective_target_vect_cmdline_needed { } {
 		 && [check_effective_target_lp64])
 	     || ([istarget powerpc*-*-*]
 		 && ([check_effective_target_powerpc_spe]
-		     || [check_effective_target_powerpc_altivec]))} {
+		     || [check_effective_target_powerpc_altivec]))
+             || [istarget spu-*-*] } {
 	   set et_vect_cmdline_needed_saved 0
 	}
     }
@@ -1200,6 +1201,17 @@ proc check_effective_target_arm_neon_ok { } {
     }
 }
 
+# Return 1 is this is an ARM target where -mthumb causes Thumb-1 to be
+# used.
+
+proc check_effective_target_arm_thumb1_ok { } {
+    return [check_no_compiler_messages arm_thumb1_ok assembly {
+	#if !defined(__arm__) || !defined(__thumb__) || defined(__thumb2__)
+	#error FOO
+	#endif
+    } "-mthumb"]
+}
+
 # Return 1 if the target supports executing NEON instructions, 0
 # otherwise.  Cache the result.
 
@@ -1234,6 +1246,24 @@ proc check_effective_target_powerpc_fprs { } {
     }
 }
 
+# Return 1 if this is a PowerPC target with hardware double-precision
+# floating point.
+
+proc check_effective_target_powerpc_hard_double { } {
+    if { [istarget powerpc*-*-*]
+	 || [istarget rs6000-*-*] } {
+	return [check_no_compiler_messages powerpc_hard_double object {
+	    #ifdef _SOFT_DOUBLE
+	    #error soft double
+	    #else
+	    int dummy;
+	    #endif
+	}]
+    } else {
+	return 0
+    }
+}
+
 # Return 1 if this is a PowerPC target supporting -maltivec.
 
 proc check_effective_target_powerpc_altivec_ok { } {
@@ -1257,7 +1287,11 @@ proc check_effective_target_powerpc_altivec_ok { } {
 # Return 1 if this is a PowerPC target that supports SPU.
 
 proc check_effective_target_powerpc_spu { } {
-    return [istarget powerpc*-*-linux*]
+    if [istarget powerpc*-*-linux*] {
+	return [check_effective_target_powerpc_altivec_ok]
+    } else {
+	return 0
+    }
 }
 
 # Return 1 if this is a PowerPC target with SPE enabled.
@@ -1287,6 +1321,19 @@ proc check_effective_target_powerpc_altivec { } {
 	    int dummy;
 	    #endif
 	}]
+    } else {
+	return 0
+    }
+}
+
+# Return 1 if this is a SPU target with a toolchain that
+# supports automatic overlay generation.
+
+proc check_effective_target_spu_auto_overlay { } {
+    if { [istarget spu*-*-elf*] } {
+	return [check_no_compiler_messages spu_auto_overlay executable {
+		int main (void) { }
+		} "-Wl,--auto-overlay" ]
     } else {
 	return 0
     }

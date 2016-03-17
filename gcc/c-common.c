@@ -1031,8 +1031,13 @@ warn_logical_operator (enum tree_code code, tree arg1, tree
 bool
 strict_aliasing_warning (tree otype, tree type, tree expr)
 {
-  if (!(flag_strict_aliasing && POINTER_TYPE_P (type) 
-        && POINTER_TYPE_P (otype) && !VOID_TYPE_P (TREE_TYPE (type))))
+  if (!(flag_strict_aliasing
+	&& POINTER_TYPE_P (type)
+	&& POINTER_TYPE_P (otype)
+	&& !VOID_TYPE_P (TREE_TYPE (type)))
+      /* If the type we are casting to is a ref-all pointer
+         dereferencing it is always valid.  */
+      || TYPE_REF_CAN_ALIAS_ALL (type))
     return false;
 
   if ((warn_strict_aliasing > 1) && TREE_CODE (expr) == ADDR_EXPR
@@ -3214,10 +3219,6 @@ c_common_get_alias_set (tree t)
       || t == unsigned_char_type_node)
     return 0;
 
-  /* If it has the may_alias attribute, it can alias anything.  */
-  if (lookup_attribute ("may_alias", TYPE_ATTRIBUTES (t)))
-    return 0;
-
   /* The C standard specifically allows aliasing between signed and
      unsigned variants of the same type.  We treat the signed
      variant as canonical.  */
@@ -5207,6 +5208,8 @@ handle_mode_attribute (tree *node, tree name, tree args,
 	mode = targetm.libgcc_cmp_return_mode ();
       else if (!strcmp (p, "libgcc_shift_count"))
 	mode = targetm.libgcc_shift_count_mode ();
+      else if (!strcmp (p, "unwind_word"))
+	mode = targetm.unwind_word_mode ();
       else
 	for (j = 0; j < NUM_MACHINE_MODES; j++)
 	  if (!strcmp (p, GET_MODE_NAME (j)))

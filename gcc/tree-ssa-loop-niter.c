@@ -697,7 +697,7 @@ number_of_iterations_lt_to_ne (tree type, affine_iv *iv0, affine_iv *iv1,
       /* The final value of the iv is iv1->base + MOD, assuming that this
 	 computation does not overflow, and that
 	 iv0->base <= iv1->base + MOD.  */
-      if (!iv1->no_overflow && !integer_zerop (mod))
+      if (!iv0->no_overflow && !integer_zerop (mod))
 	{
 	  bound = fold_build2 (MINUS_EXPR, type,
 			       TYPE_MAX_VALUE (type1), tmod);
@@ -719,7 +719,7 @@ number_of_iterations_lt_to_ne (tree type, affine_iv *iv0, affine_iv *iv1,
       /* The final value of the iv is iv0->base - MOD, assuming that this
 	 computation does not overflow, and that
 	 iv0->base - MOD <= iv1->base. */
-      if (!iv0->no_overflow && !integer_zerop (mod))
+      if (!iv1->no_overflow && !integer_zerop (mod))
 	{
 	  bound = fold_build2 (PLUS_EXPR, type1,
 			       TYPE_MIN_VALUE (type1), tmod);
@@ -1672,7 +1672,7 @@ simplify_using_outer_evolutions (struct loop *loop, tree expr)
 
 /* Returns true if EXIT is the only possible exit from LOOP.  */
 
-static bool
+bool
 loop_only_exit_p (const struct loop *loop, const_edge exit)
 {
   basic_block *body;

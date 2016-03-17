@@ -11221,7 +11221,7 @@ cp_parser_elaborated_type_specifier (cp_parser* parser,
              caught elsewhere in parsing.  Those that are pointless arrive
              here.  */
 
-          if (cp_parser_declares_only_class_p (parser)
+          if (cp_lexer_next_token_is (parser->lexer, CPP_SEMICOLON)
               && !is_friend && !processing_explicit_instantiation)
             warning (0, "declaration %qD does not declare anything", decl);
 
@@ -15046,9 +15046,8 @@ cp_parser_member_declaration (cp_parser* parser)
 							 sfk_none)
 				   : NULL,
 				   &decl_specifiers,
-				   width);
-	      /* Apply the attributes.  */
-	      cplus_decl_attributes (&decl, attributes, /*flags=*/0);
+				   width,
+				   attributes);
 	    }
 	  else
 	    {
@@ -18961,11 +18960,10 @@ cp_parser_objc_class_ivars (cp_parser* parser)
 	  attributes = chainon (prefix_attributes, attributes);
 
 	  if (width)
-	    {
 	      /* Create the bitfield declaration.  */
-	      decl = grokbitfield (declarator, &declspecs, width);
-	      cplus_decl_attributes (&decl, attributes, /*flags=*/0);
-	    }
+	      decl = grokbitfield (declarator, &declspecs,
+				   width,
+				   attributes);
 	  else
 	    decl = grokfield (declarator, &declspecs,
 			      NULL_TREE, /*init_const_expr_p=*/false,

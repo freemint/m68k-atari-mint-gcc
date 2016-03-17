@@ -1,3 +1,40 @@
+2008-08-27  Release Manager
+
+	* GCC 4.3.2 released.
+
+2008-07-27  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/36132
+
+	* trans-array.c (gfc_conv_array_parameter): Fix packing/unpacking
+	for nonpresent optional actuals to optional formals.
+	* trans-array.h (gfc_conv_array_parameter): Update declaration.
+	* trans-expr.c (gfc_conv_function_call,gfc_trans_arrayfunc_assign):
+	Update gfc_conv_array_parameter calls.
+	* trans-intrinsics (gfc_conv_intrinsic_transfer,
+	gfc_conv_intrinsic_loc): Ditto.
+
+2008-07-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/36366
+	* resolve.c (add_dt_to_dt_list):  New function.
+	(resolve_fl_derived): Call new function for pointer components
+	and when derived type resolved.
+
+2008-07-17  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/36824
+	* resolve.c (resolve_fl_derived): Fix constantness check
+	for the array dimensions.
+
+2008-06-20  Laurynas Biveinis  <laurynas.biveinis@gmail.com>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/34908
+	PR fortran/36276
+	* scanner.c (preprocessor_line): do not call gfc_free for
+	current_file->filename if it differs from filename.
+
 2008-06-06  Release Manager
 
 	* GCC 4.3.1 released.

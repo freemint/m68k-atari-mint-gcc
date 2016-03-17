@@ -2,7 +2,8 @@
 
 // 2001-09-17 Benjamin Kosnik  <bkoz@redhat.com>
 
-// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation
+// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
+// Free Software Foundation
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -38,22 +39,22 @@ void test04()
 
   // basic construction and sanity check
   locale loc_c = locale::classic();
-  locale loc_fr = locale("fr_FR@euro");
-  VERIFY( loc_fr != loc_c );
+  locale loc_es = locale("es_ES");
+  VERIFY( loc_es != loc_c );
 
   // create an ostream-derived object, cache the time_put facet
   const string empty;
   ostringstream oss;
-  oss.imbue(loc_fr);
+  oss.imbue(loc_es);
   const time_put<char>& tim_put = use_facet<time_put<char> >(oss.getloc()); 
   iterator_type os_it04 = tim_put.put(oss.rdbuf(), oss, '*', &time1, 'a');
   string result4 = oss.str();
-  VERIFY( result4 == "dim" );
+  VERIFY( result4 == "dom" );
 
-  oss.str(empty); // "%d.%m.%Y"
+  oss.str(empty); // "%d/%m/%y"
   iterator_type os_it27 = tim_put.put(oss.rdbuf(), oss, '*', &time1, 'x');
-  string result27 = oss.str(); // "04.04.1971"
-  VERIFY( result27 == "04.04.1971" );
+  string result27 = oss.str(); // "04/04/71"
+  VERIFY( result27 == "04/04/71" );
 
   oss.str(empty); // "%T"
   iterator_type os_it28 = tim_put.put(oss.rdbuf(), oss, '*', &time1, 'X');
@@ -62,8 +63,8 @@ void test04()
 
   oss.str(empty);
   iterator_type os_it37 = tim_put.put(oss.rdbuf(), oss, '*', &time1, 'x', 'E');
-  string result37 = oss.str(); // "04.04.1971"
-  VERIFY( result37 == "04.04.1971" );
+  string result37 = oss.str(); // "04/04/71"
+  VERIFY( result37 == "04/04/71" );
 
   oss.str(empty);
   iterator_type os_it38 = tim_put.put(oss.rdbuf(), oss, '*', &time1, 'X', 'E');

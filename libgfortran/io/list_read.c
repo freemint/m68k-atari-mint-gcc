@@ -370,7 +370,7 @@ eat_separator (st_parameter_dt *dtp)
 		    }
 		}
 	    }
-	  while (c == '\n' || c == '\r' || c == ' ');
+	  while (c == '\n' || c == '\r' || c == ' ' || c == '\t');
 	  unget_char (dtp, c);
 	}
       break;
@@ -1086,7 +1086,7 @@ read_character (st_parameter_dt *dtp, int length __attribute__ ((unused)))
      invalid.  */
  done:
   c = next_char (dtp);
-  if (is_separator (c))
+  if (is_separator (c) || c == '!')
     {
       unget_char (dtp, c);
       eat_separator (dtp);
@@ -2775,7 +2775,7 @@ get_name:
 
   if (nl->type == GFC_DTYPE_DERIVED)
     nml_touch_nodes (nl);
-  if (component_flag)
+  if (component_flag && nl->var_rank > 0)
     nl = first_nl;
 
   /* Make sure no extraneous qualifiers are there.  */
@@ -2900,11 +2900,14 @@ find_nml_name:
 
   /* A trailing space is required, we give a little lattitude here, 10.9.1.  */ 
   c = next_char (dtp);
-  if (!is_separator(c))
+  if (!is_separator(c) && c != '!')
     {
       unget_char (dtp, c);
       goto find_nml_name;
     }
+
+  unget_char (dtp, c);
+  eat_separator (dtp);
 
   /* Ready to read namelist objects.  If there is an error in input
      from stdin, output the error message and continue.  */

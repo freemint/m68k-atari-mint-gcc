@@ -1,6 +1,6 @@
 /* Convert tree expression to rtl instructions, for GNU compiler.
    Copyright (C) 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008
    Free Software Foundation, Inc.
 
 This file is part of GCC.
@@ -552,15 +552,15 @@ convert_move (rtx to, rtx from, int unsignedp)
 	       && ((code = can_extend_p (to_mode, word_mode, unsignedp))
 		   != CODE_FOR_nothing))
 	{
+	  rtx word_to = gen_reg_rtx (word_mode);
 	  if (REG_P (to))
 	    {
 	      if (reg_overlap_mentioned_p (to, from))
 		from = force_reg (from_mode, from);
 	      emit_insn (gen_rtx_CLOBBER (VOIDmode, to));
 	    }
-	  convert_move (gen_lowpart (word_mode, to), from, unsignedp);
-	  emit_unop_insn (code, to,
-			  gen_lowpart (word_mode, to), equiv_code);
+	  convert_move (word_to, from, unsignedp);
+	  emit_unop_insn (code, to, word_to, equiv_code);
 	  return;
 	}
 
@@ -8983,7 +8983,10 @@ expand_expr_real_1 (tree exp, rtx target, enum machine_mode tmode,
       /* If no set-flag instruction, must generate a conditional store
 	 into a temporary variable.  Drop through and handle this
 	 like && and ||.  */
-
+      /* Although TRUTH_{AND,OR}IF_EXPR aren't present in GIMPLE, they
+	 are occassionally created by folding during expansion.  */
+    case TRUTH_ANDIF_EXPR:
+    case TRUTH_ORIF_EXPR:
       if (! ignore
 	  && (target == 0
 	      || modifier == EXPAND_STACK_PARM
@@ -9193,8 +9196,6 @@ expand_expr_real_1 (tree exp, rtx target, enum machine_mode tmode,
     case POSTDECREMENT_EXPR:
     case LOOP_EXPR:
     case EXIT_EXPR:
-    case TRUTH_ANDIF_EXPR:
-    case TRUTH_ORIF_EXPR:
       /* Lowered by gimplify.c.  */
       gcc_unreachable ();
 

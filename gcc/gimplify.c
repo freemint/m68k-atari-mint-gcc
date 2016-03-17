@@ -3044,6 +3044,8 @@ zero_sized_type (const_tree type)
   return false;
 }
 
+static void tree_to_gimple_tuple (tree *);
+
 /* A subroutine of gimplify_init_constructor.  Generate individual
    MODIFY_EXPRs for a CONSTRUCTOR.  OBJECT is the LHS against which the
    assignments should happen.  ELTS is the CONSTRUCTOR_ELTS of the
@@ -3452,6 +3454,9 @@ gimplify_init_constructor (tree *expr_p, tree *pre_p,
     return GS_ERROR;
   else if (want_value)
     {
+      if (*expr_p)
+	tree_to_gimple_tuple (expr_p);
+
       append_to_statement_list (*expr_p, pre_p);
       *expr_p = object;
       return GS_OK;
@@ -3547,7 +3552,7 @@ gimplify_modify_expr_rhs (tree *expr_p, tree *from_p, tree *to_p, tree *pre_p,
 	/* If we're assigning from a constant constructor, move the
 	   constructor expression to the RHS of the MODIFY_EXPR.  */
 	if (DECL_INITIAL (*from_p)
-	    && TYPE_READONLY (TREE_TYPE (*from_p))
+	    && TREE_READONLY (*from_p)
 	    && !TREE_THIS_VOLATILE (*from_p)
 	    && TREE_CODE (DECL_INITIAL (*from_p)) == CONSTRUCTOR)
 	  {
@@ -3889,7 +3894,7 @@ gimplify_modify_expr (tree *expr_p, tree *pre_p, tree *post_p, bool want_value)
      side as statements and throw away the assignment.  Do this after
      gimplify_modify_expr_rhs so we handle TARGET_EXPRs of addressable
      types properly.  */
-  if (zero_sized_type (TREE_TYPE (*from_p)))
+  if (zero_sized_type (TREE_TYPE (*from_p)) && !want_value)
     {
       gimplify_stmt (from_p);
       gimplify_stmt (to_p);
@@ -5714,7 +5719,7 @@ gimplify_expr (tree *expr_p, tree *pre_p, tree *post_p,
 	  ret = gimplify_modify_expr (expr_p, pre_p, post_p,
 				      fallback != fb_none);
 
-	  if (*expr_p)
+	  if (*expr_p && ret != GS_ERROR)
 	    {
 	      /* The distinction between MODIFY_EXPR and INIT_EXPR is no longer
 		 useful.  */
@@ -5734,8 +5739,14 @@ gimplify_expr (tree *expr_p, tree *pre_p, tree *post_p,
 	  break;
 
 	case TRUTH_NOT_EXPR:
-	  TREE_OPERAND (*expr_p, 0)
-	    = gimple_boolify (TREE_OPERAND (*expr_p, 0));
+	  if (TREE_CODE (TREE_TYPE (*expr_p)) != BOOLEAN_TYPE)
+	    {
+	      tree type = TREE_TYPE (*expr_p);
+	      *expr_p = fold_convert (type, gimple_boolify (*expr_p));
+	      ret = GS_OK;
+	      break;
+	    }
+
 	  ret = gimplify_expr (&TREE_OPERAND (*expr_p, 0), pre_p, post_p,
 			       is_gimple_val, fb_rvalue);
 	  recalculate_side_effects (*expr_p);

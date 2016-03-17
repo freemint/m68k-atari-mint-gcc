@@ -1,3 +1,33 @@
+2008-08-27  Release Manager
+
+	* GCC 4.3.2 released.
+
+2008-08-22  Andrew Haley  <aph@redhat.com>
+
+	PR libgcj/8995:
+	
+	* interpret-run.cc (REWRITE_INSN): Null this macro.
+
+	* include/jvm.h (class _Jv_Linker): Declare resolve_mutex, init.
+	(read_cpool_entry, write_cpool_entry): New functions.
+	* link.cc (_Jv_Linker::resolve_mutex): new.
+	(_Jv_Linker::init): New function.
+	(_Jv_Linker::resolve_pool_entry): Use {read,write}_cpool_entry
+	to ensure atomic access to constant pool entries.
+
+2008-08-05  Matthias Klose  <doko@ubuntu.com>
+
+	PR libgcj/31890
+	* gcj/javaprims.h: Regenerate class list.
+	* HACKING: Update instructions how to build gcj/javaprims.h.
+
+2008-07-02  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Substitute gcjsubdir.
+	* Makefile.am (db_pathtail): Use it.
+	* Makefile.in include/Makefile.in, testsuite/Makefile.in,
+	gcj/Makefile.in, configure: Regenerate.
+
 2008-06-06  Release Manager
 
 	* GCC 4.3.1 released.

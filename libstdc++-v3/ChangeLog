@@ -1,3 +1,90 @@
+2008-08-27  Release Manager
+
+	* GCC 4.3.2 released.
+
+2008-08-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/37100
+	* include/bits/stl_pair.h: Fix documentation URL in comment.
+
+2008-08-12  Johannes Singler  <singler@ira.uka.de>
+
+        * include/paralle/losertree.h
+        (LoserTreePointerBase<>::~LoserTreePointerBase):
+        Replace delete by appropriate delete[].
+
+2008-07-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/36832
+	* include/ext/rope (_Destroy_const): Add.
+	(rope<>::copy): Call it.
+	* testsuite/ext/rope/36832.cc: New.
+
+2008-07-10  Johannes Singler  <singler@ira.uka.de>
+
+        * include/parallel/balanced_quicksort.h:
+        (qsb_divide) Replace "*end" by "*(end - 1)" in assertion.
+
+2008-07-09  Andreas Beckmann  <gcc@abeckmann.de>
+
+	PR libstdc++/36552
+	* include/ext/pb_ds/detail/left_child_next_sibling_heap_/
+	null_metadata.hpp: Remove self-include.
+
+2008-07-09  Johannes Singler  <singler@ira.uka.de>
+
+	PR libstdc++/36729
+        * include/parallel/random_shuffle.h:
+        (sequential_random_shuffle) Copy data back.
+        * testsuite/25_algorithms/random_shuffle/1.cc:
+        New. Generic random_shuffle functionality test.
+
+2008-07-07  Bernd Schmidt  <bernd.schmidt@analog.com>
+
+	* configure.ac: Don't check AC_LIBTOOL_DLOPEN if using newlib.
+	* configure: Regenerate.
+
+2008-07-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/36616
+	* testsuite/22_locale/time_put/put/char/4.cc: Just use es_ES instead.
+	* testsuite/22_locale/time_put/put/wchar_t/4.cc: Likewise.
+
+2008-06-30  Alfred E. Heggestad  <aeh@db.org>
+
+	* include/backward/backward_warning.h: Fix typo.
+
+2008-06-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/parallel/base.h (plus, multiplies): Use __typeof__,
+	not typeof.
+
+2008-06-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/stl_algo.h (remove_if): Cast __pred result to bool.
+
+2008-06-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/36616
+	* testsuite/22_locale/money_put/put/char/9780-3.cc: Fix expected
+	results for recent glibcs (2.8 and later).
+	* testsuite/22_locale/time_put/put/wchar_t/4.cc: Likewise.
+	* testsuite/22_locale/time_put/put/char/4.cc: Likewise.
+
+2008-06-24  Paolo Carlini  <paolo.carlini@oracle.com>
+	    Chalathip Thumkanon  <chalathip@gmail.com>
+
+	PR libstdc++/36612
+	* include/ext/pb_ds/exception.hpp (__throw_container_error,
+	__throw_insert_error, __throw_join_error, __throw_resize_error):
+	Mark inline.
+
+2008-06-15  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* include/Makefile.am: Remove trailing white space, fix typo.
+	(parallel_headers): Remove duplicate file, sort entries.
+	* include/Makefile.in: Regenerate.
+
 2008-06-06  Release Manager
 
 	* GCC 4.3.1 released.

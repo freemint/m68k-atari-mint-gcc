@@ -19,17 +19,24 @@
 LIBGCC1 =
 CROSS_LIBGCC1 =
 
-# On SPU __word__ is TImode which is too inefficient and incomplete for
-# implementing libgcc routines.
-TARGET_LIBGCC2_CFLAGS = -fPIC -D__word__=SI -mwarn-reloc -D__IN_LIBGCC2
+TARGET_LIBGCC2_CFLAGS = -fPIC -mwarn-reloc -D__IN_LIBGCC2
+
+# We exclude those because the libgcc2.c default versions do not support
+# the SPU single-precision format (round towards zero).  We provide our
+# own versions below.
+LIB2FUNCS_EXCLUDE = _floatdisf _floatundisf
 
 LIB2FUNCS_STATIC_EXTRA = $(srcdir)/config/spu/float_unssidf.c \
 			 $(srcdir)/config/spu/float_unsdidf.c \
+			 $(srcdir)/config/spu/float_unsdisf.c \
+			 $(srcdir)/config/spu/float_disf.c \
 			 $(srcdir)/config/spu/mfc_tag_table.c \
 			 $(srcdir)/config/spu/mfc_tag_reserve.c \
 			 $(srcdir)/config/spu/mfc_tag_release.c \
 			 $(srcdir)/config/spu/mfc_multi_tag_reserve.c \
-			 $(srcdir)/config/spu/mfc_multi_tag_release.c
+			 $(srcdir)/config/spu/mfc_multi_tag_release.c \
+			 $(srcdir)/config/spu/multi3.c \
+			 $(srcdir)/config/spu/divmodti4.c
 
 LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde.c \
    $(srcdir)/unwind-sjlj.c $(srcdir)/unwind-c.c

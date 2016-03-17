@@ -263,6 +263,7 @@ enum reg_class {
    only true for SPU. */
 #define CANNOT_CHANGE_MODE_CLASS(FROM, TO, CLASS) \
         ((GET_MODE_SIZE (FROM) > 4 || GET_MODE_SIZE (TO) > 4) \
+	 && (GET_MODE_SIZE (FROM) < 16 || GET_MODE_SIZE (TO) < 16) \
 	 && GET_MODE_SIZE (FROM) != GET_MODE_SIZE (TO))
 
 #define REGISTER_TARGET_PRAGMAS() do {					\
@@ -288,6 +289,8 @@ targetm.resolve_overloaded_builtin = spu_resolve_overloaded_builtin;	\
 /* #define RETURN_ADDR_IN_PREVIOUS_FRAME */
 
 #define INCOMING_RETURN_ADDR_RTX gen_rtx_REG(Pmode, LINK_REGISTER_REGNUM)
+
+#define DWARF_FRAME_RETURN_COLUMN DWARF_FRAME_REGNUM (LINK_REGISTER_REGNUM)
 
 #define ARG_POINTER_CFA_OFFSET(FNDECL) (-STACK_POINTER_OFFSET)
 
