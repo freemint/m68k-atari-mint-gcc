@@ -587,17 +587,13 @@ gfc_trans_create_temp_array (stmtblock_t * pre, stmtblock_t * post,
   /* Set the lower bound to zero.  */
   for (dim = 0; dim < info->dimen; dim++)
     {
-      n = loop->order[dim];
-      /* TODO: Investigate why "if (n < loop->temp_dim)
-	 gcc_assert (integer_zerop (loop->from[n]));" fails here.  */
-      if (n >= loop->temp_dim)
-	{
-	  /* Callee allocated arrays may not have a known bound yet.  */
-          if (loop->to[n])
-              loop->to[n] = fold_build2 (MINUS_EXPR, gfc_array_index_type,
-					 loop->to[n], loop->from[n]);
-	  loop->from[n] = gfc_index_zero_node;
-	}
+     n = loop->order[dim];
+      /* Callee allocated arrays may not have a known bound yet.  */
+      if (loop->to[n])
+	loop->to[n] = gfc_evaluate_now (fold_build2 (MINUS_EXPR,
+					gfc_array_index_type,
+					loop->to[n], loop->from[n]), pre);
+      loop->from[n] = gfc_index_zero_node;
 
       info->delta[dim] = gfc_index_zero_node;
       info->start[dim] = gfc_index_zero_node;
@@ -635,9 +631,18 @@ gfc_trans_create_temp_array (stmtblock_t * pre, stmtblock_t * post,
 
   or_expr = NULL_TREE;
 
+  /* If there is at least one null loop->to[n], it is a callee allocated 
+     array.  */
   for (n = 0; n < info->dimen; n++)
-    {
-      if (loop->to[n] == NULL_TREE)
+    if (loop->to[n] == NULL_TREE)
+      {
+	size = NULL_TREE;
+	break;
+      }
+
+  for (n = 0; n < info->dimen; n++)
+     {
+      if (size == NULL_TREE)
         {
 	  /* For a callee allocated array express the loop bounds in terms
 	     of the descriptor fields.  */
@@ -645,7 +650,6 @@ gfc_trans_create_temp_array (stmtblock_t * pre, stmtblock_t * post,
 			gfc_conv_descriptor_ubound (desc, gfc_rank_cst[n]),
 			gfc_conv_descriptor_lbound (desc, gfc_rank_cst[n]));
           loop->to[n] = tmp;
-          size = NULL_TREE;
           continue;
         }
         
@@ -1604,8 +1608,7 @@ gfc_trans_constant_array_constructor (gfc_loopinfo * loop,
 
   info->descriptor = tmp;
   info->data = build_fold_addr_expr (tmp);
-  info->offset = fold_build1 (NEGATE_EXPR, gfc_array_index_type,
-			      loop->from[0]);
+  info->offset = gfc_index_zero_node;
 
   for (i = 0; i < info->dimen; i++)
     {
@@ -1668,7 +1671,6 @@ gfc_trans_array_constructor (gfc_loopinfo * loop, gfc_ss * ss)
   tree offsetvar;
   tree desc;
   tree type;
-  tree loopfrom;
   bool dynamic;
 
   if (flag_bounds_check && ss->expr->ts.type == BT_CHARACTER)
@@ -1747,33 +1749,8 @@ gfc_trans_array_constructor (gfc_loopinfo * loop, gfc_ss * ss)
 	}
     }
 
-  /* Temporarily reset the loop variables, so that the returned temporary
-     has the right size and bounds.  This seems only to be necessary for
-     1D arrays.  */
-  if (!integer_zerop (loop->from[0]) && loop->dimen == 1)
-    {
-      loopfrom = loop->from[0];
-      loop->from[0] = gfc_index_zero_node;
-      loop->to[0] = fold_build2 (MINUS_EXPR, gfc_array_index_type,
-				 loop->to[0], loopfrom);
-    }
-  else
-    loopfrom = NULL_TREE;
-
   gfc_trans_create_temp_array (&loop->pre, &loop->post, loop, &ss->data.info,
 			       type, dynamic, true, false);
-
-  if (loopfrom != NULL_TREE)
-    {
-      loop->from[0] = loopfrom;
-      loop->to[0] = fold_build2 (PLUS_EXPR, gfc_array_index_type,
-				 loop->to[0], loopfrom);
-      /* In the case of a non-zero from, the temporary needs an offset
-	 so that subsequent indexing is correct.  */
-      ss->data.info.offset = fold_build1 (NEGATE_EXPR,
-					  gfc_array_index_type,
-					  loop->from[0]);
-    }
 
   desc = ss->data.info.descriptor;
   offset = gfc_index_zero_node;
@@ -3299,7 +3276,10 @@ gfc_conv_loop_setup (gfc_loopinfo * loop)
 	  if (ss->shape)
 	    {
 	      /* The frontend has worked out the size for us.  */
-	      loopspec[n] = ss;
+	      if (!loopspec[n] || !loopspec[n]->shape
+		    || !integer_zerop (loopspec[n]->data.info.start[n]))
+		/* Prefer zero-based descriptors if possible.  */
+		loopspec[n] = ss;
 	      continue;
 	    }
 
@@ -3398,8 +3378,13 @@ gfc_conv_loop_setup (gfc_loopinfo * loop)
 	      break;
 
 	    case GFC_SS_SECTION:
-	      loop->to[n] = gfc_conv_section_upper_bound (loopspec[n], n,
-							  &loop->pre);
+	      /* Use the end expression if it exists and is not constant,
+		 so that it is only evaluated once.  */
+	      if (info->end[n] && !INTEGER_CST_P (info->end[n]))
+		loop->to[n] = info->end[n];
+	      else
+		loop->to[n] = gfc_conv_section_upper_bound (loopspec[n], n,
+							    &loop->pre);
 	      break;
 
             case GFC_SS_FUNCTION:
@@ -3473,7 +3458,9 @@ gfc_conv_loop_setup (gfc_loopinfo * loop)
   /* Calculate the translation from loop variables to array indices.  */
   for (ss = loop->ss; ss != gfc_ss_terminator; ss = ss->loop_chain)
     {
-      if (ss->type != GFC_SS_SECTION && ss->type != GFC_SS_COMPONENT)
+      if (ss->type != GFC_SS_SECTION && ss->type != GFC_SS_COMPONENT
+	    && ss->type != GFC_SS_CONSTRUCTOR)
+
 	continue;
 
       info = &ss->data.info;
@@ -5144,7 +5131,6 @@ gfc_conv_array_parameter (gfc_se * se, gfc_expr * expr, gfc_ss * ss, int g77,
       gfc_conv_expr_descriptor (se, expr, ss);
     }
 
-
   /* Deallocate the allocatable components of structures that are
      not variable.  */
   if (expr->ts.type == BT_DERIVED
@@ -5375,10 +5361,12 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 
       if (purpose == COPY_ALLOC_COMP)
         {
-          tmp = gfc_duplicate_allocatable (dest, decl, TREE_TYPE(decl), rank);
-	  gfc_add_expr_to_block (&fnblock, tmp);
-
-	  tmp = build_fold_indirect_ref (gfc_conv_descriptor_data_get (dest));
+	  if (GFC_DESCRIPTOR_TYPE_P (TREE_TYPE (dest)))
+	    {
+	      tmp = gfc_duplicate_allocatable (dest, decl, TREE_TYPE(decl), rank);
+	      gfc_add_expr_to_block (&fnblock, tmp);
+	    }
+	  tmp = build_fold_indirect_ref (gfc_conv_array_data (dest));
 	  dref = gfc_build_array_ref (tmp, index, NULL);
 	  tmp = structure_alloc_comps (der_type, vref, dref, rank, purpose);
 	}
@@ -5621,7 +5609,7 @@ gfc_trans_deferred_array (gfc_symbol * sym, tree body)
       gfc_add_expr_to_block (&fnblock, tmp);
     }
 
-  if (sym->attr.allocatable && !sym->attr.save)
+  if (sym->attr.allocatable && !sym->attr.save && !sym->attr.result)
     {
       tmp = gfc_trans_dealloc_allocated (sym->backend_decl);
       gfc_add_expr_to_block (&fnblock, tmp);

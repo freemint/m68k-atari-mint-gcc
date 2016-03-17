@@ -1,3 +1,110 @@
+2009-01-24  Release Manager
+
+	* GCC 4.3.3 released.
+
+2009-01-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38877
+	* tree.c (lvalue_p_1): Allow non-fields in COMPONENT_REF.
+
+2009-01-16  Steve Ellcey  <sje@cup.hp.com>
+
+	PR c++/31260
+	PR c++/38357
+	* pt.c (tsubst): Check for NULL args.
+
+2009-01-15  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38850
+	* pt.c (tsubst_copy_and_build): Tell finish_call_expr to
+	accept hidden friends.
+
+	PR c++/36334
+	PR c++/37646
+	* tree.c (lvalue_p_1): Handle BASELINK.  A COMPONENT_REF to
+	a function isn't necessarily an lvalue. Take tree, not const_tree.
+	(lvalue_p, real_lvalue_p): Take tree, not const_tree.
+	* typeck.c (lvalue_or_else): Likewise.
+	* cp-tree.h: Adjust prototypes.
+
+	PR c++/31488
+	* tree.c (pod_type_p): Return 1 for structs created by the back end.
+
+2009-01-12  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/36019
+	* pt.c (parameter_of_template_p): New function.
+	* cp-tree.h: Declare it.
+	* name-lookup.c (binding_to_template_parms_of_scope_p): New
+	function.
+	(outer_binding): Take template parameters in account when looking for
+	a name binding.
+
+2008-12-04  Janis Johnson  <janis187@us.ibm.com>
+
+	Backport from mainline:
+	2008-10-18  Jakub Jelinek  <jakub@redhat.com>
+	            Janis Johnson  <janis187@us.ibm.com>
+
+	* Make-lang.in (check-c++-subtargets): New alias for
+	check-g++-subtargets.
+	(lang_checks_parallelized): Add check-g++.
+	(check_g++_parallelize): New variable.
+
+2008-11-19  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/37142
+	* pt.c (coerce_template_template_parm): Use the more robust
+	uses_template_parms instead of dependent_type_p.
+
+2008-11-19  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/35405
+	* pt.c (lookup_template_class): Check pointers before dereferencing
+	  Them.
+	* error.c (dump_template_decl): Likewise.
+
+2008-11-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/37563
+	* parser.c (cp_parser_pseudo_destructor_name): A pseudo-destructor
+	name is not a declaration.
+
+2008-11-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38030
+	* semantics.c (finish_call_expr): Don't repeat arg-dep lookup
+	for a non-dependent call.
+
+2008-11-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/37932
+	* typeck2.c (process_init_constructor_record): Update bitfield
+	handling.
+	
+2008-11-12  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38007
+	* typeck.c (cp_build_modify_expr): Update bitfield handling.
+
+2008-09-30  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/37555
+	* decl.c (grokdeclarator): Set the type for typedefs to a
+	nested-name-specifier to error_mark_node.
+
+2008-09-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/37389
+	* decl.c (build_enumerator): Handle previous value's DECL_INITIAL
+	being error_operand_p.
+
+2008-09-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/37348
+	* decl.c (cp_finish_decl): Only set
+	DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P if decl is VAR_DECL.
+
 2008-08-27  Release Manager
 
 	* GCC 4.3.2 released.

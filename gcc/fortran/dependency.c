@@ -422,6 +422,24 @@ gfc_ref_needs_temporary_p (gfc_ref *ref)
 }
 
 
+static int
+gfc_is_data_pointer (gfc_expr *e)
+{
+  gfc_ref *ref;
+
+  if (e->expr_type != EXPR_VARIABLE)
+    return 0;
+
+  if (e->symtree->n.sym->attr.pointer)
+    return 1;
+  for (ref = e->ref; ref; ref = ref->next)
+    if (ref->type == REF_COMPONENT && ref->u.c.component->pointer)
+      return 1;
+
+  return 0;
+}
+
+
 /* Return true if array variable VAR could be passed to the same function
    as argument EXPR without interfering with EXPR.  INTENT is the intent
    of VAR.
@@ -432,25 +450,85 @@ gfc_ref_needs_temporary_p (gfc_ref *ref)
 
 static int
 gfc_check_argument_var_dependency (gfc_expr *var, sym_intent intent,
-				   gfc_expr *expr)
+				   gfc_expr *expr, gfc_dep_check elemental)
 {
+  gfc_expr *arg;
+
   gcc_assert (var->expr_type == EXPR_VARIABLE);
   gcc_assert (var->rank > 0);
 
   switch (expr->expr_type)
     {
     case EXPR_VARIABLE:
-      return (gfc_ref_needs_temporary_p (expr->ref)
-	      || gfc_check_dependency (var, expr, 1));
+      /* In case of elemental subroutines, there is no dependency 
+         between two same-range array references.  */
+      if (gfc_ref_needs_temporary_p (expr->ref)
+	  || gfc_check_dependency (var, expr, !elemental))
+	{
+	  if (elemental == ELEM_DONT_CHECK_VARIABLE)
+	    {
+	      /* Too many false positive with pointers.  */
+	      if (!gfc_is_data_pointer (var) && !gfc_is_data_pointer (expr))
+		{
+		  /* Elemental procedures forbid unspecified intents, 
+		     and we don't check dependencies for INTENT_IN args.  */
+		  gcc_assert (intent == INTENT_OUT || intent == INTENT_INOUT);
+
+		  /* We are told not to check dependencies. 
+		     We do it, however, and issue a warning in case we find one.
+		     If a dependency is found in the case 
+		     elemental == ELEM_CHECK_VARIABLE, we will generate
+		     a temporary, so we don't need to bother the user.  */
+		  gfc_warning ("INTENT(%s) actual argument at %L might "
+			       "interfere with actual argument at %L.", 
+		   	       intent == INTENT_OUT ? "OUT" : "INOUT", 
+		   	       &var->where, &expr->where);
+		}
+	      return 0;
+	    }
+	  else
+	    return 1; 
+	}
+      return 0;
 
     case EXPR_ARRAY:
       return gfc_check_dependency (var, expr, 1);
 
     case EXPR_FUNCTION:
-      if (intent != INTENT_IN && expr->inline_noncopying_intrinsic)
+      if (intent != INTENT_IN && expr->inline_noncopying_intrinsic
+	  && (arg = gfc_get_noncopying_intrinsic_argument (expr))
+	  && gfc_check_argument_var_dependency (var, intent, arg, elemental))
+	return 1;
+      if (elemental)
 	{
-	  expr = gfc_get_noncopying_intrinsic_argument (expr);
-	  return gfc_check_argument_var_dependency (var, intent, expr);
+	  if ((expr->value.function.esym
+	       && expr->value.function.esym->attr.elemental)
+	      || (expr->value.function.isym
+		  && expr->value.function.isym->elemental))
+	    return gfc_check_fncall_dependency (var, intent, NULL,
+						expr->value.function.actual,
+						ELEM_CHECK_VARIABLE);
+	}
+      return 0;
+
+    case EXPR_OP:
+      /* In case of non-elemental procedures, there is no need to catch
+	 dependencies, as we will make a temporary anyway.  */
+      if (elemental)
+	{
+	  /* If the actual arg EXPR is an expression, we need to catch 
+	     a dependency between variables in EXPR and VAR, 
+	     an intent((IN)OUT) variable.  */
+	  if (expr->value.op.op1
+	      && gfc_check_argument_var_dependency (var, intent, 
+						    expr->value.op.op1, 
+						    ELEM_CHECK_VARIABLE))
+	    return 1;
+	  else if (expr->value.op.op2
+		   && gfc_check_argument_var_dependency (var, intent, 
+							 expr->value.op.op2, 
+							 ELEM_CHECK_VARIABLE))
+	    return 1;
 	}
       return 0;
 
@@ -465,18 +543,19 @@ gfc_check_argument_var_dependency (gfc_expr *var, sym_intent intent,
 
 static int
 gfc_check_argument_dependency (gfc_expr *other, sym_intent intent,
-			       gfc_expr *expr)
+			       gfc_expr *expr, gfc_dep_check elemental)
 {
   switch (other->expr_type)
     {
     case EXPR_VARIABLE:
-      return gfc_check_argument_var_dependency (other, intent, expr);
+      return gfc_check_argument_var_dependency (other, intent, expr, elemental);
 
     case EXPR_FUNCTION:
       if (other->inline_noncopying_intrinsic)
 	{
 	  other = gfc_get_noncopying_intrinsic_argument (other);
-	  return gfc_check_argument_dependency (other, INTENT_IN, expr);
+	  return gfc_check_argument_dependency (other, INTENT_IN, expr, 
+						elemental);
 	}
       return 0;
 
@@ -491,7 +570,8 @@ gfc_check_argument_dependency (gfc_expr *other, sym_intent intent,
 
 int
 gfc_check_fncall_dependency (gfc_expr *other, sym_intent intent,
-			     gfc_symbol *fnsym, gfc_actual_arglist *actual)
+			     gfc_symbol *fnsym, gfc_actual_arglist *actual,
+			     gfc_dep_check elemental)
 {
   gfc_formal_arglist *formal;
   gfc_expr *expr;
@@ -514,7 +594,7 @@ gfc_check_fncall_dependency (gfc_expr *other, sym_intent intent,
 	  && formal->sym->attr.intent == INTENT_IN)
 	continue;
 
-      if (gfc_check_argument_dependency (other, intent, expr))
+      if (gfc_check_argument_dependency (other, intent, expr, elemental))
 	return 1;
     }
 
@@ -547,10 +627,16 @@ gfc_are_equivalenced_arrays (gfc_expr *e1, gfc_expr *e2)
       || !e2->symtree->n.sym->attr.in_equivalence|| !e1->rank || !e2->rank)
     return 0;
 
+  if (e1->symtree->n.sym->ns
+	&& e1->symtree->n.sym->ns != gfc_current_ns)
+    l = e1->symtree->n.sym->ns->equiv_lists;
+  else
+    l = gfc_current_ns->equiv_lists;
+
   /* Go through the equiv_lists and return 1 if the variables
      e1 and e2 are members of the same group and satisfy the
      requirement on their relative offsets.  */
-  for (l = gfc_current_ns->equiv_lists; l; l = l->next)
+  for (; l; l = l->next)
     {
       fl1 = NULL;
       fl2 = NULL;
@@ -600,7 +686,6 @@ gfc_check_dependency (gfc_expr *expr1, gfc_expr *expr2, bool identical)
 {
   gfc_actual_arglist *actual;
   gfc_constructor *c;
-  gfc_ref *ref;
   int n;
 
   gcc_assert (expr1->expr_type == EXPR_VARIABLE);
@@ -636,17 +721,8 @@ gfc_check_dependency (gfc_expr *expr1, gfc_expr *expr2, bool identical)
 
 	  /* If either variable is a pointer, assume the worst.  */
 	  /* TODO: -fassume-no-pointer-aliasing */
-	  if (expr1->symtree->n.sym->attr.pointer)
+	  if (gfc_is_data_pointer (expr1) || gfc_is_data_pointer (expr2))
 	    return 1;
-	  for (ref = expr1->ref; ref; ref = ref->next)
-	    if (ref->type == REF_COMPONENT && ref->u.c.component->pointer)
-	      return 1;
-
-	  if (expr2->symtree->n.sym->attr.pointer)
-	    return 1;
-	  for (ref = expr2->ref; ref; ref = ref->next)
-	    if (ref->type == REF_COMPONENT && ref->u.c.component->pointer)
-	      return 1;
 
 	  /* Otherwise distinct symbols have no dependencies.  */
 	  return 0;
@@ -1246,6 +1322,14 @@ gfc_dep_resolver (gfc_ref *lref, gfc_ref *rref)
 	      if (this_dep > fin_dep)
 		fin_dep = this_dep;
 	    }
+
+	  /* If this is an equal element, we have to keep going until we find
+	     the "real" array reference.  */
+	  if (lref->u.ar.type == AR_ELEMENT
+		&& rref->u.ar.type == AR_ELEMENT
+		&& fin_dep == GFC_DEP_EQUAL)
+	    break;
+
 	  /* Exactly matching and forward overlapping ranges don't cause a
 	     dependency.  */
 	  if (fin_dep < GFC_DEP_OVERLAP)

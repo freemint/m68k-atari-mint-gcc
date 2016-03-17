@@ -5415,7 +5415,7 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
 	  DECL_INITIAL (decl) = NULL_TREE;
 	}
 
-      if (init && init_const_expr_p)
+      if (init && init_const_expr_p && TREE_CODE (decl) == VAR_DECL)
 	{
 	  DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (decl) = 1;
 	  if (DECL_INTEGRAL_CONSTANT_VAR_P (decl))
@@ -8544,8 +8544,10 @@ grokdeclarator (const cp_declarator *declarator,
 	decl = build_lang_decl (TYPE_DECL, unqualified_id, type);
       else
 	decl = build_decl (TYPE_DECL, unqualified_id, type);
-      if (id_declarator && declarator->u.id.qualifying_scope)
+      if (id_declarator && declarator->u.id.qualifying_scope) {
 	error ("%Jtypedef name may not be a nested-name-specifier", decl);
+	TREE_TYPE (decl) = error_mark_node;
+      }
 
       if (decl_context != FIELD)
 	{
@@ -10923,21 +10925,26 @@ build_enumerator (tree name, tree value, tree enumtype)
 	      tree prev_value;
 	      bool overflowed;
 
-	      /* The next value is the previous value plus one.  We can
-		 safely assume that the previous value is an INTEGER_CST.
+	      /* The next value is the previous value plus one.
 		 add_double doesn't know the type of the target expression,
 		 so we must check with int_fits_type_p as well.  */
 	      prev_value = DECL_INITIAL (TREE_VALUE (TYPE_VALUES (enumtype)));
-	      overflowed = add_double (TREE_INT_CST_LOW (prev_value),
-				       TREE_INT_CST_HIGH (prev_value),
-				       1, 0, &lo, &hi);
-	      value = build_int_cst_wide (TREE_TYPE (prev_value), lo, hi);
-	      overflowed |= !int_fits_type_p (value, TREE_TYPE (prev_value));
-
-	      if (overflowed)
+	      if (error_operand_p (prev_value))
+		value = error_mark_node;
+	      else
 		{
-		  error ("overflow in enumeration values at %qD", name);
-		  value = error_mark_node;
+		  overflowed = add_double (TREE_INT_CST_LOW (prev_value),
+					   TREE_INT_CST_HIGH (prev_value),
+					   1, 0, &lo, &hi);
+		  value = build_int_cst_wide (TREE_TYPE (prev_value), lo, hi);
+		  overflowed
+		    |= !int_fits_type_p (value, TREE_TYPE (prev_value));
+
+		  if (overflowed)
+		    {
+		      error ("overflow in enumeration values at %qD", name);
+		      value = error_mark_node;
+		    }
 		}
 	    }
 	  else

@@ -2341,7 +2341,7 @@ real_maxval (REAL_VALUE_TYPE *r, int sign, enum machine_mode mode)
 	   required to be the value of the long double rounded to the
 	   nearest double.  Rounding means we need a slightly smaller
 	   value for LDBL_MAX.  */
-        clear_significand_bit (r, SIGNIFICAND_BITS - fmt->pnan);
+	clear_significand_bit (r, SIGNIFICAND_BITS - fmt->pnan - 1);
     }
 }
 
@@ -4213,6 +4213,7 @@ const struct real_format vax_f_format =
     127,
     15,
     15,
+    false,
     false,
     false,
     false,

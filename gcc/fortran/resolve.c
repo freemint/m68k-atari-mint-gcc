@@ -1012,6 +1012,38 @@ resolve_assumed_size_actual (gfc_expr *e)
 }
 
 
+/* Check a generic procedure, passed as an actual argument, to see if
+   there is a matching specific name.  If none, it is an error, and if
+   more than one, the reference is ambiguous.  */
+static int
+count_specific_procs (gfc_expr *e)
+{
+  int n;
+  gfc_interface *p;
+  gfc_symbol *sym;
+	
+  n = 0;
+  sym = e->symtree->n.sym;
+
+  for (p = sym->generic; p; p = p->next)
+    if (strcmp (sym->name, p->sym->name) == 0)
+      {
+	e->symtree = gfc_find_symtree (p->sym->ns->sym_root,
+				       sym->name);
+	n++;
+      }
+
+  if (n > 1)
+    gfc_error ("'%s' at %L is ambiguous", e->symtree->n.sym->name,
+	       &e->where);
+
+  if (n == 0)
+    gfc_error ("GENERIC procedure '%s' is not allowed as an actual "
+	       "argument at %L", sym->name, &e->where);
+
+  return n;
+}
+
 /* Resolve an actual argument list.  Most of the time, this is just
    resolving the expressions in the list.
    The exception is that we sometimes have to decide whether arguments
@@ -1019,7 +1051,8 @@ resolve_assumed_size_actual (gfc_expr *e)
    references.  */
 
 static try
-resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype)
+resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype,
+			bool no_formal_args)
 {
   gfc_symbol *sym;
   gfc_symtree *parent_st;
@@ -1044,17 +1077,16 @@ resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype)
 	  continue;
 	}
 
-      if (e->expr_type == FL_VARIABLE && e->symtree->ambiguous)
-	{
-	  gfc_error ("'%s' at %L is ambiguous", e->symtree->n.sym->name,
-		     &e->where);
-	  return FAILURE;
-	}
+      if (e->expr_type == EXPR_VARIABLE
+	    && e->symtree->n.sym->attr.generic
+	    && no_formal_args
+	    && count_specific_procs (e) != 1)
+	return FAILURE;
 
       if (e->ts.type != BT_PROCEDURE)
 	{
 	  save_need_full_assumed_size = need_full_assumed_size;
-	  if (e->expr_type != FL_VARIABLE)
+	  if (e->expr_type != EXPR_VARIABLE)
 	    need_full_assumed_size = 0;
 	  if (gfc_resolve_expr (e) != SUCCESS)
 	    return FAILURE;
@@ -1110,22 +1142,19 @@ resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype)
 
 	  /* Check if a generic interface has a specific procedure
 	    with the same name before emitting an error.  */
-	  if (sym->attr.generic)
-	    {
-	      gfc_interface *p;
-	      for (p = sym->generic; p; p = p->next)
-		if (strcmp (sym->name, p->sym->name) == 0)
-		  {
-		    e->symtree = gfc_find_symtree
-					   (p->sym->ns->sym_root, sym->name);
-		    sym = p->sym;
-		    break;
-		  }
+	  if (sym->attr.generic && count_specific_procs (e) != 1)
+	    return FAILURE;
+	  
+	  /* Just in case a specific was found for the expression.  */
+	  sym = e->symtree->n.sym;
 
-	      if (p == NULL || e->symtree == NULL)
-		gfc_error ("GENERIC procedure '%s' is not "
-			   "allowed as an actual argument at %L", sym->name,
-			   &e->where);
+	  if (sym->attr.entry && sym->ns->entries
+		&& sym->ns == gfc_current_ns
+		&& !sym->ns->entries->sym->attr.recursive)
+	    {
+	      gfc_error ("Reference to ENTRY '%s' at %L is recursive, but procedure "
+			 "'%s' is not declared as RECURSIVE",
+			 sym->name, &e->where, sym->ns->entries->sym->name);
 	    }
 
 	  /* If the symbol is the function that names the current (or
@@ -1198,7 +1227,7 @@ resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype)
 	 is a  variable instead, it needs to be resolved as it was not
 	 done at the beginning of this function.  */
       save_need_full_assumed_size = need_full_assumed_size;
-      if (e->expr_type != FL_VARIABLE)
+      if (e->expr_type != EXPR_VARIABLE)
 	need_full_assumed_size = 0;
       if (gfc_resolve_expr (e) != SUCCESS)
 	return FAILURE;
@@ -1426,7 +1455,8 @@ find_noncopying_intrinsics (gfc_symbol *fnsym, gfc_actual_arglist *actual)
   for (ap = actual; ap; ap = ap->next)
     if (ap->expr
 	&& (expr = gfc_get_noncopying_intrinsic_argument (ap->expr))
-	&& !gfc_check_fncall_dependency (expr, INTENT_IN, fnsym, actual))
+	&& !gfc_check_fncall_dependency (expr, INTENT_IN, fnsym, actual,
+					 NOT_ELEMENTAL))
       ap->expr->inline_noncopying_intrinsic = 1;
 }
 
@@ -2170,6 +2200,7 @@ resolve_function (gfc_expr *expr)
   try t;
   int temp;
   procedure_type p = PROC_INTRINSIC;
+  bool no_formal_args;
 
   sym = NULL;
   if (expr->symtree)
@@ -2199,7 +2230,9 @@ resolve_function (gfc_expr *expr)
   if (expr->symtree && expr->symtree->n.sym)
     p = expr->symtree->n.sym->attr.proc;
 
-  if (resolve_actual_arglist (expr->value.function.actual, p) == FAILURE)
+  no_formal_args = sym && is_external_proc (sym) && sym->formal == NULL;
+  if (resolve_actual_arglist (expr->value.function.actual,
+			      p, no_formal_args) == FAILURE)
       return FAILURE;
 
   /* Need to setup the call to the correct c_associated, depending on
@@ -2776,26 +2809,41 @@ resolve_call (gfc_code *c)
 {
   try t;
   procedure_type ptype = PROC_INTRINSIC;
+  gfc_symbol *csym, *sym;
+  bool no_formal_args;
 
-  if (c->symtree && c->symtree->n.sym
-      && c->symtree->n.sym->ts.type != BT_UNKNOWN)
+  csym = c->symtree ? c->symtree->n.sym : NULL;
+
+  if (csym && csym->ts.type != BT_UNKNOWN)
     {
       gfc_error ("'%s' at %L has a type, which is not consistent with "
-		 "the CALL at %L", c->symtree->n.sym->name,
-		 &c->symtree->n.sym->declared_at, &c->loc);
+		 "the CALL at %L", csym->name, &csym->declared_at, &c->loc);
       return FAILURE;
     }
 
+  if (csym && gfc_current_ns->parent && csym->ns != gfc_current_ns)
+    {
+      gfc_find_symbol (csym->name, gfc_current_ns, 1, &sym);
+      if (sym && csym != sym
+	      && sym->ns == gfc_current_ns
+	      && sym->attr.flavor == FL_PROCEDURE
+	      && sym->attr.contained)
+	{
+	  sym->refs++;
+	  csym = sym;
+	  c->symtree->n.sym = sym;
+	}
+    }
+
   /* If external, check for usage.  */
-  if (c->symtree && is_external_proc (c->symtree->n.sym))
-    resolve_global_procedure (c->symtree->n.sym, &c->loc, 1);
+  if (csym && is_external_proc (csym))
+    resolve_global_procedure (csym, &c->loc, 1);
 
   /* Subroutines without the RECURSIVE attribution are not allowed to
    * call themselves.  */
-  if (c->symtree && c->symtree->n.sym && !c->symtree->n.sym->attr.recursive)
+  if (csym && !csym->attr.recursive)
     {
-      gfc_symbol *csym, *proc;
-      csym = c->symtree->n.sym;
+      gfc_symbol *proc;
       proc = gfc_current_ns->proc_name;
       if (csym == proc)
       {
@@ -2818,10 +2866,12 @@ resolve_call (gfc_code *c)
      of procedure, once the procedure itself is resolved.  */
   need_full_assumed_size++;
 
-  if (c->symtree && c->symtree->n.sym)
-    ptype = c->symtree->n.sym->attr.proc;
+  if (csym)
+    ptype = csym->attr.proc;
 
-  if (resolve_actual_arglist (c->ext.actual, ptype) == FAILURE)
+  no_formal_args = csym && is_external_proc (csym) && csym->formal == NULL;
+  if (resolve_actual_arglist (c->ext.actual, ptype,
+			      no_formal_args) == FAILURE)
     return FAILURE;
 
   /* Resume assumed_size checking.  */
@@ -2829,7 +2879,7 @@ resolve_call (gfc_code *c)
 
   t = SUCCESS;
   if (c->resolved_sym == NULL)
-    switch (procedure_kind (c->symtree->n.sym))
+    switch (procedure_kind (csym))
       {
       case PTYPE_GENERIC:
 	t = resolve_generic_s (c);
@@ -4150,19 +4200,22 @@ check_host_association (gfc_expr *e)
   int n;
   bool retval = e->expr_type == EXPR_FUNCTION;
 
-  if (e->symtree == NULL || e->symtree->n.sym == NULL)
+  /*  If the expression is the result of substitution in
+      interface.c(gfc_extend_expr) because there is no way in
+      which the host association can be wrong.  */
+  if (e->symtree == NULL
+	|| e->symtree->n.sym == NULL
+	|| e->user_operator)
     return retval;
 
   old_sym = e->symtree->n.sym;
 
-  if (old_sym->attr.use_assoc)
-    return retval;
-
   if (gfc_current_ns->parent
 	&& old_sym->ns != gfc_current_ns)
     {
-      gfc_find_symbol (old_sym->name, gfc_current_ns, 1, &sym);
+      gfc_find_symbol (e->symtree->name, gfc_current_ns, 1, &sym);
       if (sym && old_sym != sym
+	      && sym->ts.type == old_sym->ts.type
 	      && sym->attr.flavor == FL_PROCEDURE
 	      && sym->attr.contained)
 	{
@@ -4188,6 +4241,11 @@ check_host_association (gfc_expr *e)
 	      gfc_free (e->shape);
 	    }
 
+/* TODO - Replace this gfc_match_rvalue with a straight replacement of
+   actual arglists for function to function substitutions and with a
+   conversion of the reference list to an actual arglist in the case of
+   a variable to function replacement.  This should be quite easy since
+   only integers and vectors can be involved.  */	    
 	  gfc_match_rvalue (&expr);
 	  gfc_clear_error ();
 	  gfc_buffer_error (0);
@@ -5796,9 +5854,9 @@ gfc_resolve_assign_in_forall (gfc_code *code, int nvar, gfc_expr **var_expr)
 	     assignment target, then there will be a many-to-one
 	     assignment.  */
 	  if (find_forall_index (code->expr, forall_index, 0) == FAILURE)
-	    gfc_error ("The FORALL with index '%s' cause more than one "
-		       "assignment to this object at %L",
-		       var_expr[n]->symtree->name, &code->expr->where);
+	    gfc_warning ("The FORALL with index '%s' might cause more than "
+			 "one assignment to this object at %L",
+			 var_expr[n]->symtree->name, &code->expr->where);
 	}
     }
 }
@@ -5894,6 +5952,40 @@ gfc_resolve_forall_body (gfc_code *code, int nvar, gfc_expr **var_expr)
 }
 
 
+/* Counts the number of iterators needed inside a forall construct, including
+   nested forall constructs. This is used to allocate the needed memory 
+   in gfc_resolve_forall.  */
+
+static int 
+gfc_count_forall_iterators (gfc_code *code)
+{
+  int max_iters, sub_iters, current_iters;
+  gfc_forall_iterator *fa;
+
+  gcc_assert(code->op == EXEC_FORALL);
+  max_iters = 0;
+  current_iters = 0;
+
+  for (fa = code->ext.forall_iterator; fa; fa = fa->next)
+    current_iters ++;
+  
+  code = code->block->next;
+
+  while (code)
+    {          
+      if (code->op == EXEC_FORALL)
+        {
+          sub_iters = gfc_count_forall_iterators (code);
+          if (sub_iters > max_iters)
+            max_iters = sub_iters;
+        }
+      code = code->next;
+    }
+
+  return current_iters + max_iters;
+}
+
+
 /* Given a FORALL construct, first resolve the FORALL iterator, then call
    gfc_resolve_forall_body to resolve the FORALL body.  */
 
@@ -5903,22 +5995,18 @@ gfc_resolve_forall (gfc_code *code, gfc_namespace *ns, int forall_save)
   static gfc_expr **var_expr;
   static int total_var = 0;
   static int nvar = 0;
+  int old_nvar, tmp;
   gfc_forall_iterator *fa;
-  gfc_code *next;
   int i;
+
+  old_nvar = nvar;
 
   /* Start to resolve a FORALL construct   */
   if (forall_save == 0)
     {
       /* Count the total number of FORALL index in the nested FORALL
-	 construct in order to allocate the VAR_EXPR with proper size.  */
-      next = code;
-      while ((next != NULL) && (next->op == EXEC_FORALL))
-	{
-	  for (fa = next->ext.forall_iterator; fa; fa = fa->next)
-	    total_var ++;
-	  next = next->block->next;
-	}
+         construct in order to allocate the VAR_EXPR with proper size.  */
+      total_var = gfc_count_forall_iterators (code);
 
       /* Allocate VAR_EXPR with NUMBER_OF_FORALL_INDEX elements.  */
       var_expr = (gfc_expr **) gfc_getmem (total_var * sizeof (gfc_expr *));
@@ -5943,6 +6031,9 @@ gfc_resolve_forall (gfc_code *code, gfc_namespace *ns, int forall_save)
       var_expr[nvar] = gfc_copy_expr (fa->var);
 
       nvar++;
+
+      /* No memory leak.  */
+      gcc_assert (nvar <= total_var);
     }
 
   /* Resolve the FORALL body.  */
@@ -5951,13 +6042,21 @@ gfc_resolve_forall (gfc_code *code, gfc_namespace *ns, int forall_save)
   /* May call gfc_resolve_forall to resolve the inner FORALL loop.  */
   gfc_resolve_blocks (code->block, ns);
 
-  /* Free VAR_EXPR after the whole FORALL construct resolved.  */
-  for (i = 0; i < total_var; i++)
-    gfc_free_expr (var_expr[i]);
+  tmp = nvar;
+  nvar = old_nvar;
+  /* Free only the VAR_EXPRs allocated in this frame.  */
+  for (i = nvar; i < tmp; i++)
+     gfc_free_expr (var_expr[i]);
 
-  /* Reset the counters.  */
-  total_var = 0;
-  nvar = 0;
+  if (nvar == 0)
+    {
+      /* We are in the outermost FORALL construct.  */
+      gcc_assert (forall_save == 0);
+
+      /* VAR_EXPR is not needed any more.  */
+      gfc_free (var_expr);
+      total_var = 0;
+    }
 }
 
 
@@ -7060,8 +7159,7 @@ resolve_fl_variable_derived (gfc_symbol *sym, int no_init_flag)
     {
       gfc_symbol *s;
       gfc_find_symbol (sym->ts.derived->name, sym->ns, 0, &s);
-      if (s && (s->attr.flavor != FL_DERIVED
-		|| !gfc_compare_derived_types (s, sym->ts.derived)))
+      if (s && s->attr.flavor != FL_DERIVED)
 	{
 	  gfc_error ("The type '%s' cannot be host associated at %L "
 		     "because it is blocked by an incompatible object "
@@ -7192,6 +7290,10 @@ resolve_fl_variable (gfc_symbol *sym, int mp_flag)
 	  return FAILURE;
 	}
     }
+
+  /* Ensure that any initializer is simplified.  */
+  if (sym->value)
+    gfc_simplify_expr (sym->value, 1);
 
   /* Reject illegal initializers.  */
   if (!sym->mark && sym->value)
@@ -9092,6 +9194,7 @@ resolve_types (gfc_namespace *ns)
   gfc_charlen *cl;
   gfc_data *d;
   gfc_equiv *eq;
+  gfc_namespace* old_ns = gfc_current_ns;
 
   gfc_current_ns = ns;
 
@@ -9149,6 +9252,8 @@ resolve_types (gfc_namespace *ns)
     warn_unused_fortran_label (ns->st_labels);
 
   gfc_resolve_uops (ns->uop_root);
+
+  gfc_current_ns = old_ns;
 }
 
 

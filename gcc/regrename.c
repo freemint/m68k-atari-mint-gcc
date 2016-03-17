@@ -137,8 +137,15 @@ merge_overlapping_regs (basic_block b, HARD_REG_SET *pset,
   struct du_chain *t = chain;
   rtx insn;
   HARD_REG_SET live;
+  struct df_ref **def_rec;
 
   REG_SET_TO_HARD_REG_SET (live, df_get_live_in (b));
+  for (def_rec = df_get_artificial_defs (b->index); *def_rec; def_rec++)
+    {
+      struct df_ref *def = *def_rec;
+      if (DF_REF_FLAGS (def) & DF_REF_AT_TOP)
+	SET_HARD_REG_BIT (live, DF_REF_REGNO (def));
+    }
   insn = BB_HEAD (b);
   while (t)
     {
@@ -1315,6 +1322,10 @@ maybe_mode_change (enum machine_mode orig_mode, enum machine_mode copy_mode,
 		   enum machine_mode new_mode, unsigned int regno,
 		   unsigned int copy_regno ATTRIBUTE_UNUSED)
 {
+  if (GET_MODE_SIZE (copy_mode) < GET_MODE_SIZE (orig_mode)
+      && GET_MODE_SIZE (copy_mode) < GET_MODE_SIZE (new_mode))
+    return NULL_RTX;
+
   if (orig_mode == new_mode)
     return gen_rtx_raw_REG (new_mode, regno);
   else if (mode_change_ok (orig_mode, new_mode, regno))

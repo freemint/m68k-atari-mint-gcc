@@ -4709,7 +4709,7 @@ coerce_template_template_parms (tree parm_parms,
 	       D<int, C> d;
 
 	     i.e. the parameter list of TT depends on earlier parameters.  */
-	  if (!dependent_type_p (TREE_TYPE (arg))
+	  if (!uses_template_parms (TREE_TYPE (arg))
 	      && !same_type_p
 		    (tsubst (TREE_TYPE (parm), outer_args, complain, in_decl),
 			     TREE_TYPE (arg)))
@@ -5504,6 +5504,7 @@ lookup_template_class (tree d1,
       d1 = DECL_NAME (template);
     }
   else if (TREE_CODE (d1) == TEMPLATE_DECL
+           && DECL_TEMPLATE_RESULT (d1)
 	   && TREE_CODE (DECL_TEMPLATE_RESULT (d1)) == TYPE_DECL)
     {
       template = d1;
@@ -6297,6 +6298,30 @@ outermost_tinst_level (void)
     while (level->next)
       level = level->next;
   return level;
+}
+
+/* Returns TRUE if PARM is a parameter of the template TEMPL.  */
+
+bool
+parameter_of_template_p (tree parm, tree templ)
+{
+  tree parms;
+  int i;
+
+  if (!parm || !templ)
+    return false;
+
+  gcc_assert (DECL_TEMPLATE_PARM_P (parm));
+  gcc_assert (TREE_CODE (templ) == TEMPLATE_DECL);
+
+  parms = DECL_TEMPLATE_PARMS (templ);
+  parms = INNERMOST_TEMPLATE_PARMS (parms);
+
+  for (i = 0; i < TREE_VEC_LENGTH (parms); ++i)
+    if (parm == TREE_VALUE (TREE_VEC_ELT (parms, i)))
+      return true;
+
+  return false;
 }
 
 /* DECL is a friend FUNCTION_DECL or TEMPLATE_DECL.  ARGS is the
@@ -8828,6 +8853,9 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
   if (DECL_P (t))
     return tsubst_decl (t, args, complain);
 
+  if (args == NULL_TREE)
+    return t;
+
   if (TREE_CODE (t) == IDENTIFIER_NODE)
     type = IDENTIFIER_TYPE_VALUE (t);
   else
@@ -11026,9 +11054,12 @@ tsubst_copy_and_build (tree t,
 		       qualified_p ? LOOKUP_NONVIRTUAL : LOOKUP_NORMAL,
 		       /*fn_p=*/NULL));
 	  }
+	/* Pass true for koenig_p so that build_new_function_call will
+	   allow hidden friends found by arg-dependent lookup at template
+	   parsing time.  */
 	return finish_call_expr (function, call_args,
 				 /*disallow_virtual=*/qualified_p,
-				 koenig_p);
+				 /*koenig_p*/true);
       }
 
     case COND_EXPR:

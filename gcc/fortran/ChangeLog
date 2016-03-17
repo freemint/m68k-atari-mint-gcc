@@ -1,3 +1,405 @@
+2009-01-24  Release Manager
+
+	* GCC 4.3.3 released.
+
+2009-01-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38657
+	* module.c (write_common_0): Revert patch of 2009-01-10.
+
+2009-01-14  Mikael Morin  <mikael.morin@tele2.fr>
+
+	PR fortran/35681
+	* ChangeLog: Fix function name.
+
+	PR fortran/38487
+	* dependency.c (gfc_check_argument_var_dependency):
+	Move the check for pointerness inside the if block
+	so that it doesn't affect the return value.
+
+	PR fortran/38669
+	* trans-stmt.c (gfc_trans_call):
+	Add the dependency code after the loop bounds calculation one.
+
+2009-01-11 Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38763
+	Backport from mainline:
+	* target-memory.c (encode_derived): Encode NULL.
+
+	PR fortran/38765
+	Backport from mainline:
+	* resolve.c (check_host_association): Use the symtree name to
+	search for a potential contained procedure, since this is the
+	name by which it would be referenced.
+
+2009-01-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38657
+	* module.c (write_common_0): Use the name of the symtree rather
+	than the common block, to determine if the common has been
+	written.
+
+2009-01-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38665
+	* gfortran.h : Add bit to gfc_expr 'user_operator'
+	* interface.c (gfc_extend_expr): Set the above if the operator
+	is substituted by a function. 
+	* resolve.c (check_host_association): Return if above is set.
+
+2009-01-01  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR fortran/38675
+	Backport from mainline:
+	2008-12-09  Mikael Morin  <mikael.morin@tele2.fr>
+
+        PR fortran/37469
+	* expr.c (find_array_element): Simplify array bounds.
+	Assert that both bounds are constant expressions.
+
+	2008-10-31  Mikael Morin  <mikael.morin@tele2.fr>
+
+	* expr.c (gfc_reduce_init_expr): New function, containing checking code
+	from gfc_match_init_expr, so that checking can be deferred. 
+	(gfc_match_init_expr): Use gfc_reduce_init_expr.
+	* match.h (gfc_reduce_init_expr): Prototype added. 
+
+2008-12-22  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38602
+	* trans-decl.c (init_intent_out_dt): Allow for optional args.
+
+2008-12-21  Mikael Morin  <mikael.morin@tele2.fr>
+
+	PR fortran/38487
+	* dependency.c (gfc_is_data_pointer): New function.
+	(gfc_check_argument_var_dependency): Disable the warning
+	in the pointer case.
+	(gfc_check_dependency): Use gfc_is_data_pointer.
+
+2008-12-21  Mikael Morin  <mikael.morin@tele2.fr>
+
+	PR fortran/38113
+	* error.c (show_locus): Start counting columns at 0.
+	* primary.c (match_actual_arg): Eat spaces
+	before copying the current locus.
+	(match_variable): Copy the locus before matching.
+
+2008-12-21  Mikael Morin  <mikael.morin@tele2.fr>
+
+	PR fortran/35983
+	* trans-expr.c (gfc_trans_subcomponent_assign):
+	Add se's pre and post blocks to current block.
+	(gfc_trans_structure_assign): Remove specific handling
+	of C_NULL_PTR and C_NULL_FUNPTR.
+
+2008-12-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35937
+	* trans-expr.c (gfc_finish_interface_mapping): Fold convert the
+	character length to gfc_charlen_type_node.
+
+2008-12-04  Janis Johnson  <janis187@us.ibm.com>
+
+	Backport from mainline:
+	2008-10-18  Jakub Jelinek  <jakub@redhat.com>
+	            Janis Johnson  <janis187@us.ibm.com>
+
+	* Make-lang.in (check-f95-subtargets, check-fortran-subtargets): New
+	aliases for check-gfortran-subtargets.
+	(lang_checks_parallelized): Add check-gfortran.
+	(check_gfortran_parallelize): New variable.
+
+2008-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/34820
+	* trans-expr.c (gfc_conv_function_call): Remove all code to
+	deallocate intent out derived types with allocatable
+	components.
+	(gfc_trans_assignment_1): An assignment from a scalar to an
+	array of derived types with allocatable components, requires
+	a deep copy to each array element and deallocation of the
+	converted rhs expression afterwards.
+	* trans-array.c : Minor whitespace.
+	* trans-decl.c (init_intent_out_dt): Add code to deallocate
+	allocatable components of derived types with intent out.
+	(generate_local_decl): If these types are unused, set them
+	referenced anyway but allow the uninitialized warning.
+
+	PR fortran/34143
+	* trans-expr.c (gfc_trans_subcomponent_assign): If a conversion
+	expression has a null data pointer argument, nullify the
+	allocatable component.
+
+	PR fortran/32795
+	* trans-expr.c (gfc_trans_subcomponent_assign): Only nullify
+	the data pointer if the source is not a variable.
+
+2008-11-29  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37735
+	* trans-array.c (structure_alloc_comps): Do not duplicate the
+	descriptor if this is a descriptorless array!
+
+2008-11-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/36526
+	* interface.c (check_intents):  Correct error where the actual
+	arg was checked for a pointer argument, rather than the formal.
+
+2008-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38033
+	* trans-array.c (gfc_trans_create_temp_array): Stabilize the
+	'to' expression.
+	(gfc_conv_loop_setup): Use the end expression for the loop 'to'
+	if it is available.
+
+2008-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37926
+	* trans-expr.c (gfc_free_interface_mapping): Null sym->formal
+	(gfc_add_interface_mapping): Copy the pointer to the formal
+	arglist and set attr.always_explicit if this is a procedure.
+
+2008-11-24  Steven G. Kargl  <kargls@comcast.net>
+
+	PR fortran/37792
+	* fortran/resolve.c (resolve_fl_variable): Simplify the
+	initializer if there is one.
+
+2008-11-24  Mikael Morin <mikael.morin@tele2.fr>
+
+	PR fortran/35681
+	* dependency.c (gfc_check_argument_var_dependency): Add
+	elemental check flag. Issue a warning if we find a dependency
+	but don't generate a temporary. Add the case of an elemental
+	function call as actual argument to an elemental procedure.
+	Add the case of an operator expression as actual argument
+	to an elemental procedure.
+	(gfc_check_argument_dependency): Add elemental check flag.
+	Update calls to gfc_check_argument_var_dependency.
+	(gfc_check_fncall_dependency): Add elemental check flag.
+	Update call to gfc_check_argument_dependency.
+	* trans-stmt.c (gfc_trans_call): Make call to
+	gfc_conv_elemental_dependencies unconditional, but with a flag
+	whether we should check dependencies between variables.
+	(gfc_conv_elemental_dependencies): Add elemental check flag.
+	Update call to gfc_check_fncall_dependency.
+	* trans-expr.c (gfc_trans_arrayfunc_assign): Update call to
+	gfc_check_fncall_dependency.
+	* resolve.c (find_noncopying_intrinsics): Update call to
+	gfc_check_fncall_dependency.
+	* dependency.h (enum gfc_dep_check): New enum.
+	(gfc_check_fncall_dependency): Update prototype.
+
+2008-11-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/38171
+	* module.c (load_equiv): Regression fix; check that equivalence
+	members come from the same module only.
+
+2008-11-14  Paul Thomas  <pault@gcc.gnu.org>
+
+        PR fortran/37836
+        * intrinsic.c (add_functions): Reference gfc_simplify._minval
+	and gfc_simplify_maxval.
+	* intrinsic.h : Add prototypes for gfc_simplify._minval and
+	gfc_simplify_maxval.
+	* simplify.c (min_max_choose): New function extracted from
+	simplify_min_max.
+	(simplify_min_max): Call it.
+	(simplify_minval_maxval, gfc_simplify_minval,
+	gfc_simplify_maxval): New functions.
+
+2008-11-08  Paul Thomas  <pault@gcc.gnu.org>
+
+        PR fortran/37597
+        * parse.c (gfc_fixup_sibling_symbols ): Fixup contained, even
+	when symbol not found.
+
+2008-11-08  Mikael Morin  <mikael.morin@tele2.fr>
+
+	PR fortran/35820
+	* resolve.c (gfc_count_forall_iterators): New function.
+	(gfc_resolve_forall): Use gfc_count_forall_iterators to evaluate 
+	the needed memory amount to allocate. Don't forget to free allocated 
+	memory.  Add an assertion to check for memory leaks. 
+
+2008-11-08  Paul Thomas  <pault@gcc.gnu.org>
+
+        PR fortran/37445
+        * resolve.c (resolve_call): Check host association is correct.
+        (resolve_actual_arglist ): Remove return is old_sym is use
+        associated.  Only reparse expression if old and new symbols
+        have different types.
+
+        PR fortran/PR35769
+        * resolve.c (gfc_resolve_assign_in_forall): Change error to a
+        warning.
+
+2008-11-01  Mikael Morin  <mikael.morin@tele2.fr>
+
+        PR fortran/37903
+        * trans-array.c (gfc_trans_create_temp_array): If n is less
+	than the temporary dimension, assert that loop->from is
+	zero (reverts to earlier versions). If there is at least one
+	null loop->to[n], it is a callee allocated array so set the
+	size to NULL and break.
+	(gfc_trans_constant_array_constructor): Set the offset to zero.
+	(gfc_trans_array_constructor): Remove loop shifting around the
+	temporary creation.
+	(gfc_conv_loop_setup): Prefer zero-based descriptors if
+	possible.  Calculate the translation from loop variables to
+	array indices if an array constructor.
+
+2008-11-01  Mikael Morin  <mikael.morin@tele2.fr>
+
+        PR fortran/37749
+        * trans-array.c (gfc_trans_create_temp_array): If size is NULL
+	use the array bounds for loop->to.
+
+2008-10-19  Paul Thomas  <pault@gcc.gnu.org>
+
+        PR fortran/37723
+        * dependency.c (gfc_dep_resolver ): If we find equal array
+	element references, go on to the next reference.
+
+2008-10-19  Paul Thomas  <pault@gcc.gnu.org>
+
+        PR fortran/37787
+        * dependency.c (gfc_are_equivalenced_arrays): Look in symbol
+        namespace rather than current namespace, if it is available.
+
+2008-10-11  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37794
+	* module.c (check_for_ambiguous): Remove redundant code.
+
+2008-10-11  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35680
+	* gfortran.h : Add 'error' bit field to gfc_expr structure.
+	* expr.c (check_inquiry): When checking a restricted expression
+	check that arguments are either variables or restricted.
+	(check_restricted): Do not emit error if the expression has
+	'error' set.  Clean up detection of host-associated variable.
+
+2008-10-05  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37706
+	* module.c (load_equiv): Check the module before negating the
+	unused flag.
+
+2008-09-26  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/37580
+	* expr.c (gfc_check_pointer_assign): Add checks for pointer
+	remapping.
+
+2008-09-26  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/37504
+	* expr.c (gfc_check_pointer_assign): Allow assignment of
+	protected pointers.
+
+2008-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/37626
+	* trans-array.c (gfc_trans_deferred_array): Don't auto-deallocate
+	result variable.
+
+2008-09-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/35945
+	* resolve.c (resolve_fl_variable_derived):  Remove derived type
+	comparison for use associated derived types.  Host association
+	of a derived type will not arise if there is a local derived type
+	whose use name is the same.
+
+	PR fortran/36700
+	* match.c (gfc_match_call):  Use the existing symbol even if
+	it is a function.
+
+2008-09-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37583
+	* decl.c (gfc_match_entry): Both subroutines and functions can
+	give a true for get_proc_mame's last argument so remove the
+	&& gfc_current_ns->proc_name->attr.function.
+	resolve.c (resolve_actual_arglist): Add check for recursion by
+	reference to procedure as actual argument.
+
+2008-09-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/37274
+	PR fortran/36374
+	* module.c (check_for_ambiguous): New function to test loaded
+	symbol for ambiguity with fixup symbol.
+	(read_module): Call check_for_ambiguous.
+	(write_symtree): Do not write the symtree for symbols coming
+	from an interface body.
+
+	PR fortran/36374
+	* resolve.c (count_specific_procs ): New function to count the
+	number of specific procedures with the same name as the generic
+	and emit appropriate errors for and actual argument reference.
+	(resolve_assumed_size_actual): Add new argument no_formal_args.
+	Correct logic around passing generic procedures as arguments.
+	Call count_specific_procs from two locations.
+	(resolve_function): Evaluate and pass no_formal_args.
+	(resolve call): The same and clean up a bit by using csym more
+	widely.
+
+	PR fortran/36454
+	* symbol.c (gfc_add_access): Access can be updated if use
+	associated and not private.
+
+2008-09-13  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/35770
+	* primary.c (gfc_match_varspec): Added missing type-spec clearing
+	after wrong implicit character typing.
+
+2008-09-11  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/36214
+	* simplify.c (simplify_cmplx): Added linebreak to long line.
+	* target-memory.c (gfc_convert_boz): Fix indentation.
+	(gfc_interpret_float): Set mpfr precision to right value before
+	calling mpfr_init.
+
+2008-09-08  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/37199
+	* trans-expr.c (gfc_add_interface_mapping): Set new_sym->as.
+	(gfc_map_intrinsic_function): Added checks against NULL bounds in
+	array specs.
+
+2008-09-05  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/35837
+	* resolve.c (resolve_types): Restore gfc_current_ns on exit.
+	* symbol.c (gfc_save_all): Removed blank line.
+
+2008-09-04  Daniel Kraft  <d@domob.eu>
+
+	* PR fortran/37099
+	* expr.c (simplify_const_ref): Update expression's character length
+	when pulling out a substring reference.
+
+2008-08-30  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/37193
+	* module.c (read_module): Initialize use_only flag on used symbols.
+
+2008-06-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/36371
+	* expr.c (gfc_check_assign):  Change message and locus for
+	error when conform == 0.
+
 2008-08-27  Release Manager
 
 	* GCC 4.3.2 released.

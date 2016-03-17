@@ -1377,7 +1377,8 @@ gfc_add_access (symbol_attribute *attr, gfc_access access,
 		const char *name, locus *where)
 {
 
-  if (attr->access == ACCESS_UNKNOWN)
+  if (attr->access == ACCESS_UNKNOWN
+	|| (attr->use_assoc && attr->access != ACCESS_PRIVATE))
     {
       attr->access = access;
       return check_conflict (attr, name, where);
@@ -3058,7 +3059,6 @@ save_symbol (gfc_symbol *sym)
 void
 gfc_save_all (gfc_namespace *ns)
 {
-
   gfc_traverse_ns (ns, save_symbol);
 }
 

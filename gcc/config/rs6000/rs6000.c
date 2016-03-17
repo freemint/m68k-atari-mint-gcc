@@ -2545,7 +2545,7 @@ num_insns_constant (rtx op, enum machine_mode mode)
    corresponding element of the vector, but for V4SFmode and V2SFmode,
    the corresponding "float" is interpreted as an SImode integer.  */
 
-static HOST_WIDE_INT
+HOST_WIDE_INT
 const_vector_elt_as_int (rtx op, unsigned int elt)
 {
   rtx tmp = CONST_VECTOR_ELT (op, elt);
@@ -6786,7 +6786,8 @@ rs6000_gimplify_va_arg (tree valist, tree type, tree *pre_p, tree *post_p)
       else if (reg == fpr && TYPE_MODE (type) == TDmode)
 	{
 	  regalign = 1;
-	  t = build2 (BIT_IOR_EXPR, TREE_TYPE (reg), reg, size_int (1));
+	  t = build2 (BIT_IOR_EXPR, TREE_TYPE (reg), reg,
+		      build_int_cst (TREE_TYPE (reg), 1));
 	  u = build2 (MODIFY_EXPR, void_type_node, reg, t);
 	}
 
@@ -6826,7 +6827,8 @@ rs6000_gimplify_va_arg (tree valist, tree type, tree *pre_p, tree *post_p)
 	{
 	  /* Ensure that we don't find any more args in regs.
 	     Alignment has taken care of for special cases.  */
-	  t = build2 (GIMPLE_MODIFY_STMT, TREE_TYPE (reg), reg, size_int (8));
+	  t = build_gimple_modify_stmt (reg,
+					build_int_cst (TREE_TYPE (reg), 8));
 	  gimplify_and_add (t, pre_p);
 	}
     }
@@ -11188,6 +11190,10 @@ rs6000_check_sdmode (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
     case FIELD_DECL:
     case RESULT_DECL:
     case REAL_CST:
+    case INDIRECT_REF:
+    case ALIGN_INDIRECT_REF:
+    case MISALIGNED_INDIRECT_REF:
+    case VIEW_CONVERT_EXPR:
       if (TYPE_MODE (TREE_TYPE (*tp)) == SDmode)
 	return *tp;
       break;
@@ -13829,7 +13835,8 @@ rs6000_expand_compare_and_swapqhi (rtx dst, rtx mem, rtx oldval, rtx newval)
   HOST_WIDE_INT imask = GET_MODE_MASK (mode);
 
   /* Shift amount for subword relative to aligned word.  */
-  addrSI = force_reg (SImode, gen_lowpart_common (SImode, XEXP (mem, 0)));
+  addrSI = force_reg (GET_MODE (XEXP (mem, 0)), XEXP (mem, 0));
+  addrSI = force_reg (SImode, gen_lowpart_common (SImode, addrSI));
   shift = gen_reg_rtx (SImode);
   emit_insn (gen_rlwinm (shift, addrSI, GEN_INT (3),
 			 GEN_INT (shift_mask)));
@@ -19831,8 +19838,10 @@ rs6000_handle_altivec_attribute (tree *node,
     default: break;
     }
 
-  if (result && result != type && TYPE_READONLY (type))
-    result = build_qualified_type (result, TYPE_QUAL_CONST);
+  /* Propagate qualifiers attached to the element type
+     onto the vector type.  */
+  if (result && result != type && TYPE_QUALS (type))
+    result = build_qualified_type (result, TYPE_QUALS (type));
 
   *no_add_attrs = true;  /* No need to hang on to the attribute.  */
 

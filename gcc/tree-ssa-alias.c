@@ -2504,6 +2504,8 @@ have_common_aliases_p (bitmap tag1aliases, bitmap tag2aliases)
 static void
 compute_flow_insensitive_aliasing (struct alias_info *ai)
 {
+  referenced_var_iterator rvi;
+  tree var;
   size_t i;
 
   timevar_push (TV_FLOW_INSENSITIVE);
@@ -2615,6 +2617,24 @@ compute_flow_insensitive_aliasing (struct alias_info *ai)
 	}
 
     }
+
+  /* We have to add all HEAP variables to all SMTs aliases bitmaps.
+     As we don't know which effective type the HEAP will have we cannot
+     do better here and we need the conflicts with obfuscated pointers
+     (a simple (*(int[n] *)ptr)[i] will do, with ptr from a VLA array
+     allocation).  */
+  for (i = 0; i < ai->num_pointers; i++)
+    {
+      struct alias_map_d *p_map = ai->pointers[i];
+      tree tag = symbol_mem_tag (p_map->var);
+
+      FOR_EACH_REFERENCED_VAR (var, rvi)
+	{
+	  if (var_ann (var)->is_heapvar)
+	    add_may_alias (tag, var);
+	}
+    }
+
   timevar_pop (TV_FLOW_INSENSITIVE);
 }
 
@@ -2940,16 +2960,6 @@ may_alias_p (tree ptr, alias_set_type mem_alias_set,
      not point to global variables.  */
   if (flag_argument_noalias > 1 && is_global_var (var)
       && TREE_CODE (ptr) == PARM_DECL)
-    {
-      alias_stats.alias_noalias++;
-      alias_stats.simple_resolved++;
-      return false;
-    }
-
-  /* If either MEM or VAR is a read-only global and the other one
-     isn't, then PTR cannot point to VAR.  */
-  if ((unmodifiable_var_p (mem) && !unmodifiable_var_p (var))
-      || (unmodifiable_var_p (var) && !unmodifiable_var_p (mem)))
     {
       alias_stats.alias_noalias++;
       alias_stats.simple_resolved++;

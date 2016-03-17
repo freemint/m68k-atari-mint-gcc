@@ -2374,7 +2374,7 @@ check_intents (gfc_formal_arglist *f, gfc_actual_arglist *a)
 	      return FAILURE;
 	    }
 
-	  if (a->expr->symtree->n.sym->attr.pointer)
+	  if (f->sym->attr.pointer)
 	    {
 	      gfc_error ("Procedure argument at %L is local to a PURE "
 			 "procedure and has the POINTER attribute",
@@ -2625,6 +2625,7 @@ gfc_extend_expr (gfc_expr *e)
   e->value.function.esym = NULL;
   e->value.function.isym = NULL;
   e->value.function.name = NULL;
+  e->user_operator = 1;
 
   if (gfc_pure (NULL) && !gfc_pure (sym))
     {

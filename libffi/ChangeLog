@@ -1,3 +1,27 @@
+2009-01-24  Release Manager
+
+	* GCC 4.3.3 released.
+
+2008-11-21  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* src/sparc/ffi.c (ffi_prep_cif_machdep): Add support for
+	signed/unsigned int8/16 return values.
+	* src/sparc/v8.S (ffi_call_v8): Likewise.
+	(ffi_closure_v8): Likewise.
+
+2008-09-10  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* src/powerpc/ffitarget.h (ffi_abi): Add FFI_LINUX and
+	FFI_LINUX_SOFT_FLOAT to the POWERPC_FREEBSD enum.
+	Add note about flag bits used for FFI_SYSV_TYPE_SMALL_STRUCT.
+	Adjust copyright notice.
+	* src/powerpc/ffi.c: Add two new flags to indicate if we have one
+	register or two register to use for FFI_SYSV structs.
+	(ffi_prep_cif_machdep): Pass the right register flag introduced above.
+	(ffi_closure_helper_SYSV): Fix the return type for
+	FFI_SYSV_TYPE_SMALL_STRUCT. Comment.
+	Adjust copyright notice.
+
 2008-08-27  Release Manager
 
 	* GCC 4.3.2 released.

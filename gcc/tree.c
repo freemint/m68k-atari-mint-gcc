@@ -6296,6 +6296,21 @@ int_fits_type_p (const_tree c, const_tree type)
      for "unknown if constant fits", 0 for "constant known *not* to fit" and 1
      for "constant known to fit".  */
 
+  if (TREE_TYPE (c) == sizetype
+      && TYPE_UNSIGNED (TREE_TYPE (c))
+      && TREE_INT_CST_HIGH (c) == -1
+      && !TREE_OVERFLOW (c))
+      /* So c is an unsigned integer which type is sizetype.
+         sizetype'd integers are sign extended even though they are
+	 unsigned. If the integer value fits in the lower end word of c,
+	 and if the higher end word has all its bits set to 1, that
+	 means the higher end bits are set to 1 only for sign extension.
+	 So let's convert c into an equivalent zero extended unsigned
+	 integer.  */
+      c = force_fit_type_double (size_type_node,
+				 TREE_INT_CST_LOW (c),
+				 TREE_INT_CST_HIGH (c),
+				 false, false);
   /* Check if C >= type_low_bound.  */
   if (type_low_bound && TREE_CODE (type_low_bound) == INTEGER_CST)
     {
@@ -7370,7 +7385,16 @@ build_common_tree_nodes_2 (int short_double)
   complex_long_double_type_node = build_complex_type (long_double_type_node);
 
 /* Make fixed-point nodes based on sat/non-sat and signed/unsigned.  */
-#define MAKE_FIXED_TYPE_NODE(KIND,WIDTH,SIZE) \
+#define MAKE_FIXED_TYPE_NODE(KIND,SIZE) \
+  sat_ ## KIND ## _type_node = \
+    make_sat_signed_ ## KIND ## _type (SIZE); \
+  sat_unsigned_ ## KIND ## _type_node = \
+    make_sat_unsigned_ ## KIND ## _type (SIZE); \
+  KIND ## _type_node = make_signed_ ## KIND ## _type (SIZE); \
+  unsigned_ ## KIND ## _type_node = \
+    make_unsigned_ ## KIND ## _type (SIZE);
+
+#define MAKE_FIXED_TYPE_NODE_WIDTH(KIND,WIDTH,SIZE) \
   sat_ ## WIDTH ## KIND ## _type_node = \
     make_sat_signed_ ## KIND ## _type (SIZE); \
   sat_unsigned_ ## WIDTH ## KIND ## _type_node = \
@@ -7381,10 +7405,10 @@ build_common_tree_nodes_2 (int short_double)
 
 /* Make fixed-point type nodes based on four different widths.  */
 #define MAKE_FIXED_TYPE_NODE_FAMILY(N1,N2) \
-  MAKE_FIXED_TYPE_NODE (N1, short_, SHORT_ ## N2 ## _TYPE_SIZE) \
-  MAKE_FIXED_TYPE_NODE (N1, , N2 ## _TYPE_SIZE) \
-  MAKE_FIXED_TYPE_NODE (N1, long_, LONG_ ## N2 ## _TYPE_SIZE) \
-  MAKE_FIXED_TYPE_NODE (N1, long_long_, LONG_LONG_ ## N2 ## _TYPE_SIZE)
+  MAKE_FIXED_TYPE_NODE_WIDTH (N1, short_, SHORT_ ## N2 ## _TYPE_SIZE) \
+  MAKE_FIXED_TYPE_NODE (N1, N2 ## _TYPE_SIZE) \
+  MAKE_FIXED_TYPE_NODE_WIDTH (N1, long_, LONG_ ## N2 ## _TYPE_SIZE) \
+  MAKE_FIXED_TYPE_NODE_WIDTH (N1, long_long_, LONG_LONG_ ## N2 ## _TYPE_SIZE)
 
 /* Make fixed-point mode nodes based on sat/non-sat and signed/unsigned.  */
 #define MAKE_FIXED_MODE_NODE(KIND,NAME,MODE) \

@@ -1018,21 +1018,30 @@ find_array_element (gfc_constructor *cons, gfc_array_ref *ar,
   mpz_init_set_ui (span, 1);
   for (i = 0; i < ar->dimen; i++)
     {
+      if (gfc_reduce_init_expr (ar->as->lower[i]) == FAILURE
+	  || gfc_reduce_init_expr (ar->as->upper[i]) == FAILURE)
+	{
+	  t = FAILURE;
+	  cons = NULL;
+	  goto depart;
+	}
+
       e = gfc_copy_expr (ar->start[i]);
       if (e->expr_type != EXPR_CONSTANT)
 	{
 	  cons = NULL;
 	  goto depart;
 	}
-        /* Check the bounds.  */
+
+      gcc_assert (ar->as->upper[i]->expr_type == EXPR_CONSTANT
+		  && ar->as->lower[i]->expr_type == EXPR_CONSTANT);
+
+      /* Check the bounds.  */
       if ((ar->as->upper[i]
-	     && ar->as->upper[i]->expr_type == EXPR_CONSTANT
-	     && mpz_cmp (e->value.integer,
-			 ar->as->upper[i]->value.integer) > 0)
-		||
-	  (ar->as->lower[i]->expr_type == EXPR_CONSTANT
-	     && mpz_cmp (e->value.integer,
-			 ar->as->lower[i]->value.integer) < 0))
+	   && mpz_cmp (e->value.integer,
+		       ar->as->upper[i]->value.integer) > 0)
+	  || (mpz_cmp (e->value.integer,
+		       ar->as->lower[i]->value.integer) < 0))
 	{
 	  gfc_error ("Index in dimension %d is out of bounds "
 		     "at %L", i + 1, &ar->c_where[i]);
@@ -1443,6 +1452,40 @@ simplify_const_ref (gfc_expr *p)
 		    {
 		      cons->expr->ref = copy_ref (p->ref->next);
 		      simplify_const_ref (cons->expr);
+		      if (simplify_const_ref (cons->expr) == FAILURE)
+			return FAILURE;
+		    }
+
+		  /* If this is a CHARACTER array and we possibly took a
+		     substring out of it, update the type-spec's character
+		     length according to the first element (as all should have
+		     the same length).  */
+		  if (p->ts.type == BT_CHARACTER)
+		    {
+		      int string_len;
+
+		      gcc_assert (p->ref->next);
+		      gcc_assert (!p->ref->next->next);
+		      gcc_assert (p->ref->next->type == REF_SUBSTRING);
+
+		      if (p->value.constructor)
+			{
+			  const gfc_expr* first = p->value.constructor->expr;
+			  gcc_assert (first->expr_type == EXPR_CONSTANT);
+			  gcc_assert (first->ts.type == BT_CHARACTER);
+			  string_len = first->value.character.length;
+			}
+		      else
+			string_len = 0;
+
+		      if (!p->ts.cl)
+			{
+			  p->ts.cl = gfc_get_charlen ();
+			  p->ts.cl->next = NULL;
+			  p->ts.cl->length = NULL;
+			}
+		      gfc_free_expr (p->ts.cl->length);
+		      p->ts.cl->length = gfc_int_expr (string_len);
 		    }
 		}
 	      gfc_free_ref_list (p->ref);
@@ -1968,6 +2011,9 @@ check_init_expr_arguments (gfc_expr *e)
   return MATCH_YES;
 }
 
+
+static try check_restricted (gfc_expr *);
+
 /* F95, 7.1.6.1, Initialization expressions, (7)
    F2003, 7.1.7 Initialization expression, (8)  */
 
@@ -2046,6 +2092,11 @@ check_inquiry (gfc_expr *e, int not_restricted)
 	      return MATCH_ERROR;
 	  }
 	else if (not_restricted && check_init_expr (ap->expr) == FAILURE)
+	  return MATCH_ERROR;
+
+	if (not_restricted == 0
+	      && ap->expr->expr_type != EXPR_VARIABLE
+	      && check_restricted (ap->expr) == FAILURE)
 	  return MATCH_ERROR;
     }
 
@@ -2319,6 +2370,42 @@ check_init_expr (gfc_expr *e)
 }
 
 
+/* Reduces a general expression to an initialization expression (a constant).
+   This used to be part of gfc_match_init_expr.
+   Note that this function doesn't free the given expression on FAILURE.  */
+  
+try
+gfc_reduce_init_expr (gfc_expr *expr)
+{
+  try t;
+
+  gfc_init_expr = 1;
+  t = gfc_resolve_expr (expr);
+  if (t == SUCCESS)
+    t = check_init_expr (expr);
+  gfc_init_expr = 0;
+
+  if (t == FAILURE)
+    return FAILURE;
+
+  if (expr->expr_type == EXPR_ARRAY
+      && (gfc_check_constructor_type (expr) == FAILURE
+      || gfc_expand_constructor (expr) == FAILURE))
+    return FAILURE;
+
+  /* Not all inquiry functions are simplified to constant expressions
+     so it is necessary to call check_inquiry again.  */ 
+  if (!gfc_is_constant_expr (expr) && check_inquiry (expr, 1) != MATCH_YES
+      && !gfc_in_match_data ())
+    {
+      gfc_error ("Initialization expression didn't reduce %C");
+      return FAILURE;
+    }
+
+  return SUCCESS;
+}
+
+
 /* Match an initialization expression.  We work by first matching an
    expression, then reducing it to a constant.  */
 
@@ -2329,36 +2416,16 @@ gfc_match_init_expr (gfc_expr **result)
   match m;
   try t;
 
+  expr = NULL;
+
   m = gfc_match_expr (&expr);
   if (m != MATCH_YES)
     return m;
 
-  gfc_init_expr = 1;
-  t = gfc_resolve_expr (expr);
-  if (t == SUCCESS)
-    t = check_init_expr (expr);
-  gfc_init_expr = 0;
-
-  if (t == FAILURE)
+  t = gfc_reduce_init_expr (expr);
+  if (t != SUCCESS)
     {
       gfc_free_expr (expr);
-      return MATCH_ERROR;
-    }
-
-  if (expr->expr_type == EXPR_ARRAY
-      && (gfc_check_constructor_type (expr) == FAILURE
-	  || gfc_expand_constructor (expr) == FAILURE))
-    {
-      gfc_free_expr (expr);
-      return MATCH_ERROR;
-    }
-
-  /* Not all inquiry functions are simplified to constant expressions
-     so it is necessary to call check_inquiry again.  */ 
-  if (!gfc_is_constant_expr (expr) && check_inquiry (expr, 1) != MATCH_YES
-      && !gfc_in_match_data ())
-    {
-      gfc_error ("Initialization expression didn't reduce %C");
       return MATCH_ERROR;
     }
 
@@ -2367,8 +2434,6 @@ gfc_match_init_expr (gfc_expr **result)
   return MATCH_YES;
 }
 
-
-static try check_restricted (gfc_expr *);
 
 /* Given an actual argument list, test to see that each argument is a
    restricted expression and optionally if the expression type is
@@ -2508,14 +2573,17 @@ check_restricted (gfc_expr *e)
 	 that host associated dummy array indices are accepted (PR23446).
 	 This mechanism also does the same for the specification expressions
 	 of array-valued functions.  */
-      if (sym->attr.in_common
-	  || sym->attr.use_assoc
-	  || sym->attr.dummy
-	  || sym->attr.implied_index
-	  || sym->ns != gfc_current_ns
-	  || (sym->ns->proc_name != NULL
-	      && sym->ns->proc_name->attr.flavor == FL_MODULE)
-	  || (gfc_is_formal_arg () && (sym->ns == gfc_current_ns)))
+      if (e->error
+	    || sym->attr.in_common
+	    || sym->attr.use_assoc
+	    || sym->attr.dummy
+	    || sym->attr.implied_index
+	    || (sym->ns && sym->ns == gfc_current_ns->parent)
+	    || (sym->ns && gfc_current_ns->parent
+		  && sym->ns == gfc_current_ns->parent->parent)
+	    || (sym->ns->proc_name != NULL
+		  && sym->ns->proc_name->attr.flavor == FL_MODULE)
+	    || (gfc_is_formal_arg () && (sym->ns == gfc_current_ns)))
 	{
 	  t = SUCCESS;
 	  break;
@@ -2523,7 +2591,8 @@ check_restricted (gfc_expr *e)
 
       gfc_error ("Variable '%s' cannot appear in the expression at %L",
 		 sym->name, &e->where);
-
+      /* Prevent a repetition of the error.  */
+      e->error = 1;
       break;
 
     case EXPR_NULL:
@@ -2825,6 +2894,7 @@ gfc_check_assign (gfc_expr *lvalue, gfc_expr *rvalue, int conform)
   if (gfc_compare_types (&lvalue->ts, &rvalue->ts))
     return SUCCESS;
 
+  /* Only DATA Statements come here.  */
   if (!conform)
     {
       /* Numeric can be converted to any other numeric. And Hollerith can be
@@ -2837,7 +2907,7 @@ gfc_check_assign (gfc_expr *lvalue, gfc_expr *rvalue, int conform)
 	return SUCCESS;
 
       gfc_error ("Incompatible types in assignment at %L, %s to %s",
-		 &rvalue->where, gfc_typename (&rvalue->ts),
+		 &lvalue->where, gfc_typename (&rvalue->ts),
 		 gfc_typename (&lvalue->ts));
 
       return FAILURE;
@@ -2888,6 +2958,32 @@ gfc_check_pointer_assign (gfc_expr *lvalue, gfc_expr *rvalue)
 
       if (ref->type == REF_COMPONENT && ref->u.c.component->pointer)
 	pointer = 1;
+
+      if (ref->type == REF_ARRAY && ref->next == NULL)
+	{
+	  if (ref->u.ar.type == AR_FULL)
+	    break;
+
+	  if (ref->u.ar.type != AR_SECTION)
+	    {
+	      gfc_error ("Expected bounds specification for '%s' at %L",
+			 lvalue->symtree->n.sym->name, &lvalue->where);
+	      return FAILURE;
+	    }
+
+	  if (gfc_notify_std (GFC_STD_F2003,"Fortran 2003: Bounds "
+			      "specification for '%s' in pointer assignment "
+                              "at %L", lvalue->symtree->n.sym->name,
+			      &lvalue->where) == FAILURE)
+            return FAILURE;
+
+	  gfc_error ("Pointer bounds remapping at %L is not yet implemented "
+		     "in gfortran", &lvalue->where);
+	  /* TODO: See PR 29785. Add checks that all lbounds are specified and
+	     either never or always the upper-bound; strides shall not be
+	     present.  */
+	  return FAILURE;
+	}
     }
 
   if (check_intent_in && lvalue->symtree->n.sym->attr.intent == INTENT_IN)
@@ -2978,9 +3074,9 @@ gfc_check_pointer_assign (gfc_expr *lvalue, gfc_expr *rvalue)
       return FAILURE;
     }
 
-  if (attr.protected && attr.use_assoc)
+  if (attr.protected && attr.use_assoc && !attr.pointer)
     {
-      gfc_error ("Pointer assigment target has PROTECTED "
+      gfc_error ("Pointer assignment target has PROTECTED "
 		 "attribute at %L", &rvalue->where);
       return FAILURE;
     }

@@ -3465,11 +3465,16 @@ load_equiv (void)
 	mio_expr (&tail->expr);
       }
 
-    /* Unused equivalence members have a unique name.  */
+    /* Unused equivalence members have a unique name.  In addition, it
+       must be checked that the symbols are from the same module.  */
     unused = true;
     for (eq = head; eq; eq = eq->eq)
       {
-	if (!check_unique_name (eq->expr->symtree->name))
+	if (eq->expr->symtree->n.sym->module
+	      && head->expr->symtree->n.sym->module
+	      && strcmp (head->expr->symtree->n.sym->module,
+			 eq->expr->symtree->n.sym->module) == 0
+	      && !check_unique_name (eq->expr->symtree->name))
 	  {
 	    unused = false;
 	    break;
@@ -3600,6 +3605,41 @@ read_cleanup (pointer_info *p)
   /* Free unused symbols.  */
   if (p->type == P_SYMBOL && p->u.rsym.state == UNUSED)
     gfc_free_symbol (p->u.rsym.sym);
+}
+
+
+/* It is not quite enough to check for ambiguity in the symbols by
+   the loaded symbol and the new symbol not being identical.  */
+static bool
+check_for_ambiguous (gfc_symbol *st_sym, pointer_info *info)
+{
+  gfc_symbol *rsym;
+  module_locus locus;
+  symbol_attribute attr;
+
+  rsym = info->u.rsym.sym;
+  if (st_sym == rsym)
+    return false;
+
+  /* If the existing symbol is generic from a different module and
+     the new symbol is generic there can be no ambiguity.  */
+  if (st_sym->attr.generic
+	&& st_sym->module
+	&& strcmp (st_sym->module, module_name))
+    {
+      /* The new symbol's attributes have not yet been read.  Since
+	 we need attr.generic, read it directly.  */
+      get_module_locus (&locus);
+      set_module_locus (&info->u.rsym.where);
+      mio_lparen ();
+      attr.generic = 0;
+      mio_symbol_attribute (&attr);
+      set_module_locus (&locus);
+      if (attr.generic)
+	return false;
+    }
+
+  return true;
 }
 
 
@@ -3744,7 +3784,7 @@ read_module (void)
 	  if (st != NULL)
 	    {
 	      /* Check for ambiguous symbols.  */
-	      if (st->n.sym != info->u.rsym.sym)
+	      if (check_for_ambiguous (st->n.sym, info))
 		st->ambiguous = 1;
 	      info->u.rsym.symtree = st;
 	    }
@@ -3753,9 +3793,9 @@ read_module (void)
 	      st = gfc_find_symtree (gfc_current_ns->sym_root, name);
 
 	      /* Delete the symtree if the symbol has been added by a USE
-		 statement without an ONLY(11.3.2). Remember that the rsym
+		 statement without an ONLY(11.3.2).  Remember that the rsym
 		 will be the same as the symbol found in the symtree, for
-		 this case.*/
+		 this case.  */
 	      if (st && (only_flag || info->u.rsym.renamed)
 		     && !st->n.sym->attr.use_only
 		     && !st->n.sym->attr.use_rename
@@ -3790,6 +3830,11 @@ read_module (void)
 
 	      if (strcmp (name, p) != 0)
 		sym->attr.use_rename = 1;
+
+	      /* We need to set the only_flag here so that symbols from the
+		 same USE...ONLY but earlier are not deleted from the tree in
+		 the gfc_delete_symtree above.  */
+	      sym->attr.use_only = only_flag;
 
 	      /* Store the symtree pointing to this symbol.  */
 	      info->u.rsym.symtree = st;
@@ -3998,7 +4043,7 @@ write_common_0 (gfc_symtree *st)
 
       /* Record that we have written this common.  */
       w = gfc_getmem (sizeof (struct written_common));
-      w->name = p->name;
+      w->name = name;
       w->label = label;
       gfc_insert_bbt (&written_commons, w, compare_written_commons);
     }
@@ -4233,6 +4278,14 @@ write_symtree (gfc_symtree *st)
   pointer_info *p;
 
   sym = st->n.sym;
+
+  /* A symbol in an interface body must not be visible in the
+     module file.  */
+  if (sym->ns != gfc_current_ns
+	&& sym->ns->proc_name
+	&& sym->ns->proc_name->attr.if_source == IFSRC_IFBODY)
+    return;
+
   if (!gfc_check_access (sym->attr.access, sym->ns->default_access)
       || (sym->attr.flavor == FL_PROCEDURE && sym->attr.generic
 	  && !sym->attr.subroutine && !sym->attr.function))

@@ -1,3 +1,60 @@
+2009-01-24  Release Manager
+
+	* GCC 4.3.3 released.
+
+2008-12-31  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR fortran/31832
+	* acinclude.m4 (LIBGFOR_CHECK_FOR_BROKEN_POWF): New autoconf check for
+	broken powf.
+	* configure.ac (LIBGFOR_CHECK_FOR_BROKEN_POWF): Use it.
+	* intrinsics/c99_functions.c: Use internal powf implementation if
+	HAVE_BROKEN_POWF is defined.
+	* configure: Rebuilt.
+	* config.h.in: Rebuilt.
+
+2008-11-23  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/38135
+	Backport from trunk.
+	* m4/reshape.m4:  Tread PAD as if it were SOURCE when SOURCE
+	is empty.
+	* intrinsics/reshape_generic.c:  Likewise.
+	* generated/reshape_c10.c Regenerated.
+	* generated/reshape_c16.c Regenerated.
+	* generated/reshape_c4.c Regenerated.
+	* generated/reshape_c8.c Regenerated.
+	* generated/reshape_i16.c Regenerated.
+	* generated/reshape_i4.c Regenerated.
+	* generated/reshape_i8.c Regenerated.
+	* generated/reshape_r10.c Regenerated.
+	* generated/reshape_r16.c Regenerated.
+	* generated/reshape_r4.c Regenerated.
+	* generated/reshape_r8.c Regenerated.
+
+2008-10-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/37707
+	Backport from trunk.
+	* io/list_read.c (read_character): Remove code to look ahead in namelist
+	reads to descriminate non-delimited strings from namelist objects.
+	* io/write.c (namelist_write): Delimit character strings with quote or
+	apostrophe, defaulting to quote.
+
+2008-10-19  Jerry DeLisle  <jvdelisle@gcc.gnu.org
+
+	PR libfortran/37863
+	Backport from trunk.
+	* io/write_float.def (WRITE_FLOAT): Round to 1.0 correctly.
+
+2008-10-19  Jerry DeLisle  <jvdelisle@gcc.gnu.org
+
+	PR libfortran/37707
+	Backport from trunk.
+	* io/list_read.c (nml_get_obj_data): If the first namelist object rank
+	is greater than zero, call nml_object_read with the first object rather
+	than the sub-object.
+
 2008-08-27  Release Manager
 
 	* GCC 4.3.2 released.
