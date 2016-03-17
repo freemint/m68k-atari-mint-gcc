@@ -1,3 +1,71 @@
+2010-01-21  Release Manager
+
+	* GCC 4.4.3 released.
+
+2009-12-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Revert:
+        2009-12-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/42261
+	* include/bits/basic_string.h (_S_construct_aux(_Integer, _Integer,
+	const _Alloc&, __true_type)): Cast the second argument to value_type.
+	* include/ext/sso_string_base.h (_M_construct_aux(_Integer, _Integer,
+	std::__true_type)): Likewise.
+	* include/ext/rc_string_base.h (_S_construct_aux(_Integer, _Integer,
+	const _Alloc&, std::__true_type)): Likewise.
+	* testsuite/21_strings/basic_string/cons/char/42261.cc: New.
+	* testsuite/21_strings/basic_string/cons/wchar_t/42261.cc: Likewise.
+
+2009-12-09  Roman Odaisky  <to.roma.from.bugcc@qwertty.com>
+
+	PR libstdc++/42273
+	* include/bits/atomic_2.h: Fix typo.
+
+2009-12-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/42261
+	* include/bits/basic_string.h (_S_construct_aux(_Integer, _Integer,
+	const _Alloc&, __true_type)): Cast the second argument to value_type.
+	* include/ext/sso_string_base.h (_M_construct_aux(_Integer, _Integer,
+	std::__true_type)): Likewise.
+	* include/ext/rc_string_base.h (_S_construct_aux(_Integer, _Integer,
+	const _Alloc&, std::__true_type)): Likewise.
+	* testsuite/21_strings/basic_string/cons/char/42261.cc: New.
+	* testsuite/21_strings/basic_string/cons/wchar_t/42261.cc: Likewise.
+
+2009-11-19  Johannes Singler  <singler@kit.edu>
+
+        * include/parallel/partition.h (__parallel_partition): Correctly
+        initialize chunk size.
+        (__parallel_nth_element): Respect nth_element_minimal_n.  Use
+        sequential nth_element as base case, instead of sequential sort.
+
+2009-10-28  Johannes Singler  <singler@kit.edu>
+
+        PR libstdc++/40852
+        * include/parallel/multiseq_selection.h
+        (multiseq_partition, multiseq_selection):  Avoid intermediate
+	values exceeding the integer type range for very large inputs.
+
+2009-10-16  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * include/c_compatibility/stdatomic.h: Include cstdatomic if
+        __cplusplus.
+
+2009-10-15  Benjamin Kosnik  <bkoz@redhat.com>
+
+        PR libstdc++/40654
+        PR libstdc++/40826
+        * src/atomic.cc (atomic_flag_test_and_set_explicit): Add
+        static_cast from base to derived.
+        (atomic_flag_clear_explicit): Same.
+        * include/bits/atomic_2.h (__atomic2::atomic_flag): Public derivation.
+        Remove value type constructor.
+        * include/bits/atomic_0.h (__atomic0::atomic_flag): Same.
+        * include/std/future (_Future_state): Use ATOMIC_FLAG_INIT to
+        initialized the atomic_flag member.
+
 2009-10-15  Release Manager
 
 	* GCC 4.4.2 released.
