@@ -1,3 +1,30 @@
+2009-10-15  Release Manager
+
+	* GCC 4.4.2 released.
+
+2009-09-11  Johannes Singler  <singler@ira.uka.de>
+
+        * include/parallel/multiway_merge.h
+        (multiway_merge_exact_splitting): Deallocate borders correctly.
+        (parallel_multiway_merge): Remove unnecessarily complicated
+        allocation, random access iterators are default-constructible;
+        deallocate ne_seqs correctly.
+
+2009-08-26  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/41005
+	* configure.ac: Bump libtool_VERSION to 6:13:0.
+	* configure: Regenerate.
+	* src/Makefile.am: Compile fstream-inst.cc as C++0x.
+	* src/Makefile.in: Regenerate.
+	* config/abi/pre/gnu.ver: Add new symbols and disambiguate old ones.
+	* testsuite/util/testsuite_abi.cc: Add GLIBCXX_3.4.13 version.
+
+2009-07-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/std/valarray (valarray<>::operator=(initializer_list<>)):
+	Return *this.
+
 2009-07-22  Release Manager
 
 	* GCC 4.4.1 released.
