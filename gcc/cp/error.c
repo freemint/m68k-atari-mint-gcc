@@ -1,12 +1,12 @@
 /* Call-backs for C++ error reporting.
    This code is non-reentrant.
    Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2002,
-   2003, 2004, 2005 Free Software Foundation, Inc.
+   2003, 2004, 2005, 2007 Free Software Foundation, Inc.
    This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -15,9 +15,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -901,6 +900,10 @@ dump_decl (tree t, int flags)
 	pp_type_id (cxx_pp, t);
       break;
 
+    case UNBOUND_CLASS_TEMPLATE:
+      dump_type (t, flags);
+      break;
+
     default:
       pp_unsupported_tree (cxx_pp, t);
       /* Fall through to error.  */
@@ -1301,10 +1304,14 @@ static tree
 resolve_virtual_fun_from_obj_type_ref (tree ref)
 {
   tree obj_type = TREE_TYPE (OBJ_TYPE_REF_OBJECT (ref));
-  int index = tree_low_cst (OBJ_TYPE_REF_TOKEN (ref), 1);
+  HOST_WIDE_INT index = tree_low_cst (OBJ_TYPE_REF_TOKEN (ref), 1);
   tree fun = BINFO_VIRTUALS (TYPE_BINFO (TREE_TYPE (obj_type)));
-    while (index--)
+  while (index)
+    {
       fun = TREE_CHAIN (fun);
+      index -= (TARGET_VTABLE_USES_DESCRIPTORS
+		? TARGET_VTABLE_USES_DESCRIPTORS : 1);
+    }
 
   return BV_FN (fun);
 }
@@ -1420,13 +1427,13 @@ dump_expr (tree t, int flags)
 	    if (TREE_CODE (ob) == ADDR_EXPR)
 	      {
 		dump_expr (TREE_OPERAND (ob, 0), flags | TFF_EXPR_IN_PARENS);
-		pp_dot (cxx_pp);
+		pp_cxx_dot (cxx_pp);
 	      }
 	    else if (TREE_CODE (ob) != PARM_DECL
 		     || strcmp (IDENTIFIER_POINTER (DECL_NAME (ob)), "this"))
 	      {
 		dump_expr (ob, flags | TFF_EXPR_IN_PARENS);
-		pp_arrow (cxx_pp);
+		pp_cxx_arrow (cxx_pp);
 	      }
 	    args = TREE_CHAIN (args);
 	  }

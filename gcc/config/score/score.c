@@ -1,12 +1,12 @@
 /* Output routines for Sunplus S+CORE processor
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
    Contributed by Sunnorth.
 
    This file is part of GCC.
 
    GCC is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 2, or (at your
+   by the Free Software Foundation; either version 3, or (at your
    option) any later version.
 
    GCC is distributed in the hope that it will be useful, but WITHOUT
@@ -15,9 +15,8 @@
    License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with GCC; see the file COPYING.  If not, write to
-   the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -751,30 +750,13 @@ score_initialize_trampoline (rtx ADDR, rtx FUNC, rtx CHAIN)
 #define FFCACHE          "_flush_cache"
 #define CODE_SIZE        (TRAMPOLINE_INSNS * UNITS_PER_WORD)
 
-  unsigned int tramp[TRAMPOLINE_INSNS] = {
-    0x8103bc56,                         /* mv      r8, r3          */
-    0x9000bc05,                         /* bl      0x0x8           */
-    0xc1238000 | (CODE_SIZE - 8),       /* lw      r9, &func       */
-    0xc0038000
-    | (STATIC_CHAIN_REGNUM << 21)
-    | (CODE_SIZE - 4),                  /* lw  static chain reg, &chain */
-    0x8068bc56,                         /* mv      r3, r8          */
-    0x8009bc08,                         /* br      r9              */
-    0x0,
-    0x0,
-    };
   rtx pfunc, pchain;
-  int i;
-
-  for (i = 0; i < TRAMPOLINE_INSNS; i++)
-    emit_move_insn (gen_rtx_MEM (ptr_mode, plus_constant (ADDR, i << 2)),
-                    GEN_INT (tramp[i]));
 
   pfunc = plus_constant (ADDR, CODE_SIZE);
-  pchain = plus_constant (ADDR, CODE_SIZE + GET_MODE_SIZE (ptr_mode));
+  pchain = plus_constant (ADDR, CODE_SIZE + GET_MODE_SIZE (SImode));
 
-  emit_move_insn (gen_rtx_MEM (ptr_mode, pfunc), FUNC);
-  emit_move_insn (gen_rtx_MEM (ptr_mode, pchain), CHAIN);
+  emit_move_insn (gen_rtx_MEM (SImode, pfunc), FUNC);
+  emit_move_insn (gen_rtx_MEM (SImode, pchain), CHAIN);
   emit_library_call (gen_rtx_SYMBOL_REF (Pmode, FFCACHE),
                      0, VOIDmode, 2,
                      ADDR, Pmode,
@@ -1301,8 +1283,11 @@ score_print_operand_address (FILE *file, rtx x)
                          INTVAL (addr.offset));
                 break;
               default:
-                fprintf (file, "[%s,%ld]", reg_names[REGNO (addr.reg)],
-                         INTVAL (addr.offset));
+                if (INTVAL(addr.offset) == 0)
+                  fprintf(file, "[%s]", reg_names[REGNO (addr.reg)]);
+                else 
+                  fprintf(file, "[%s, %ld]", reg_names[REGNO (addr.reg)], 
+                          INTVAL(addr.offset));
                 break;
               }
           }

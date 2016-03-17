@@ -1,12 +1,12 @@
 /* Analysis Utilities for Loop Vectorization.
-   Copyright (C) 2003,2004,2005,2006 Free Software Foundation, Inc.
+   Copyright (C) 2003,2004,2005,2006, 2007 Free Software Foundation, Inc.
    Contributed by Dorit Naishlos <dorit@il.ibm.com>
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -15,9 +15,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -25,6 +24,7 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #include "tm.h"
 #include "ggc.h"
 #include "tree.h"
+#include "target.h"
 #include "basic-block.h"
 #include "diagnostic.h"
 #include "tree-flow.h"
@@ -911,6 +911,57 @@ vect_verify_datarefs_alignment (loop_vec_info loop_vinfo)
 }
 
 
+/* Function vector_alignment_reachable_p
+
+   Return true if vector alignment for DR is reachable by peeling
+   a few loop iterations.  Return false otherwise.  */
+
+static bool
+vector_alignment_reachable_p (struct data_reference *dr)
+{
+  tree stmt = DR_STMT (dr);
+  stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
+  tree vectype = STMT_VINFO_VECTYPE (stmt_info);
+
+  /* If misalignment is known at the compile time then allow peeling
+     only if natural alignment is reachable through peeling.  */
+  if (known_alignment_for_access_p (dr) && !aligned_access_p (dr))
+    {
+      HOST_WIDE_INT elmsize = 
+		int_cst_value (TYPE_SIZE_UNIT (TREE_TYPE (vectype)));
+      if (vect_print_dump_info (REPORT_DETAILS))
+	{
+	  fprintf (vect_dump, "data size =" HOST_WIDE_INT_PRINT_DEC, elmsize);
+	  fprintf (vect_dump, ". misalignment = %d. ", DR_MISALIGNMENT (dr));
+	}
+      if (DR_MISALIGNMENT (dr) % elmsize)
+	{
+	  if (vect_print_dump_info (REPORT_DETAILS))
+	    fprintf (vect_dump, "data size does not divide the misalignment.\n");
+	  return false;
+	}
+    }
+
+  if (!known_alignment_for_access_p (dr))
+    {
+      tree type = (TREE_TYPE (DR_REF (dr)));
+      tree ba = DR_BASE_OBJECT (dr);
+      bool is_packed = false;
+
+      if (ba)
+	is_packed = contains_packed_reference (ba);
+
+      if (vect_print_dump_info (REPORT_DETAILS))
+	fprintf (vect_dump, "Unknown misalignment, is_packed = %d",is_packed);
+      if (targetm.vectorize.vector_alignment_reachable (type, is_packed))
+	return true;
+      else
+	return false;
+    }
+
+  return true;
+}
+
 /* Function vect_enhance_data_refs_alignment
 
    This pass will use loop versioning and loop peeling in order to enhance
@@ -1056,8 +1107,11 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
   for (i = 0; VEC_iterate (data_reference_p, datarefs, i, dr); i++)
     if (!DR_IS_READ (dr) && !aligned_access_p (dr))
       {
-	dr0 = dr;
-	do_peeling = true;
+        do_peeling = vector_alignment_reachable_p (dr);
+        if (do_peeling)
+          dr0 = dr;
+        if (!do_peeling && vect_print_dump_info (REPORT_DETAILS))
+          fprintf (vect_dump, "vector alignment may not be reachable");
 	break;
       }
 

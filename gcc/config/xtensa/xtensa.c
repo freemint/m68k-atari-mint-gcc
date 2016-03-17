@@ -1,12 +1,13 @@
 /* Subroutines for insn-output.c for Tensilica's Xtensa architecture.
-   Copyright 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
    Contributed by Bob Wilson (bwilson@tensilica.com) at Tensilica.
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -15,9 +16,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -93,6 +93,7 @@ struct machine_function GTY(())
   int accesses_prev_frame;
   bool need_a7_copy;
   bool vararg_a7;
+  rtx vararg_a7_copy;
   rtx set_frame_ptr_insn;
 };
 
@@ -1102,7 +1103,7 @@ xtensa_copy_incoming_a7 (rtx opnd)
   /* Copy a7 to a new pseudo at the function entry.  Use gen_raw_REG to
      create the REG for a7 so that hard_frame_pointer_rtx is not used.  */
 
-  push_to_sequence (entry_insns);
+  start_sequence ();
   tmp = gen_reg_rtx (mode);
 
   switch (mode)
@@ -1136,10 +1137,11 @@ xtensa_copy_incoming_a7 (rtx opnd)
 
   if (cfun->machine->vararg_a7)
     {
-      /* This is called from within builtin_savereg, so we're already
-	 inside a start_sequence that will be placed at the start of
-	 the function.  */
-      emit_insn (entry_insns);
+      /* This is called from within builtin_saveregs, which will insert the
+	 saveregs code at the function entry, ahead of anything placed at
+	 the function entry now.  Instead, save the sequence to be inserted
+	 at the beginning of the saveregs code.  */
+      cfun->machine->vararg_a7_copy = entry_insns;
     }
   else
     {
@@ -1148,6 +1150,8 @@ xtensa_copy_incoming_a7 (rtx opnd)
 	 chain current, so the code is placed at the start of the
 	 function.  */
       push_topmost_sequence ();
+      /* Do not use entry_of_function() here.  This is called from within
+	 expand_function_start, when the CFG still holds GIMPLE.  */
       emit_insn_after (entry_insns, get_insns ());
       pop_topmost_sequence ();
     }
@@ -1844,6 +1848,7 @@ xtensa_output_literal (FILE *file, rtx x, enum machine_mode mode, int labelno)
   long value_long[2];
   REAL_VALUE_TYPE r;
   int size;
+  rtx first, second;
 
   fprintf (file, "\t.literal .LC%u, ", (unsigned) labelno);
 
@@ -1857,11 +1862,18 @@ xtensa_output_literal (FILE *file, rtx x, enum machine_mode mode, int labelno)
 	{
 	case SFmode:
 	  REAL_VALUE_TO_TARGET_SINGLE (r, value_long[0]);
+	  if (HOST_BITS_PER_LONG > 32)
+	    value_long[0] &= 0xffffffff;
 	  fprintf (file, "0x%08lx\n", value_long[0]);
 	  break;
 
 	case DFmode:
 	  REAL_VALUE_TO_TARGET_DOUBLE (r, value_long);
+	  if (HOST_BITS_PER_LONG > 32)
+	    {
+	      value_long[0] &= 0xffffffff;
+	      value_long[1] &= 0xffffffff;
+	    }
 	  fprintf (file, "0x%08lx, 0x%08lx\n",
 		   value_long[0], value_long[1]);
 	  break;
@@ -1883,9 +1895,10 @@ xtensa_output_literal (FILE *file, rtx x, enum machine_mode mode, int labelno)
 	  break;
 
 	case 8:
-	  output_addr_const (file, operand_subword (x, 0, 0, DImode));
+	  split_double (x, &first, &second);
+	  output_addr_const (file, first);
 	  fputs (", ", file);
-	  output_addr_const (file, operand_subword (x, 1, 0, DImode));
+	  output_addr_const (file, second);
 	  fputs ("\n", file);
 	  break;
 
@@ -2091,6 +2104,8 @@ xtensa_builtin_saveregs (void)
   cfun->machine->need_a7_copy = true;
   cfun->machine->vararg_a7 = true;
   move_block_from_reg (GP_ARG_FIRST + arg_words, dest, gp_left);
+  gcc_assert (cfun->machine->vararg_a7_copy != 0);
+  emit_insn_before (cfun->machine->vararg_a7_copy, get_insns ());
 
   return XEXP (gp_regs, 0);
 }

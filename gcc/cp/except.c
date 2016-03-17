@@ -1,6 +1,6 @@
 /* Handle exceptional things in C++.
    Copyright (C) 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005  Free Software Foundation, Inc.
+   2000, 2001, 2002, 2003, 2004, 2005, 2007  Free Software Foundation, Inc.
    Contributed by Michael Tiemann <tiemann@cygnus.com>
    Rewritten by Mike Stump <mrs@cygnus.com>, based upon an
    initial re-implementation courtesy Tad Hunt.
@@ -9,7 +9,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -18,9 +18,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 
 #include "config.h"
@@ -115,6 +114,9 @@ prepare_eh_type (tree type)
 
   /* Peel off cv qualifiers.  */
   type = TYPE_MAIN_VARIANT (type);
+
+  /* Functions and arrays decay to pointers.  */
+  type = type_decays_to (type);
 
   return type;
 }
@@ -389,6 +391,9 @@ initialize_handler_parm (tree decl, tree exp)
 	 See also expand_default_init.  */
       init = ocp_convert (TREE_TYPE (decl), init,
 			  CONV_IMPLICIT|CONV_FORCE_TEMP, 0);
+      /* Force cleanups now to avoid nesting problems with the
+	 MUST_NOT_THROW_EXPR.  */
+      init = fold_build_cleanup_point_expr (TREE_TYPE (init), init);
       init = build1 (MUST_NOT_THROW_EXPR, TREE_TYPE (init), init);
     }
 

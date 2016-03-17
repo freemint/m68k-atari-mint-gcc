@@ -1,3 +1,150 @@
+2007-10-07  Release Manager
+
+	* GCC 4.2.2 released.
+
+2007-09-20  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33459
+	* init.c (build_zero_init): If, recursively, build_zero_init
+	returns a NULL_TREE, do not append it to the VEC of constructors.
+
+2007-09-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/15097
+	* init.c (build_delete): Use build_headof to get the address of the
+	complete object if we aren't using the deleting destructor.
+	* rtti.c (build_headof): No longer static.
+	* cp-tree.h: Declare it.
+
+2007-09-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/31419
+	* call.c (reference_binding): Don't look for user-defined conversions
+	to the same type.
+
+	PR c++/15745
+	* except.c (prepare_eh_type): Use type_decays_to.
+
+	* except.c (initialize_handler_parm): Use
+	fold_build_cleanup_point_expr.
+
+	PR c++/31411
+	* except.c (initialize_handler_parm): Put a CLEANUP_POINT_EXPR inside
+	the MUST_NOT_THROW_EXPR.
+
+2007-09-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/33342
+	* pt.c (most_specialized_class): Set processing_template_decl
+	while tsubsting partial spec args.
+
+2007-09-06  Jason Merrill  <jason@redhat.com>
+
+	* decl2.c (get_guard): Copy visibility from the guarded variable.
+
+2007-09-06  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32674
+	* decl.c (cp_finish_decl): When processing_template_decl,
+	deal correctly with init as TREE_LIST.
+
+2007-09-05  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33210
+	* cxx-pretty-print.c (pp_cxx_unqualified_id): Deal with
+	BOUND_TEMPLATE_TEMPLATE_PARM.
+
+2007-09-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/14032
+	* pt.c (most_specialized_class): Substitute outer template
+	arguments into the arguments of a member template partial
+	specialization.
+	(strip_innermost_template_args): New fn.
+
+2007-08-31  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32113
+	* search.c (lookup_member): Check the name argument for
+	error_mark_node.
+
+2007-08-29  Nick Clifton  <nickc@redhat.com>
+
+	* typeck.c: Change copyright header to refer to version	3 of the
+	GNU General Public License and to point readers at the COPYING3
+	file and the FSF's license web page.
+	* optimize.c, lang-specs.h, init.c, class.c, repo.c, decl.c,
+	config-lang.in, cp-tree.def, call.c, decl.h, ptree.c,
+	Make-lang.in, method.c, rtti.c, cp-objcp-common.c, g++spec.c,
+	cp-objcp-common.h, except.c, error.c, operators.def, cvt.c,
+	tree.c, mangle.c, cp-tree.h, dump.c, search.c, friend.c, expr.c,
+	cp-gimplify.c, cxx-pretty-print.c, cp-lang.c, typeck2.c, pt.c,
+	cxx-pretty-print.h, semantics.c, name-lookup.c, lex.c, decl2.c,
+	name-lookup.h, parser.c: Likewise.
+
+2007-08-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/31941
+	* error.c (resolve_virtual_fun_from_obj_type_ref): Handle
+	TARGET_VTABLE_USES_DESCRIPTORS targets properly.
+
+	PR c++/32898
+	* name-lookup.c (set_decl_namespace): lookup_qualified_name failure
+	is error_mark_node rather than NULL_TREE.
+	* pt.c (check_explicit_specialization): Likewise.
+
+2007-08-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/29365
+	* pt.c (outermost_tinst_level): New function.
+	* lex.c (in_main_input_context): New function.
+	* cp-tree.h: Declare it.
+	* decl2.c (constrain_class_visibility): Use it to avoid warning
+	about uses of the anonymous namespace in the main input file.
+
+2007-08-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/32992
+	* typeck.c (check_return_expr): Don't NRV optimize vars in
+	anonymous unions.
+	* decl.c (finish_function): Comment fix.
+
+2007-08-18  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32112
+	* error.c (dump_decl): Deal with UNBOUND_CLASS_TEMPLATE.
+	* cxx-pretty-print.c (pp_cxx_unqualified_id): Likewise.
+
+2007-08-10  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/17763
+	* error.c (dump_expr): Consistently use the *_cxx_*
+	variants of the pretty-print functions.
+
+2007-07-30  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32108
+	* semantics.c (finish_label_stmt): Reject the __label__
+	extension outside function scopes.
+
+2007-07-28  Simon Martin  <simartin@users.sourceforge.net>
+	    Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/30917
+	* name-lookup.c (lookup_name_real): Non namespace-scope bindings can be
+	hidden due to friend declarations in local classes.
+
+2007-07-27  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/32346
+	* call.c (convert_for_arg_passing): Only widen bitfields to their
+	declared types if necessary.
+
+2007-07-24  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/30535
+	* pt.c (unify): Never pass error_mark_node to template_decl_level.
+
 2007-07-19  Release Manager
 
 	* GCC 4.2.1 released.

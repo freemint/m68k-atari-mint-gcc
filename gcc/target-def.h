@@ -2,23 +2,23 @@
    Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2, or (at your option) any
-later version.
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the
+   Free Software Foundation; either version 3, or (at your option) any
+   later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.
 
- In other words, you are welcome to use, share and improve this program.
- You are forbidden to forbid anyone else to use, share and improve
- what you give them.   Help stamp out software-hoarding!  */
+   In other words, you are welcome to use, share and improve this program.
+   You are forbidden to forbid anyone else to use, share and improve
+   what you give them.   Help stamp out software-hoarding!  */
 
 /* See target.h for a description of what this file contains and how to
    use it.
@@ -337,9 +337,12 @@ Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
    TARGET_SCHED_SET_SCHED_FLAGS}
 
 #define TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD 0
+#define TARGET_VECTOR_ALIGNMENT_REACHABLE \
+  default_builtin_vector_alignment_reachable
 
 #define TARGET_VECTORIZE                                                \
-  {TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD}
+  {TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD,				\
+   TARGET_VECTOR_ALIGNMENT_REACHABLE}
 
 #define TARGET_DEFAULT_TARGET_FLAGS 0
 

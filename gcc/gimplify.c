@@ -1,6 +1,7 @@
 /* Tree lowering pass.  This pass converts the GENERIC functions-as-trees
    tree representation into the GIMPLE form.
-   Copyright (C) 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
    Major work done by Sebastian Pop <s.pop@laposte.net>,
    Diego Novillo <dnovillo@redhat.com> and Jason Merrill <jason@redhat.com>.
 
@@ -8,7 +9,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -17,9 +18,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -3532,8 +3532,16 @@ gimplify_modify_expr (tree *expr_p, tree *pre_p, tree *post_p, bool want_value)
   gcc_assert (TREE_CODE (*expr_p) == MODIFY_EXPR
 	      || TREE_CODE (*expr_p) == INIT_EXPR);
 
-  /* For zero sized types only gimplify the left hand side and right hand side
-     as statements and throw away the assignment.  */
+  /* See if any simplifications can be done based on what the RHS is.  */
+  ret = gimplify_modify_expr_rhs (expr_p, from_p, to_p, pre_p, post_p,
+				  want_value);
+  if (ret != GS_UNHANDLED)
+    return ret;
+
+  /* For zero sized types only gimplify the left hand side and right hand
+     side as statements and throw away the assignment.  Do this after
+     gimplify_modify_expr_rhs so we handle TARGET_EXPRs of addressable
+     types properly.  */
   if (zero_sized_type (TREE_TYPE (*from_p)))
     {
       gimplify_stmt (from_p);
@@ -3543,12 +3551,6 @@ gimplify_modify_expr (tree *expr_p, tree *pre_p, tree *post_p, bool want_value)
       *expr_p = NULL_TREE;
       return GS_ALL_DONE;
     }
-
-  /* See if any simplifications can be done based on what the RHS is.  */
-  ret = gimplify_modify_expr_rhs (expr_p, from_p, to_p, pre_p, post_p,
-				  want_value);
-  if (ret != GS_UNHANDLED)
-    return ret;
 
   /* If the value being copied is of variable width, compute the length
      of the copy into a WITH_SIZE_EXPR.   Note that we need to do this

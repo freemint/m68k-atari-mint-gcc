@@ -1,13 +1,13 @@
 /* Output dbx-format symbol table information from GNU compiler.
    Copyright (C) 1987, 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
    Free Software Foundation, Inc.
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -16,9 +16,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 
 /* Output dbx-format symbol table data.
@@ -2024,7 +2023,11 @@ dbxout_type (tree type, int full)
 	       another type's definition; instead, output an xref
 	       and let the definition come when the name is defined.  */
 	    stabstr_S ((TREE_CODE (type) == RECORD_TYPE) ? "xs" : "xu");
-	    if (TYPE_NAME (type) != 0)
+	    if (TYPE_NAME (type) != 0
+		/* The C frontend creates for anonymous variable length
+		   records/unions TYPE_NAME with DECL_NAME NULL.  */
+		&& (TREE_CODE (TYPE_NAME (type)) != TYPE_DECL
+		    || DECL_NAME (TYPE_NAME (type))))
 	      dbxout_type_name (type);
 	    else
 	      {

@@ -1,12 +1,12 @@
 /* If-conversion for vectorizer.
-   Copyright (C) 2004, 2005 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2005, 2007 Free Software Foundation, Inc.
    Contributed by Devang Patel <dpatel@apple.com>
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -15,9 +15,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 /* This pass implements tree level if-conversion transformation of loops.
    Initial goal is to help vectorizer vectorize loops with conditions.
@@ -743,7 +742,7 @@ find_phi_replacement_condition (struct loop *loop,
       if (TREE_CODE (*cond) == TRUTH_NOT_EXPR)
 	/* We can be smart here and choose inverted
 	   condition without switching bbs.  */
-	  *cond = invert_truthvalue (*cond);
+	*cond = invert_truthvalue (*cond);
       else
 	/* Select non loop header bb.  */
 	first_edge = second_edge;
@@ -762,9 +761,11 @@ find_phi_replacement_condition (struct loop *loop,
 
   /* Create temp. for the condition. Vectorizer prefers to have gimple
      value as condition. Various targets use different means to communicate
-     condition in vector compare operation. Using gimple value allows compiler
-     to emit vector compare and select RTL without exposing compare's result.  */
-  *cond = force_gimple_operand (*cond, &new_stmts, false, NULL_TREE);
+     condition in vector compare operation. Using gimple value allows
+     compiler to emit vector compare and select RTL without exposing
+     compare's result.  */
+  *cond = force_gimple_operand (unshare_expr (*cond), &new_stmts,
+				false, NULL_TREE);
   if (new_stmts)
     bsi_insert_before (bsi, new_stmts, BSI_SAME_STMT);
   if (!is_gimple_reg (*cond) && !is_gimple_condexpr (*cond))

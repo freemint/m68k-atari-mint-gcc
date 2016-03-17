@@ -1,3 +1,236 @@
+2007-10-07  Release Manager
+
+	* GCC 4.2.2 released.
+
+2007-09-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/32694
+	* gcc.c-torture/compile/20070925-1.c: New test.
+
+2007-09-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/33316
+	* gcc.dg/debug/pr33316.c: New test.
+
+2007-09-20  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33459
+	* g++.dg/init/ref14.C: New.
+
+2007-09-12  John David Anglin  <dave.anglin@nrc-crnc.gc.ca>
+
+	PR testsuite/33153
+	* gcc.dg/pr32912-1.c: Add -fno-common to options on hppa*-*-hpux*.
+	* gcc.dg/pr32912-2.c: Delete declaration of a, b, c, d, e and f.
+
+2007-09-12  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/33382
+	* gcc.c-torture/compile/pr33382.c: New testcase.
+	* gcc.c-torture/execute/pr33382.c: Likewise.
+
+2007-09-06  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32674
+	* g++.dg/template/static31.C: New.
+
+2007-09-06  David Daney  <ddaney@avtrex.com>
+	    Richard Sandiford  <richard@codesourcery.com>
+
+	PR target/33256
+	* gcc.target/mips/mips.exp (setup_mips_tests): Set mips_forced_le.
+	(dg-mips-options): Skip -EB and -meb tests when $mips_forced_le.
+	* gcc.target/mips/pr33256.c: New test.
+
+2007-09-05  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33210
+	* g++.dg/template/error30.C: New.
+
+2007-08-31  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32113
+	* g++.dg/template/crash70.C: New.
+
+2007-08-31  Nick Clifton  <nickc@redhat.com>
+
+	* gcc.c-torture/execute/execute.exp: Change copyright header to
+	refer to version 3 of the GNU General Public License and to point
+	readers at the COPYING3 file and the FSF's license web page.
+	* gcc.c-torture/execute/ieee/ieee.exp,
+	gcc.c-torture/unsorted/unsorted.exp,
+	gcc.c-torture/compile/compile.exp,
+	gcc.c-torture/compile/structs.c, gcc.target/powerpc/powerpc.exp,
+	gcc.target/arm/arm.exp, gcc.target/cris/torture/cris-torture.exp,
+	gcc.target/cris/cris.exp, gcc.target/ia64/ia64.exp,
+	gcc.target/alpha/alpha.exp, gcc.target/mips/mips.exp,
+	gcc.target/sparc/sparc.exp, gcc.target/i386/i386.exp,
+	gcc.target/x86_64/abi/abi-x86_64.exp, gnat.dg/specs/specs.exp,
+	gnat.dg/dg.exp, gnat.dg/style/style.exp,
+	gcc.dg/special/mips-abi.exp, gcc.dg/special/special.exp,
+	gcc.dg/pch/pch.exp, gcc.dg/dg.exp, gcc.dg/charset/charset.exp,
+	gcc.dg/weak/weak.exp, gcc.dg/tree-ssa/tree-ssa.exp,
+	gcc.dg/tls/tls.exp, gcc.dg/cpp/cpp.exp, gcc.dg/cpp/trad/trad.exp,
+	gcc.dg/vmx/vmx.exp, gcc.dg/compat/struct-layout-1.exp,
+	gcc.dg/compat/compat.exp,
+	gcc.dg/compat/struct-layout-1_generate.c, gcc.dg/debug/debug.exp,
+	gcc.dg/debug/dwarf2/dwarf2.exp, gcc.dg/tree-prof/tree-prof.exp,
+	gcc.dg/ipa/ipa.exp, gcc.dg/dfp/dfp.exp,
+	gcc.dg/noncompile/noncompile.exp, gcc.dg/vect/vect.exp,
+	gcc.dg/format/format.exp, gcc.misc-tests/i386-prefetch.exp,
+	gcc.misc-tests/sort2.exp, gcc.misc-tests/matrix1.exp,
+	gcc.misc-tests/dectest.exp, gcc.misc-tests/options.exp,
+	gcc.misc-tests/gcov.exp, gcc.misc-tests/mg-2.exp,
+	gcc.misc-tests/mg.exp, gcc.misc-tests/bprob.exp,
+	gcc.misc-tests/acker1.exp, gcc.misc-tests/dhry.exp,
+	gcc.misc-tests/linkage.exp, gcc.misc-tests/arm-isr.exp,
+	gcc.misc-tests/sieve.exp, g++.old-deja/g++.niklas/README,
+	g++.old-deja/g++.gb/README, g++.old-deja/old-deja.exp,
+	gfortran.fortran-torture/execute/execute.exp,
+	gfortran.fortran-torture/compile/compile.exp,
+	treelang/output/output-1.c, treelang/output/output-1.tree,
+	treelang/execute/execute.exp, treelang/Makefile.in,
+	treelang/compile/compile.exp, g++.dg/dg.exp,
+	g++.dg/debug/debug.exp, g++.dg/charset/charset.exp,
+	g++.dg/vect/vect.exp, g++.dg/tls/tls.exp, g++.dg/pch/pch.exp,
+	g++.dg/special/ecos.exp, g++.dg/compat/struct-layout-1.exp,
+	g++.dg/compat/struct-layout-1_generate.c,
+	g++.dg/compat/compat.exp, g++.dg/gcov/gcov.exp,
+	g++.dg/bprob/bprob.exp, config/default.exp,
+	gcc.test-framework/test-framework.awk,
+	gcc.test-framework/gen_directive_tests,
+	gcc.test-framework/test-framework.exp,
+	objc.dg/special/special.exp,
+	objc.dg/gnu-encoding/gnu-encoding.exp,
+	objc.dg/gnu-encoding/struct-layout-encoding-1_generate.c,
+	objc.dg/pch/pch.exp, objc.dg/dg.exp, lib/copy-file.exp,
+	lib/profopt.exp, lib/gcc.exp, lib/mike-g++.exp, lib/c-compat.exp,
+	lib/scanrtl.exp, lib/gfortran-dg.exp, lib/g++.exp,
+	lib/obj-c++.exp, lib/wrapper.exp, lib/gnat-dg.exp, lib/compat.exp,
+	lib/c-torture.exp, lib/gcc-dg.exp, lib/scanasm.exp, lib/gnat.exp,
+	lib/treelang-dg.exp, lib/prune.exp, lib/gcov.exp,
+	lib/treelang.exp, lib/dg-pch.exp, lib/scantree.exp,
+	lib/g++-dg.exp, lib/objc-dg.exp, lib/file-format.exp,
+	lib/target-libpath.exp, lib/obj-c++-dg.exp, lib/scandump.exp,
+	lib/target-supports-dg.exp, lib/gcc-defs.exp,
+	lib/fortran-torture.exp, lib/objc.exp, lib/scanipa.exp,
+	lib/mike-gcc.exp, lib/objc-torture.exp, lib/gfortran.exp,
+	lib/target-supports.exp, obj-c++.dg/dg.exp, gfortran.dg/dg.exp,
+	gfortran.dg/vect/vect.exp, objc/execute/execute.exp,
+	objc/execute/exceptions/exceptions.exp, objc/compile/compile.exp:
+	Likewise.
+
+2007-08-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/33148
+	* gcc.c-torture/compile/20070827-1.c: New test.
+
+	PR debug/32914
+	* d++.dg/debug/const3.C: New test.
+	* d++.dg/debug/const4.C: New test.
+
+2007-08-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/32912
+	* gcc.dg/pr32912-1.c: New test.
+	* gcc.dg/pr32912-2.c: New test.
+
+	PR c++/31941
+	* g++.dg/parse/crash37.C: New test.
+
+	PR c++/32898
+	* g++.dg/lookup/ns3.C: New test.
+
+	PR debug/32610
+	* gcc.dg/debug/pr32610.c: New test.
+
+2007-08-22  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/33142
+	* gcc.c-torture/execute/pr33142.c: New testcase.
+
+2007-08-22  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/32563
+	* g++.dg/torture/pr32563.C: New testcase.
+
+	Backport from mainline:
+	2007-05-30  Richard Guenther  <rguenther@suse.de>
+
+	* g++.dg/dg.exp: Prune torture/.
+	* g++.dg/torture/dg-torture.exp: New testsuite.
+
+2007-08-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/32992
+	* g++.dg/opt/nrv14.C: New test.
+
+2007-08-18  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32112
+	* g++.dg/template/error26.C: New.
+
+2007-08-17  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32190
+	* g++.dg/parse/error31.C: New.
+
+2007-08-10  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/17763
+	* g++.dg/other/error16.C: New.
+
+2007-08-01  Andreas Krebbel  <krebbel1@de.ibm.com>
+
+	* gcc.dg/20070801-1.c: New testcase.
+
+2007-07-30  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/32108
+	* g++.dg/ext/label6.C: New.
+
+2007-07-28  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/30917
+	* g++.dg/lookup/friend11.C: New test.
+
+2007-07-27  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/32346
+	* g++.dg/expr/bitfield9.C: New test.
+
+2007-07-25  Dorit Nuzman  <dorit@il.ibm.com>
+	    Devang Patel  <dpatel@apple.com>
+	    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR tree-optimization/25413
+	* lib/target-supports.exp (check_effective_target_vect_aligned_arrays):
+	New procedure to check if arrays are naturally aligned to the vector
+	alignment boundary.
+	* gcc.dg/vect/vect-align-1.c: New.
+	* gcc.dg/vect/vect-align-2.c: New.
+	* gcc.dg/vect/pr25413.c: New.
+	* gcc.dg/vect/pr25413a.c: New.
+
+2007-07-24  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/30535
+	* g++.dg/template/operator10.C: New.
+
+2007-07-21  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/32678
+	* gfortran.dg/fmt_t_5.f90: New test.
+
+2007-07-21  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/c99-math-double-1.c: Mark test variables as volatile.
+	Test negative numbers also.
+	* gcc.dg/c99-math-float-1.c: Likewise.
+	* gcc.dg/c99-math-long-double-1.c: Likewise.
+	* gcc.dg/c99-math.h: Check for FP exceptions.  Update for negative
+	test inputs.
+
 2007-07-19  Release Manager
 
 	* GCC 4.2.1 released.

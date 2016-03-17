@@ -7,7 +7,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -16,9 +16,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 
 #include "config.h"
@@ -589,7 +588,8 @@ simplify_unary_operation_1 (enum rtx_code code, enum machine_mode mode, rtx op)
       /* (neg (lt x 0)) is (ashiftrt X C) if STORE_FLAG_VALUE is 1.  */
       /* (neg (lt x 0)) is (lshiftrt X C) if STORE_FLAG_VALUE is -1.  */
       if (GET_CODE (op) == LT
-	  && XEXP (op, 1) == const0_rtx)
+	  && XEXP (op, 1) == const0_rtx
+	  && SCALAR_INT_MODE_P (GET_MODE (XEXP (op, 0))))
 	{
 	  enum machine_mode inner = GET_MODE (XEXP (op, 0));
 	  int isize = GET_MODE_BITSIZE (inner);

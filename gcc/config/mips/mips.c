@@ -1,6 +1,6 @@
 /* Subroutines used for MIPS code generation.
    Copyright (C) 1989, 1990, 1991, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007 Free Software Foundation, Inc.
    Contributed by A. Lichnewsky, lich@inria.inria.fr.
    Changes by Michael Meissner, meissner@osf.org.
    64 bit r4000 support by Ian Lance Taylor, ian@cygnus.com, and
@@ -10,7 +10,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -19,9 +19,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -1293,6 +1292,20 @@ mips_split_const (rtx x, rtx *base, HOST_WIDE_INT *offset)
   *base = x;
 }
 
+/* Classify symbolic expression X, given that it appears in context
+   CONTEXT.  */
+
+static enum mips_symbol_type
+mips_classify_symbolic_expression (rtx x)
+{
+  HOST_WIDE_INT offset;
+
+  mips_split_const (x, &x, &offset);
+  if (UNSPEC_ADDRESS_P (x))
+    return UNSPEC_ADDRESS_TYPE (x);
+
+  return mips_classify_symbol (x);
+}
 
 /* Return true if SYMBOL is a SYMBOL_REF and OFFSET + SYMBOL points
    to the same object as SYMBOL, or to the same object_block.  */
@@ -1530,8 +1543,17 @@ mips_classify_address (struct mips_address_info *info, rtx x,
       info->type = ADDRESS_LO_SUM;
       info->reg = XEXP (x, 0);
       info->offset = XEXP (x, 1);
+      /* We have to trust the creator of the LO_SUM to do something vaguely
+	 sane.  Target-independent code that creates a LO_SUM should also
+	 create and verify the matching HIGH.  Target-independent code that
+	 adds an offset to a LO_SUM must prove that the offset will not
+	 induce a carry.  Failure to do either of these things would be
+	 a bug, and we are not required to check for it here.  The MIPS
+	 backend itself should only create LO_SUMs for valid symbolic
+	 constants, with the high part being either a HIGH or a copy
+	 of _gp. */
+      info->symbol_type = mips_classify_symbolic_expression (info->offset);
       return (mips_valid_base_register_p (info->reg, mode, strict)
-	      && mips_symbolic_constant_p (info->offset, &info->symbol_type)
 	      && mips_symbolic_address_p (info->symbol_type, mode)
 	      && mips_lo_relocs[info->symbol_type] != 0);
 
@@ -5667,7 +5689,8 @@ print_operand_reloc (FILE *file, rtx op, const char **relocs)
   rtx base;
   HOST_WIDE_INT offset;
 
-  if (!mips_symbolic_constant_p (op, &symbol_type) || relocs[symbol_type] == 0)
+  symbol_type = mips_classify_symbolic_expression (op);
+  if (relocs[symbol_type] == 0)
     fatal_insn ("PRINT_OPERAND, invalid operand for relocation", op);
 
   /* If OP uses an UNSPEC address, we want to print the inner symbol.  */

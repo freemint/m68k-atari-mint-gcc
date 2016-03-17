@@ -1,13 +1,13 @@
 /* Convert tree expression to rtl instructions, for GNU compiler.
    Copyright (C) 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation,
-   Inc.
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -16,9 +16,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -5654,7 +5653,6 @@ get_inner_reference (tree exp, HOST_WIDE_INT *pbitsize,
   enum machine_mode mode = VOIDmode;
   tree offset = size_zero_node;
   tree bit_offset = bitsize_zero_node;
-  tree tem;
 
   /* First get the mode, signedness, and size.  We do this from just the
      outermost expression.  */
@@ -5689,6 +5687,8 @@ get_inner_reference (tree exp, HOST_WIDE_INT *pbitsize,
       else
 	*pbitsize = tree_low_cst (size_tree, 1);
     }
+
+  *pmode = mode;
 
   /* Compute cumulative bit-offset for nested component-refs and array-refs,
      and find the ultimate containing object.  */
@@ -5774,19 +5774,67 @@ get_inner_reference (tree exp, HOST_WIDE_INT *pbitsize,
  done:
 
   /* If OFFSET is constant, see if we can return the whole thing as a
-     constant bit position.  Otherwise, split it up.  */
-  if (host_integerp (offset, 0)
-      && 0 != (tem = size_binop (MULT_EXPR,
-				 fold_convert (bitsizetype, offset),
-				 bitsize_unit_node))
-      && 0 != (tem = size_binop (PLUS_EXPR, tem, bit_offset))
-      && host_integerp (tem, 0))
-    *pbitpos = tree_low_cst (tem, 0), *poffset = 0;
-  else
-    *pbitpos = tree_low_cst (bit_offset, 0), *poffset = offset;
+     constant bit position.  Make sure to handle overflow during
+     this conversion.  */
+  if (host_integerp (offset, 0))
+    {
+      double_int tem = double_int_mul (tree_to_double_int (offset),
+				       uhwi_to_double_int (BITS_PER_UNIT));
+      tem = double_int_add (tem, tree_to_double_int (bit_offset));
+      if (double_int_fits_in_shwi_p (tem))
+	{
+	  *pbitpos = double_int_to_shwi (tem);
+	  *poffset = NULL_TREE;
+	  return exp;
+	}
+    }
 
-  *pmode = mode;
+  /* Otherwise, split it up.  */
+  *pbitpos = tree_low_cst (bit_offset, 0);
+  *poffset = offset;
+
   return exp;
+}
+
+/* Given an expression EXP that may be a COMPONENT_REF or an ARRAY_REF,
+   look for whether EXP or any nested component-refs within EXP is marked
+   as PACKED.  */
+
+bool
+contains_packed_reference (tree exp)
+{
+  bool packed_p = false;
+
+  while (1)
+    {
+      switch (TREE_CODE (exp))
+	{
+	case COMPONENT_REF:
+	  {
+	    tree field = TREE_OPERAND (exp, 1);
+	    packed_p = DECL_PACKED (field) 
+		       || TYPE_PACKED (TREE_TYPE (field))
+		       || TYPE_PACKED (TREE_TYPE (exp));
+	    if (packed_p)
+	      goto done;
+	  }
+	  break;
+
+	case BIT_FIELD_REF:
+	case ARRAY_REF:
+	case ARRAY_RANGE_REF:
+	case REALPART_EXPR:
+	case IMAGPART_EXPR:
+	case VIEW_CONVERT_EXPR:
+	  break;
+
+	default:
+	  goto done;
+	}
+      exp = TREE_OPERAND (exp, 0);
+    }
+ done:
+  return packed_p;
 }
 
 /* Return a tree of sizetype representing the size, in bytes, of the element

@@ -1,6 +1,6 @@
 /* Handle parameterized types (templates) for GNU C++.
    Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2004, 2005  Free Software Foundation, Inc.
+   2001, 2002, 2003, 2004, 2005, 2007  Free Software Foundation, Inc.
    Written by Ken Raeburn (raeburn@cygnus.com) while at Watchmaker Computing.
    Rewritten by Jason Merrill (jason@cygnus.com).
 
@@ -8,7 +8,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -17,9 +17,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 /* Known bugs or deficiencies include:
 
@@ -504,6 +503,37 @@ get_innermost_template_args (tree args, int n)
   for (i = 1; i <= n; ++i)
     SET_TMPL_ARGS_LEVEL (new_args, i,
 			 TMPL_ARGS_LEVEL (args, i + extra_levels));
+
+  return new_args;
+}
+
+/* The inverse of get_innermost_template_args: Return all but the innermost
+   EXTRA_LEVELS levels of template arguments from the ARGS.  */
+
+static tree
+strip_innermost_template_args (tree args, int extra_levels)
+{
+  tree new_args;
+  int n = TMPL_ARGS_DEPTH (args) - extra_levels;
+  int i;
+
+  gcc_assert (n >= 0);
+
+  /* If N is 1, just return the outermost set of template arguments.  */
+  if (n == 1)
+    return TMPL_ARGS_LEVEL (args, 1);
+
+  /* If we're not removing anything, just return the arguments we were
+     given.  */
+  gcc_assert (extra_levels >= 0);
+  if (extra_levels == 0)
+    return args;
+
+  /* Make a new set of arguments, not containing the inner arguments.  */
+  new_args = make_tree_vec (n);
+  for (i = 1; i <= n; ++i)
+    SET_TMPL_ARGS_LEVEL (new_args, i,
+			 TMPL_ARGS_LEVEL (args, i));
 
   return new_args;
 }
@@ -1971,7 +2001,7 @@ check_explicit_specialization (tree declarator,
 		 context.  */
 	      fns = lookup_qualified_name (CP_DECL_CONTEXT (decl), dname,
 					   false, true);
-	      if (!fns || !is_overloaded_fn (fns))
+	      if (fns == error_mark_node || !is_overloaded_fn (fns))
 		{
 		  error ("%qD is not a template function", dname);
 		  fns = error_mark_node;
@@ -5286,6 +5316,15 @@ reopen_tinst_level (tree level)
 
   current_tinst_level = level;
   pop_tinst_level ();
+}
+
+/* Returns the TINST_LEVEL which gives the original instantiation
+   context.  */
+
+tree
+outermost_tinst_level (void)
+{
+  return tree_last (current_tinst_level);
 }
 
 /* DECL is a friend FUNCTION_DECL or TEMPLATE_DECL.  ARGS is the
@@ -10453,6 +10492,8 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict)
     case TEMPLATE_TEMPLATE_PARM:
     case BOUND_TEMPLATE_TEMPLATE_PARM:
       tparm = TREE_VALUE (TREE_VEC_ELT (tparms, 0));
+      if (tparm == error_mark_node)
+	return 1;
 
       if (TEMPLATE_TYPE_LEVEL (parm)
 	  != template_decl_level (tparm))
@@ -11511,20 +11552,57 @@ most_specialized_class (tree type, tree tmpl)
   int fate;
   bool ambiguous_p;
   tree args;
+  tree outer_args = NULL_TREE;
 
   tmpl = most_general_template (tmpl);
   args = CLASSTYPE_TI_ARGS (type);
+
+  /* For determining which partial specialization to use, only the
+     innermost args are interesting.  */
+  if (TMPL_ARGS_HAVE_MULTIPLE_LEVELS (args))
+    {
+      outer_args = strip_innermost_template_args (args, 1);
+      args = INNERMOST_TEMPLATE_ARGS (args);
+    }
+
   for (t = DECL_TEMPLATE_SPECIALIZATIONS (tmpl); t; t = TREE_CHAIN (t))
     {
       tree partial_spec_args;
       tree spec_args;
+      tree parms = TREE_VALUE (t);
 
       partial_spec_args = CLASSTYPE_TI_ARGS (TREE_TYPE (t));
-      spec_args = get_class_bindings (TREE_VALUE (t),
+      if (outer_args)
+	{
+	  int i;
+
+	  ++processing_template_decl;
+
+	  /* Discard the outer levels of args, and then substitute in the
+	     template args from the enclosing class.  */
+	  partial_spec_args = INNERMOST_TEMPLATE_ARGS (partial_spec_args);
+	  partial_spec_args = tsubst_template_args
+	    (partial_spec_args, outer_args, tf_none, NULL_TREE);
+
+	  /* PARMS already refers to just the innermost parms, but the
+	     template parms in partial_spec_args had their levels lowered
+	     by tsubst, so we need to do the same for the parm list.  We
+	     can't just tsubst the TREE_VEC itself, as tsubst wants to
+	     treat a TREE_VEC as an argument vector.  */
+	  parms = copy_node (parms);
+	  for (i = TREE_VEC_LENGTH (parms) - 1; i >= 0; --i)
+	    TREE_VEC_ELT (parms, i) =
+	      tsubst (TREE_VEC_ELT (parms, i), outer_args, tf_none, NULL_TREE);
+
+	  --processing_template_decl;
+	}
+      spec_args = get_class_bindings (parms,
 				      partial_spec_args,
 				      args);
       if (spec_args)
 	{
+	  if (outer_args)
+	    spec_args = add_to_template_args (outer_args, spec_args);
 	  list = tree_cons (spec_args, TREE_VALUE (t), list);
 	  TREE_TYPE (list) = TREE_TYPE (t);
 	}

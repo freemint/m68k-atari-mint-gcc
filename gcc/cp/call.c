@@ -1,6 +1,7 @@
 /* Functions related to invoking methods and overloaded functions.
    Copyright (C) 1987, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation, Inc.
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
    Contributed by Michael Tiemann (tiemann@cygnus.com) and
    modified by Brendan Kehoe (brendan@cygnus.com).
 
@@ -8,7 +9,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -17,9 +18,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 
 /* High-level class interface.  */
@@ -1153,7 +1153,12 @@ reference_binding (tree rto, tree rfrom, tree expr, bool c_cast_p, int flags)
 
       return conv;
     }
-  else if (CLASS_TYPE_P (from) && !(flags & LOOKUP_NO_CONVERSION))
+  /* [class.conv.fct] A conversion function is never used to convert a
+     (possibly cv-qualified) object to the (possibly cv-qualified) same
+     object type (or a reference to it), to a (possibly cv-qualified) base
+     class of that type (or a reference to it).... */
+  else if (CLASS_TYPE_P (from) && !related_p
+	   && !(flags & LOOKUP_NO_CONVERSION))
     {
       /* [dcl.init.ref]
 
@@ -4674,7 +4679,27 @@ type_passed_as (tree type)
 tree
 convert_for_arg_passing (tree type, tree val)
 {
-  val = convert_bitfield_to_declared_type (val);
+  tree bitfield_type;
+
+  /* If VAL is a bitfield, then -- since it has already been converted
+     to TYPE -- it cannot have a precision greater than TYPE.  
+
+     If it has a smaller precision, we must widen it here.  For
+     example, passing "int f:3;" to a function expecting an "int" will
+     not result in any conversion before this point.
+
+     If the precision is the same we must not risk widening.  For
+     example, the COMPONENT_REF for a 32-bit "long long" bitfield will
+     often have type "int", even though the C++ type for the field is
+     "long long".  If the value is being passed to a function
+     expecting an "int", then no conversions will be required.  But,
+     if we call convert_bitfield_to_declared_type, the bitfield will
+     be converted to "long long".  */
+  bitfield_type = is_bitfield_expr_with_lowered_type (val);
+  if (bitfield_type 
+      && TYPE_PRECISION (TREE_TYPE (val)) < TYPE_PRECISION (type))
+    val = convert_to_integer (TYPE_MAIN_VARIANT (bitfield_type), val);
+
   if (val == error_mark_node)
     ;
   /* Pass classes with copy ctors by invisible reference.  */

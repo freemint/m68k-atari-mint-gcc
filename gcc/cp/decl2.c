@@ -1,13 +1,13 @@
 /* Process declarations and variables for C++ compiler.
    Copyright (C) 1988, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005  Free Software Foundation, Inc.
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007  Free Software Foundation, Inc.
    Hacked by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -16,9 +16,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 
 /* Process declarations and symbol lookup for C++ front end.
@@ -1860,9 +1859,12 @@ constrain_class_visibility (tree type)
 	int subvis = type_visibility (ftype);
 
 	if (subvis == VISIBILITY_ANON)
-	  warning (0, "\
+	  {
+	    if (!in_main_input_context ())
+	      warning (0, "\
 %qT has a field %qD whose type uses the anonymous namespace",
 		   type, t);
+	  }
 	else if (IS_AGGR_TYPE (ftype)
 		 && vis < VISIBILITY_HIDDEN
 		 && subvis >= VISIBILITY_HIDDEN)
@@ -1877,9 +1879,12 @@ constrain_class_visibility (tree type)
       int subvis = type_visibility (TREE_TYPE (t));
 
       if (subvis == VISIBILITY_ANON)
-	warning (0, "\
+        {
+	  if (!in_main_input_context())
+	    warning (0, "\
 %qT has a base %qT whose type uses the anonymous namespace",
 		 type, TREE_TYPE (t));
+	}
       else if (vis < VISIBILITY_HIDDEN
 	       && subvis >= VISIBILITY_HIDDEN)
 	warning (OPT_Wattributes, "\
@@ -2219,6 +2224,8 @@ get_guard (tree decl)
       DECL_ONE_ONLY (guard) = DECL_ONE_ONLY (decl);
       if (TREE_PUBLIC (decl))
 	DECL_WEAK (guard) = DECL_WEAK (decl);
+      DECL_VISIBILITY (guard) = DECL_VISIBILITY (decl);
+      DECL_VISIBILITY_SPECIFIED (guard) = DECL_VISIBILITY_SPECIFIED (decl);
 
       DECL_ARTIFICIAL (guard) = 1;
       DECL_IGNORED_P (guard) = 1;

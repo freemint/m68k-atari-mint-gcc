@@ -8,7 +8,7 @@
 
    GCC is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 2, or (at your
+   by the Free Software Foundation; either version 3, or (at your
    option) any later version.
 
    GCC is distributed in the hope that it will be useful, but WITHOUT
@@ -17,9 +17,8 @@
    License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with GCC; see the file COPYING.  If not, write to the
-   Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston,
-   MA 02110-1301, USA.  */
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include "system.h"
@@ -664,6 +663,7 @@ static int rs6000_use_sched_lookahead (void);
 static tree rs6000_builtin_mask_for_load (void);
 
 static void def_builtin (int, const char *, tree, int);
+static bool rs6000_vector_alignment_reachable (tree, bool);
 static void rs6000_init_builtins (void);
 static rtx rs6000_expand_unop_builtin (enum insn_code, tree, rtx);
 static rtx rs6000_expand_binop_builtin (enum insn_code, tree, rtx);
@@ -914,6 +914,9 @@ static const char alt_reg_names[][8] =
 
 #undef TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD
 #define TARGET_VECTORIZE_BUILTIN_MASK_FOR_LOAD rs6000_builtin_mask_for_load
+
+#undef TARGET_VECTOR_ALIGNMENT_REACHABLE
+#define TARGET_VECTOR_ALIGNMENT_REACHABLE rs6000_vector_alignment_reachable
 
 #undef TARGET_INIT_BUILTINS
 #define TARGET_INIT_BUILTINS rs6000_init_builtins
@@ -1582,6 +1585,37 @@ rs6000_builtin_mask_for_load (void)
     return altivec_builtin_mask_for_load;
   else
     return 0;
+}
+
+
+/* Return true iff, data reference of TYPE can reach vector alignment (16)
+   after applying N number of iterations.  This routine does not determine
+   how may iterations are required to reach desired alignment.  */
+
+static bool
+rs6000_vector_alignment_reachable (tree type ATTRIBUTE_UNUSED, bool is_packed)
+{
+  if (is_packed)
+    return false;
+
+  if (TARGET_32BIT)
+    {
+      if (rs6000_alignment_flags == MASK_ALIGN_NATURAL)
+        return true;
+
+      if (rs6000_alignment_flags ==  MASK_ALIGN_POWER)
+        return true;
+
+      return false;
+    }
+  else
+    {
+      if (TARGET_MACHO)
+        return false;
+
+      /* Assuming that all other types are naturally aligned. CHECKME!  */
+      return true;
+    }
 }
 
 /* Handle generic options of the form -mfoo=yes/no.

@@ -1,13 +1,13 @@
 /* Handle initialization things in C++.
    Copyright (C) 1987, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007 Free Software Foundation, Inc.
    Contributed by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -16,9 +16,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 /* High-level class interface.  */
 
@@ -137,11 +136,12 @@ initialize_vtbl_ptrs (tree addr)
 /* Return an expression for the zero-initialization of an object with
    type T.  This expression will either be a constant (in the case
    that T is a scalar), or a CONSTRUCTOR (in the case that T is an
-   aggregate).  In either case, the value can be used as DECL_INITIAL
-   for a decl of the indicated TYPE; it is a valid static initializer.
-   If NELTS is non-NULL, and TYPE is an ARRAY_TYPE, NELTS is the
-   number of elements in the array.  If STATIC_STORAGE_P is TRUE,
-   initializers are only generated for entities for which
+   aggregate), or NULL (in the case that T does not require
+   initialization).  In either case, the value can be used as
+   DECL_INITIAL for a decl of the indicated TYPE; it is a valid static
+   initializer. If NELTS is non-NULL, and TYPE is an ARRAY_TYPE, NELTS
+   is the number of elements in the array.  If STATIC_STORAGE_P is
+   TRUE, initializers are only generated for entities for which
    zero-initialization does not simply mean filling the storage with
    zero bytes.  */
 
@@ -200,7 +200,8 @@ build_zero_init (tree type, tree nelts, bool static_storage_p)
 	      tree value = build_zero_init (TREE_TYPE (field),
 					    /*nelts=*/NULL_TREE,
 					    static_storage_p);
-	      CONSTRUCTOR_APPEND_ELT(v, field, value);
+	      if (value)
+		CONSTRUCTOR_APPEND_ELT(v, field, value);
 	    }
 
 	  /* For unions, only the first field is initialized.  */
@@ -2789,6 +2790,7 @@ build_delete (tree type, tree addr, special_function_kind auto_delete,
     }
   else
     {
+      tree head = NULL_TREE;
       tree do_delete = NULL_TREE;
       tree ifexp;
 
@@ -2802,8 +2804,9 @@ build_delete (tree type, tree addr, special_function_kind auto_delete,
 	{
 	  /* We will use ADDR multiple times so we must save it.  */
 	  addr = save_expr (addr);
+	  head = get_target_expr (build_headof (addr));
 	  /* Delete the object.  */
-	  do_delete = build_builtin_delete_call (addr);
+	  do_delete = build_builtin_delete_call (head);
 	  /* Otherwise, treat this like a complete object destructor
 	     call.  */
 	  auto_delete = sfk_complete_destructor;
@@ -2841,6 +2844,10 @@ build_delete (tree type, tree addr, special_function_kind auto_delete,
 			      auto_delete, flags);
       if (do_delete)
 	expr = build2 (COMPOUND_EXPR, void_type_node, expr, do_delete);
+
+      /* We need to calculate this before the dtor changes the vptr.  */
+      if (head)
+	expr = build2 (COMPOUND_EXPR, void_type_node, head, expr);
 
       if (flags & LOOKUP_DESTRUCTOR)
 	/* Explicit destructor call; don't check for null pointer.  */

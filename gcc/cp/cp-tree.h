@@ -1,13 +1,14 @@
 /* Definitions for C++ parsing and type checking.
    Copyright (C) 1987, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006  Free Software Foundation, Inc.
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+   Free Software Foundation, Inc.
    Contributed by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
+the Free Software Foundation; either version 3, or (at your option)
 any later version.
 
 GCC is distributed in the hope that it will be useful,
@@ -16,9 +17,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to
-the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #ifndef GCC_CP_TREE_H
 #define GCC_CP_TREE_H
@@ -4079,6 +4079,7 @@ extern void yyerror				(const char *);
 extern void yyhook				(int);
 extern bool cxx_init				(void);
 extern void cxx_finish				(void);
+extern bool in_main_input_context		(void);
 
 /* in method.c */
 extern void init_method				(void);
@@ -4161,6 +4162,7 @@ extern tree build_non_dependent_args		(tree);
 extern bool reregister_specialization		(tree, tree, tree);
 extern tree fold_non_dependent_expr		(tree);
 extern bool explicit_class_specialization_p     (tree);
+extern tree outermost_tinst_level		(void);
 
 /* in repo.c */
 extern void init_repo				(void);
@@ -4176,6 +4178,7 @@ extern void init_rtti_processing		(void);
 extern tree build_typeid			(tree);
 extern tree get_tinfo_decl			(tree);
 extern tree get_typeid				(tree);
+extern tree build_headof			(tree);
 extern tree build_dynamic_cast			(tree, tree);
 extern void emit_support_tinfos			(void);
 extern bool emit_tinfo_decl			(tree);

@@ -6,7 +6,7 @@ This file is part of GCC.
 
 GCC is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 2, or (at your option) any later
+Software Foundation; either version 3, or (at your option) any later
 version.
 
 GCC is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -15,9 +15,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 #ifndef GCC_TREE_H
 #define GCC_TREE_H
@@ -4111,6 +4110,12 @@ extern tree get_narrower (tree, int *);
 extern tree get_inner_reference (tree, HOST_WIDE_INT *, HOST_WIDE_INT *,
 				 tree *, enum machine_mode *, int *, int *,
 				 bool);
+
+/* Given an expression EXP that may be a COMPONENT_REF or an ARRAY_REF,
+   look for whether EXP or any nested component-refs within EXP is marked
+   as PACKED.  */
+
+extern bool contains_packed_reference (tree exp);
 
 /* Return 1 if T is an expression that get_inner_reference handles.  */
 

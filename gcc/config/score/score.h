@@ -1,12 +1,12 @@
 /* score.h for Sunplus S+CORE processor
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007 Free Software Foundation, Inc.
    Contributed by Sunnorth.
 
    This file is part of GCC.
 
    GCC is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 2, or (at your
+   by the Free Software Foundation; either version 3, or (at your
    option) any later version.
 
    GCC is distributed in the hope that it will be useful, but WITHOUT
@@ -15,9 +15,8 @@
    License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with GCC; see the file COPYING.  If not, write to
-   the Free Software Foundation, 51 Franklin Street, Fifth Floor,
-   Boston, MA 02110-1301, USA.  */
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
 
 #include "score-conv.h"
 #include "score-version.h"
@@ -629,12 +628,25 @@ typedef struct score_args
   fprintf (FILE, " .set nor1 \n");                                 \
 }
 
+#define TRAMPOLINE_TEMPLATE(STREAM)                                \
+{                                                                  \
+  fprintf (STREAM, "\t.set r1\n");                                 \
+  fprintf (STREAM, "\tmv r31, r3\n");                              \
+  fprintf (STREAM, "\tbl nextinsn\n");                             \
+  fprintf (STREAM, "nextinsn:\n");                                 \
+  fprintf (STREAM, "\tlw r1, [r3, 6*4-8]\n");                      \
+  fprintf (STREAM, "\tlw r23, [r3, 6*4-4]\n");                     \
+  fprintf (STREAM, "\tmv r3, r31\n");                              \
+  fprintf (STREAM, "\tbr! r1\n");                                  \
+  fprintf (STREAM, "\tnop!\n");                                    \
+  fprintf (STREAM, "\t.set nor1\n");                               \
+}
+
 /* Trampolines for Nested Functions.  */
-#define TRAMPOLINE_INSNS                8
+#define TRAMPOLINE_INSNS                6
 
 /* A C expression for the size in bytes of the trampoline, as an integer.  */
-#define TRAMPOLINE_SIZE \
-  (TRAMPOLINE_INSNS * GET_MODE_SIZE (SImode) + GET_MODE_SIZE (ptr_mode) * 2)
+#define TRAMPOLINE_SIZE                (24 + GET_MODE_SIZE (ptr_mode) * 2)
 
 /* A C statement to initialize the variable parts of a trampoline.
    ADDR is an RTX for the address of the trampoline; FNADDR is an

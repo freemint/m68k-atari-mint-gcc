@@ -1,3 +1,21 @@
+2007-10-07  Release Manager
+
+	* GCC 4.2.2 released.
+
+2007-10-07  Mark Mitchell  <mark@codesourcery.com>
+
+	* cpplib.pot: Regenerate.
+
+2007-09-05  Philipp Thomas  <pth@suse.de>
+
+	* uk.po, sv.po, vi.po: Update.
+
+2007-08-21  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* be.po, ca.po, da.po, de.po, el.po, es.po, fr.po, ja.po, nl.po,
+	sv.po, tr.po, vi.po, zh_CN.po, zh_TW.po: Update.
+	* uk.po: New.
+
 2007-07-19  Release Manager
 
 	* GCC 4.2.1 released.

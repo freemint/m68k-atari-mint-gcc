@@ -8,7 +8,7 @@ This file is part of GCC.
    
 GCC is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2, or (at your option) any
+Free Software Foundation; either version 3, or (at your option) any
 later version.
    
 GCC is distributed in the hope that it will be useful, but WITHOUT
@@ -17,9 +17,8 @@ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
    
 You should have received a copy of the GNU General Public License
-along with GCC; see the file COPYING.  If not, write to the Free
-Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.  */
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
 
 /* Conditional constant propagation (CCP) is based on the SSA
    propagation engine (tree-ssa-propagate.c).  Constant assignments of
@@ -2063,12 +2062,13 @@ fold_stmt_r (tree *expr_p, int *walk_subtrees, void *data)
 	  tem = fold_binary (TREE_CODE (op0), TREE_TYPE (op0),
 			     TREE_OPERAND (op0, 0),
 			     TREE_OPERAND (op0, 1));
-	  set = tem && is_gimple_condexpr (tem);
+	  set = tem && set_rhs (expr_p, tem);
 	  fold_undefer_overflow_warnings (set, fold_stmt_r_data->stmt, 0);
 	  if (set)
-	    TREE_OPERAND (expr, 0) = tem;
-	  t = expr;
-          break;
+	    {
+	      t = *expr_p;
+	      break;
+	    }
         }
 
     default:
