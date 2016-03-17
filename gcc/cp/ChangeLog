@@ -1,3 +1,119 @@
+2008-02-01  Release Manager
+
+	* GCC 4.2.3 released.
+
+2008-01-28  Jason Merrill  <jason@redhat.com>
+
+	PR c++/35007
+	* class.c (build_base_path): Fix !want_pointer case.
+
+2008-01-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/27177
+	* class.c (build_base_path): Fix previous change.
+
+	PR c++/27177
+	* class.c (build_base_path): Don't mess with virtual access if
+	skip_evaluation.
+	* call.c (standard_conversion): Don't check whether source type
+	is complete.
+
+2008-01-23  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/34944
+	* pt.c (tsubst_aggr_type): Correct previous change.
+
+2008-01-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/33959
+	* pt.c (tsubst_aggr_type): Make sure our context is complete.
+
+2008-01-02  Volker Reichelt  <reichelt@netcologne.de>
+
+	Backport:
+	2007-10-31  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33494
+	* cxx-pretty-print.c (pp_cxx_typeid_expression,
+	pp_cxx_delete_expression): Change to static linkage.
+	* cxx-pretty-print.h: Adjust declarations.
+	* error.c (dump_expr, case SCOPE_REF, TYPEID_EXPR, DELETE_EXPR,
+	VEC_DELETE_EXPR, MODOP_EXPR): Forward to pp_expression.
+
+	* cxx-pretty-print.c (pp_cxx_expression, case NON_DEPENDENT_EXPR):
+	Fix typo.
+
+	2007-11-02  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33495
+	* error.c (dump_expr): Deal specially with statements.
+
+	2007-09-27  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33493
+	* error.c (dump_expr): Deal with DELETE_EXPR and VEC_DELETE_EXPR.
+	* cxx-pretty-print.c (pp_cxx_delete_expression): Add missing
+	spaces in the formatting.
+	* cxx-pretty-print.h (pp_cxx_delete_expression): Declare.
+
+	2007-09-18  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33462
+	* cxx-pretty-print.c (pp_cxx_va_arg_expression): Add.
+	(pp_cxx_primary_expression): Use it.
+	* cxx-pretty-print.h (pp_cxx_va_arg_expression): Declare.
+	* error.c (dump_expr): Use it.
+
+	2007-09-18  Paolo Carlini  <pcarlini@suse.de>
+ 
+	PR c++/33463
+	* cxx-pretty-print.c (pp_cxx_postfix_expression): Split
+	out case TYPEID_EXPR to...
+	(pp_cxx_typeid_expression): ... here; use pp_cxx_left_paren
+	and pp_cxx_right_paren.
+	* cxx-pretty-print.h (pp_cxx_typeid_expression): Declare.
+	* error.c (dump_expr): Use it.
+
+2007-12-10  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/34059
+	* typeck.c (build_class_member_access_expr): Compute MEMBER_SCOPE from
+	MEMBER's BASELINK_ACCESS_BINFO instead of its BASELINK_BINFO.
+
+2007-10-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/33744
+	* parser.c (cp_parser_parenthesized_expression_list): Set
+	greater_than_is_operator_p to true in between the parens.
+
+2007-10-16  Mark Mitchell  <mark@codesourcery.com>
+
+	* decl.c (start_decl_1): Call cp_apply_type_quals_to_decl after
+	completing the type.
+
+2007-10-13  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/26698
+	* call.c (build_user_type_conversion_1): Do not consider conversion
+	functions to convert a (possibly cv-qualified) object to the (possibly
+	cv-qualified) same object type (or a reference to it), to a (possibly
+	cv-qualified) base class of that type (or a reference to it).
+
+2007-10-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/32470
+	* name-lookup.c (push_namespace_with_attrs): Fold back into...
+	(push_namespace): Here.
+	(handle_namespace_attrs): New fn for the attr code.
+	(leave_scope): Don't pop_visibility.
+	* name-lookup.h (struct cp_binding_level): Remove has_visibility.
+	* parser.c (cp_parser_namespace_definition): Call
+	handle_namespace_attrs and pop_visibility as appropriate. 
+
+	PR c++/33094
+	* decl.c (make_rtl_for_nonlocal_decl): It's ok for a member 
+	constant to not have DECL_EXTERNAL if it's file-local.
+
 2007-10-07  Release Manager
 
 	* GCC 4.2.2 released.

@@ -1,3 +1,484 @@
+2008-02-01  Release Manager
+
+	* GCC 4.2.3 released.
+
+2008-02-01  Andrew Pinski  <pinskia@gmail.com>
+	    Mark Mitchell  <mark@codesourcery.com>
+	    Ben Elliston  <bje@au.ibm.com>
+
+	PR c/29326
+	* doc/extend.texi (Other Builtins): Document.
+
+2008-01-31  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	* doc/invoke.texi (-ansi): Mention explicitly corresponding -std=
+	options. Minor fixes.
+	(-std): Move reference to standards closer to where language
+	standards are first mentioned.
+	
+2008-01-27  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	PR 32102
+	* flags.h (warn_strict_aliasing): Remove.
+	(warn_strict_overflow): Remove.
+	* opts.c (warn_strict_aliasing): Remove.
+	(warn_strict_overflow): Remove.
+	* c-opts.c (c_common_handle_option): -Wall only sets
+	-Wstrict-aliasing or -Wstrict-overflow if they are uninitialized.
+	(c_common_post_options): Give default values to -Wstrict-aliasing
+	and -Wstrict-overflow if they are uninitialized.
+	* common.opt (Wstrict-aliasing): Specify Var and Init.
+	(Wstrict-overflow): Likewise.
+	
+2008-01-25  Joseph Myers  <joseph@codesourcery.com>
+
+	PR other/31955
+	* doc/install.texi2html: Generate gcc-vers.texi.
+
+2008-01-24  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport:
+	2007-11-07  Kenneth Zadeck <zadeck@naturalbridge.com>
+	
+	PR middle-end/33826
+	* ipa-pure-const (static_execute): Added code to keep recursive
+	functions from being marked as pure or const.
+	* ipa-utils (searchc): Fixed comment.
+	
+2008-01-24  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34953
+	* predict.c (apply_return_prediction): Check for empty blocks.
+	(tree_estimate_probability): Likewise.
+
+2008-01-23  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline
+	2006-10-21  Richard Guenther  <rguenther@suse.de>
+
+	* builtins.c (fold_builtin_classify): Fix typo.
+
+2008-01-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/34628
+	* combine.c (try_combine): Stop and undo after the first combination
+	if an autoincrement side-effect on the first insn has effectively
+	been lost.
+
+2008-01-22  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	Backport:
+	2007-09-27  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR middle-end/33436
+	* expr.c (emit_group_load_1): Split constant double when destination
+	length is half source length.
+
+2008-01-22  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34739
+	Backport from mainline
+	2008-01-16  Richard Guenther  <rguenther@suse.de>
+
+	PR c/34768
+	* c-typeck.c (common_pointer_type): Do not merge inconsistent
+	type qualifiers for function types.
+
+	2007-11-12  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34070
+	* fold-const.c (fold_binary): If testing for non-negative
+	operands with tree_expr_nonnegative_warnv_p make sure to
+	use op0 which has all (sign) conversions retained.
+
+	2006-10-24  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/28796
+	* builtins.c (fold_builtin_classify): Use HONOR_INFINITIES
+	and HONOR_NANS instead of MODE_HAS_INFINITIES and MODE_HAS_NANS
+	for deciding optimizations in consistency with fold-const.c
+	(fold_builtin_unordered_cmp): Likewise.
+
+2008-01-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline:
+
+	2008-01-11  Eric Botcazou  <ebotcazou@adacore.com>
+	PR middle-end/31309
+	* expr.c (copy_blkmode_from_reg): Use a mode suited to the size
+	when copying to memory.
+
+2008-01-16  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR libgfortran/34699
+	* pa-hpux.h (LINK_SPEC): Only search /lib/pa1.1 and /usr/lib/pa1.1 on
+	static links.
+	* pa-hpux10.h (LINK_SPEC): Likewise.
+	* pa-hpux11.h (LINK_SPEC): Don't search /lib/pa1.1 and /usr/lib/pa1.1.
+
+2008-01-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/31944
+	* cse.c (remove_pseudo_from_table): New function.
+	(merge_equiv_classes): Use above function to remove pseudo-registers.
+	(invalidate): Likewise.
+
+2008-01-13  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR middle-end/34762
+	* reload.c (find_reloads_toplev): Use rtx_equal_p to compare x and mem.
+
+2008-01-11  Bob Wilson  <bob.wilson@acm.org>
+	
+	* config/xtensa/xtensa.c (override_options): Set flag_shlib.
+	
+2008-01-09  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34679
+	* tree.c (host_integerp): Check for sizetype only if the
+	type is an integer type.
+
+2008-01-06  Anatoly Sokolov <aesok@post.ru>
+
+	* config/avr/avr.h (LINK_SPEC, CRT_BINUTILS_SPECS): Move AT90USB82 
+	and AT90USB162 devices from 'avr5' to 'avr35' architecture.
+	(ASM_SPEC): Add 'avr35' architecture.
+	* config/avr/avr.c (avr_mcu_types): Move AT90USB82 and AT90USB162 
+	devices from 'avr5' to 'avr35' architecture.
+	(avr_arch_types): Add "avr23" entries.
+	(avr_arch): Add 'ARCH_AVR35'.
+	* config/avr/t-avr (MULTILIB_OPTIONS, MULTILIB_DIRNAMES): Add 'avr35'.
+	(MULTILIB_MATCHES): Move AT90USB82 and AT90USB162 devices from 'avr5'
+	to 'avr35' architecture.
+
+2007-12-31  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR driver/33772
+	* collect2.c (SHLIB_SUFFIX): Define if not defined.
+	(write_c_file_stat): Use SHLIB_SUFFIX.
+	* som.h (SHLIB_SUFFIX): Define.
+	* doc/tm.texi (SHLIB_SUFFIX): Document.
+
+2007-12-27  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* config.gcc: Proactively add FreeBSD 10 and FreeBSD 11.
+
+2007-12-21  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* pa.c (hppa_legitimize_address): Use INT14_OK_STRICT in mask selection.
+
+2007-12-19  Kaz Kylheku  <kaz@zeugmasystems.com>
+
+	PR rtl-optimization/34456
+	* resource.c (mark_set_resources): Use regs_invalidated_by_call
+	rather than call_used_regs and global_regs.
+
+2007-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/34003
+	* c-decl.c (merge_decls): Copy RTL from olddecl to newdecl.
+	* config/pa/pa.c (pa_encode_section_info): If !first, preserve
+	SYMBOL_FLAG_REFERENCED flag.
+
+2007-12-13  Torbjorn Granlund  <tege@swox.com>
+
+	* config/i386/i386.c (ix86_rtx_costs) [MULT]: Check op0 for
+	ZERO_EXTEND when computing costs for widening multiplication.
+
+2007-12-09  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR middle-end/32889
+	PR target/34091
+	* pa.md: Consolidate HImode and QImode move patterns into one pattern
+	each, eliminating floating-point alternatives.
+	* pa-protos.h (pa_cannot_change_mode_class, pa_modes_tieable_p):
+	Declare functions.
+	* pa-64.h (SECONDARY_MEMORY_NEEDED): Define here.
+	* pa.c (pa_secondary_reload): Use an intermediate general register
+	for copies to/from floating-point register classes.  Simplify code
+	SHIFT_REGS class.  Provide additional comments.
+	(pa_cannot_change_mode_class, pa_modes_tieable_p): New functions.
+	* pa.h (MODES_TIEABLE_P): Use pa_modes_tieable_p.
+	(SECONDARY_MEMORY_NEEDED): Delete define.
+	(INT14_OK_STRICT): Define.
+	(MODE_OK_FOR_SCALED_INDEXING_P): Allow SFmode and DFmode when using
+	soft float.
+	(MODE_OK_FOR_UNSCALED_INDEXING_P): Likewise.
+	(GO_IF_LEGITIMATE_ADDRESS): Use INT14_OK_STRICT in REG+D case for
+	SFmode and DFmode.
+	(LEGITIMIZE_RELOAD_ADDRESS): Use INT14_OK_STRICT in mask selection.
+	Align DImode offsets when generating 64-bit code.
+	* pa32-regs.h (VALID_FP_MODE_P): Remove QImode and HImode.
+	(CANNOT_CHANGE_MODE_CLASS): Define.
+	* pa64-regs.h (VALID_FP_MODE_P): Remove QImode and HImode.
+	(CANNOT_CHANGE_MODE_CLASS): Define using pa_cannot_change_mode_class.
+
+2007-11-28  Rask Ingemann Lambertsen  <rask@sygehus.dk>
+
+	Backport from mainline:
+	2007-11-26  Rask Ingemann Lambertsen  <rask@sygehus.dk>
+
+	PR target/34174
+	* config/fr30/fr30.c (fr30_move_double): Sanitize mem->reg case. Copy
+	the address before it is clobbered.
+
+2007-11-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/34215
+	* config/i386/i386.md (truncdfsf2): Select SLOT_TEMP stack slot if
+	virtual registers are instantiated.
+	(truncxfsf2): Ditto.
+	(truncxfdf2): Ditto.
+
+2007-11-22  Matthias Klose  <doko@ubuntu.com>
+
+	Backport from mainline:
+	2007-11-17  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34130
+	* fold-const.c (extract_muldiv_1): Do not move negative
+	constants inside ABS_EXPR.
+
+2007-11-22  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR rtl-optimization/33848
+	* reload.c (subst_reloads): When replacing a LABEL_REF with a
+	register, only add a REG_LABEL note if the label is the target
+	of the jump.
+
+2007-11-16  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34030
+	* fold-const.c (fold_binary): Use correct types for folding
+	1 << X & Y to Y >> X & 1.
+
+2007-11-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/32787
+	Backport from mainline:
+
+	2007-11-06  Rask Ingemann Lambertsen  <rask@sygehus.dk>
+
+	* config/i386/driver-i386.c: Test for __GNUC__ instead of
+	GCC_VERSION which is always defined.
+
+2007-11-07  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	PR rtl-optimization/33822
+	* rtl.h (REG_OFFSET): Fix comment.
+	* var-tracking.c (INT_MEM_OFFSET): New macro.
+	(var_mem_set): Use it.
+	(var_mem_delete_and_set): Likewise.
+	(var_mem_delete): Likewise.
+	(same_variable_part_p): Likewise.
+	(vt_get_decl_and_offset): Likewise.
+	(offset_valid_for_tracked_p): New predicate.
+	(count_uses): Do not track locations with invalid offsets.
+	(add_uses): Likewise.
+	(add_stores): Likewise.
+
+2007-11-02  Bob Wilson  <bob.wilson@acm.org>
+
+	* config/xtensa/xtensa.c (xtensa_expand_prologue): Put a
+	REG_FRAME_RELATED_EXPR note on the last insn that sets up the stack
+	pointer or frame pointer.
+	* config/xtensa/xtensa.h (DWARF_UNWIND_INFO): Delete.
+	(MUST_USE_SJLJ_EXCEPTIONS): Define.
+	(DWARF2_UNWIND_INFO): Define.
+	(INCOMING_RETURN_ADDR_RTX): Define.
+	(DWARF_FRAME_RETURN_COLUMN): Define.
+
+2007-10-31  Richard Guenther  <rguenther@suse.de>
+
+	* Makefile.in (targhooks.o): Add $(OPTABS_H) dependency.
+
+2007-10-29  Ian Lance Taylor  <iant@google.com>
+
+	* ifcvt.c (noce_can_store_speculate_p): New static function.
+	(noce_process_if_block): Call it.
+	(find_if_header): Only call find_if_case_1 and find_if_case_2 if
+	life_data_ok is set.
+	(if_convert): Always compute postdominators.
+
+2007-10-29  Janis Johnson  <janis187@us.ibm.com>
+
+	* doc/invoke.texi (Option Summary, optimizations): Remove
+	-fbounds-check.  Show that the value for options -falign-jumps,
+	-falign-labels, -falign-loops, -falign-functions,
+	-fsched-stalled-insns, and -fsched-stalled-insns-dep is optional.
+	Break up a long line.  Add -ftree-vrp and -funit-at-a-time.
+	(Option Summary, code gen options)  Add -fno-stack-limit.  Add
+	missing @gol to the end of a line.
+	* doc/invoke.texi (Option Summary, optimizations):
+	(Optimization Options): Remove -fbounds-check, which is also
+	documented under Code Generation Options.  In the descriptions for
+	-fsched-stalled-insns and -fsched-stalled-insns-dep, show the
+	options with and without values.  Change -fno-cprop-registers
+	to -fcprop-registers to match other options, and say when it is
+	enabled rather than disabled.  Remove extra index entry for
+	-fno-cx-limited-range.  Add opindex for several optimization
+	options, and fix typos in the opindex commands for several others.
+	(Code Gen Options): Add index entry for -ftls-model.
+
+2007-10-24  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/33755
+	* config/mips/mips.c (override_options): Always move
+	flag_delayed_branch to mips_flag_delayed_branch.
+	(mips_lo_sum_offset): New structure.
+	(mips_hash_base, mips_lo_sum_offset_hash, mips_lo_sum_offset_eq)
+	(mips_lo_sum_offset_lookup, mips_record_lo_sum)
+	(mips_orphaned_high_part_p: New functions.
+	(mips_avoid_hazard): Don't check INSN_P here.
+	(mips_avoid_hazards): Rename to...
+	(mips_reorg_process_insns): ...this.  Cope with
+	!TARGET_EXPLICIT_RELOCS.  Delete orphaned high-part relocations,
+	or turn them into nops.
+	(mips_reorg): Remove TARGET_EXPLICIT_RELOCS check from calls to
+	dbr_schedule and mips_avoid_hazards/mips_reorg_process_insns.
+
+2007-10-23  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* doc/rtl.texi (Flags): Fix MEM_SCALAR_P entry.
+	Document MEM_POINTER.  Replace mentions of "integrated"
+	field with "return_val".  Delete outdated stuff.
+
+2007-10-22  Seongbae Park <seongbae.park@gmail.com>
+	David S. Miller  <davem@davemloft.net>
+
+	* df-scan.c (df_get_call_refs): Mark global registers as both a
+	DF_REF_REG_USE and a non-clobber DF_REF_REG_DEF.
+
+2007-10-22  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/33169
+	Backport from mainline:
+
+	2006-10-29  Richard Sandiford  <richard@codesourcery.com>
+
+	* config/mips/mips.c (mips_classify_symbol): Test DECL_WEAK as well
+	as TREE_PUBLIC when deciding whether to return SYMBOL_GOT_GLOBAL.
+
+2007-10-22  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	Backport from mainline:
+
+	2007-10-18  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	* config/mips/mips.c (mips_expand_call): Use FAKE_CALL_REGNO.
+	(mips_avoid_hazard): Allow multiple sets for HAZARD_DELAY,
+	and pick the first.
+	* config/mips/mips.md (load_call<mode>): Don't make the unspec
+	depend on FAKE_CALL_REGNO.  Set FAKE_CALL_REGNO.
+
+2007-10-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/rs6000/linux-unwind.h (ppc_fallback_frame_state): Point
+	saved CR2 offset to low 32 bits of regs->ccr rather than the whole
+	64-bit register in 64-bit libgcc.
+
+2007-10-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/32961
+	* config/i386/i386.c (ix86_expand_builtin) [IX86_BUILTIN_PSLLWI128,
+	IX86_BUILTIN_PSLLDI128, BUILTIN_PSLLQI128, IX86_BUILTIN_PSRAWI128,
+	IX86_BUILTIN_PSRADI128, IX86_BUILTIN_PSRLWI128,
+	IX86_BUILTIN_PSRLDI128, IX86_BUILTIN_PSRLQI128]: Do not require
+	immediate shift value.
+	* config/i386/emmintrin.h (_mm_slli_epi16, _mm_slli_epi32,
+	_mm_slli_epi64, _mm_srai_epi16, _mm_srai_epi32, _mm_srli_epi16,
+	_mm_srli_epi32, _mm_srli_epi64):  Enable disabled functions and
+	remove equivalent macro definitions.
+
+2007-10-18  Chen liqin  <liqin@sunnorth.com.cn>
+
+        * config.gcc : update score-*-elf(extra_objs).
+        * config/score/mac.md : Remove.
+        * config/score/misc.md : Remove.
+        * config/score/score7.md : Remove.
+        * config/score/score-mdaux.h : Remove.
+        * config/score/score-mdaux.c : Remove.
+        * config/score/score-version.h : Remove.
+        * config/score/score-generic.md : New.
+        * config/score/score3.h : New.
+        * config/score/score3.c : New.
+        * config/score/score7.h : New.
+        * config/score/score7.c : New.
+        * config/score/mul-div.S : add flush_cache score3 support.
+        * config/score/elf.h : Fix some typos.
+        * config/score/score.md : merge score3 and score7 pattern.
+        * config/score/score.c : use to seperate which target it used.
+        * config/score/score.h : use to seperate the target macro.
+        * config/score/score.opt : remove -mmac option , add -mscore3,
+        -mscore3d and -march OPTION support.
+
+2007-10-12  Zdenek Dvorak <ook@ucw.cz>
+
+	PR tree-optimization/33714
+	* tree-ssa-loop-ivopts.c (constant_multiple_of): Pass the arguments to
+	division in the correct order.
+
+2007-10-10  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/25309
+	* c-common.c (complete_array_type): Diagnose too-large arrays and
+	set type to error_mark_node.
+
+2007-10-10  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/32295
+	* c-typeck.c (default_conversion): Call require_complete_type
+	before perform_integral_promotions.
+	(build_unary_op): Call require_complete_type except for ADDR_EXPR.
+	(build_c_cast): Call require_complete_type except for casts to
+	void types.
+	(convert_for_assignment): Call require_complete_type.
+
+2007-10-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2007-09-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/33438
+	* config/i386/i386.md (fmodxf3): Copy operands[2] to temporary
+	register when operands[2] equals operands[1].
+	(dremxf3): Ditto.
+
+	2007-09-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/33369
+	* gcc/config/i386/sse.md (ashr<mode>3): Change op2 mode to SImode.
+	Use 'N' operand constraint for op2.
+	(lshr<mode>3): Ditto.
+	(ashl<mode>3): Ditto.
+	(vec_shl_<mode>): Use const_0_to_255_mul_8_operand predicate for op2.
+	(vec_shr_<mode>): Use const_0_to_255_mul_8_operand predicate for op2.
+
+	* gcc/config/i386/i386.c (ix86_expand_builtin) [IX86_BUILTIN_PSLL?128,
+	IX86_BUILTIN_PSRA*?128, IX86_BUILTIN_PSRL?128]: Convert op1 to SImode.
+
+2007-10-10  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2007-10-03  Doug Kwan  <dougkwan@google.com>
+		Richard Guenther  <rguenther@suse.de>
+
+	PR debug/31899
+	* dwarf2out.c (reference_to_unused): Disable sanity checking,
+	be conservative instead.
+
+2007-10-10  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/33099
+	PR tree-optimization/33381
+	* tree-vrp.c (adjust_range_with_scev): Do not adjust ranges
+	from pointer typed chrecs.
+
+2007-10-08  Mark Mitchell  <mark@codesourcery.com>
+
+	* BASE-VER: Bump.
+	* DEV-PHASE: Mark as prerelease.
+
 2007-10-07  Release Manager
 
 	* GCC 4.2.2 released.

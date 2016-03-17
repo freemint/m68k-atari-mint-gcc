@@ -4777,6 +4777,7 @@ cp_parser_parenthesized_expression_list (cp_parser* parser,
   tree expression_list = NULL_TREE;
   bool fold_expr_p = is_attribute_list;
   tree identifier = NULL_TREE;
+  bool saved_greater_than_is_operator_p;
 
   /* Assume all the expressions will be constant.  */
   if (non_constant_p)
@@ -4784,6 +4785,12 @@ cp_parser_parenthesized_expression_list (cp_parser* parser,
 
   if (!cp_parser_require (parser, CPP_OPEN_PAREN, "`('"))
     return error_mark_node;
+
+  /* Within a parenthesized expression, a `>' token is always
+     the greater-than operator.  */
+  saved_greater_than_is_operator_p
+    = parser->greater_than_is_operator_p;
+  parser->greater_than_is_operator_p = true;
 
   /* Consume expressions until there are no more.  */
   if (cp_lexer_next_token_is_not (parser->lexer, CPP_CLOSE_PAREN))
@@ -4858,8 +4865,15 @@ cp_parser_parenthesized_expression_list (cp_parser* parser,
       if (ending < 0)
 	goto get_comma;
       if (!ending)
-	return error_mark_node;
+	{
+	  parser->greater_than_is_operator_p
+	    = saved_greater_than_is_operator_p;
+	  return error_mark_node;
+	}
     }
+
+  parser->greater_than_is_operator_p
+    = saved_greater_than_is_operator_p;
 
   /* We built up the list in reverse order so we must reverse it now.  */
   expression_list = nreverse (expression_list);
@@ -10640,6 +10654,7 @@ static void
 cp_parser_namespace_definition (cp_parser* parser)
 {
   tree identifier, attribs;
+  bool has_visibility;
 
   /* Look for the `namespace' keyword.  */
   cp_parser_require_keyword (parser, RID_NAMESPACE, "`namespace'");
@@ -10659,9 +10674,18 @@ cp_parser_namespace_definition (cp_parser* parser)
   /* Look for the `{' to start the namespace.  */
   cp_parser_require (parser, CPP_OPEN_BRACE, "`{'");
   /* Start the namespace.  */
-  push_namespace_with_attribs (identifier, attribs);
+  push_namespace (identifier);
+
+  has_visibility = handle_namespace_attrs (current_namespace, attribs);
+
   /* Parse the body of the namespace.  */
   cp_parser_namespace_body (parser);
+
+#ifdef HANDLE_PRAGMA_VISIBILITY
+  if (has_visibility)
+    pop_visibility ();
+#endif
+
   /* Finish the namespace.  */
   pop_namespace ();
   /* Look for the final `}'.  */

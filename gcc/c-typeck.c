@@ -530,6 +530,7 @@ common_pointer_type (tree t1, tree t2)
   tree pointed_to_1, mv1;
   tree pointed_to_2, mv2;
   tree target;
+  unsigned target_quals;
 
   /* Save time if the two types are the same.  */
 
@@ -557,10 +558,15 @@ common_pointer_type (tree t1, tree t2)
   if (TREE_CODE (mv2) != ARRAY_TYPE)
     mv2 = TYPE_MAIN_VARIANT (pointed_to_2);
   target = composite_type (mv1, mv2);
-  t1 = build_pointer_type (c_build_qualified_type
-			   (target,
-			    TYPE_QUALS (pointed_to_1) |
-			    TYPE_QUALS (pointed_to_2)));
+
+  /* For function types do not merge const qualifiers, but drop them
+     if used inconsistently.  The middle-end uses these to mark const
+     and noreturn functions.  */
+  if (TREE_CODE (pointed_to_1) == FUNCTION_TYPE)
+    target_quals = TYPE_QUALS (pointed_to_1) & TYPE_QUALS (pointed_to_2);
+  else
+    target_quals = TYPE_QUALS (pointed_to_1) | TYPE_QUALS (pointed_to_2);
+  t1 = build_pointer_type (c_build_qualified_type (target, target_quals));
   return build_type_attribute_variant (t1, attributes);
 }
 
@@ -1682,14 +1688,19 @@ default_conversion (tree exp)
   if (TREE_NO_WARNING (orig_exp))
     TREE_NO_WARNING (exp) = 1;
 
-  if (INTEGRAL_TYPE_P (type))
-    return perform_integral_promotions (exp);
-
   if (code == VOID_TYPE)
     {
       error ("void value not ignored as it ought to be");
       return error_mark_node;
     }
+
+  exp = require_complete_type (exp);
+  if (exp == error_mark_node)
+    return error_mark_node;
+
+  if (INTEGRAL_TYPE_P (type))
+    return perform_integral_promotions (exp);
+
   return exp;
 }
 
@@ -2801,11 +2812,15 @@ build_unary_op (enum tree_code code, tree xarg, int flag)
   /* No default_conversion here.  It causes trouble for ADDR_EXPR.  */
   tree arg = xarg;
   tree argtype = 0;
-  enum tree_code typecode = TREE_CODE (TREE_TYPE (arg));
+  enum tree_code typecode;
   tree val;
   int noconvert = flag;
   const char *invalid_op_diag;
 
+  if (code != ADDR_EXPR)
+    arg = require_complete_type (arg);
+
+  typecode = TREE_CODE (TREE_TYPE (arg));
   if (typecode == ERROR_MARK)
     return error_mark_node;
   if (typecode == ENUMERAL_TYPE || typecode == BOOLEAN_TYPE)
@@ -3490,6 +3505,13 @@ build_c_cast (tree type, tree expr)
       return error_mark_node;
     }
 
+  if (!VOID_TYPE_P (type))
+    {
+      value = require_complete_type (value);
+      if (value == error_mark_node)
+	return error_mark_node;
+    }
+
   if (type == TYPE_MAIN_VARIANT (TREE_TYPE (value)))
     {
       if (pedantic)
@@ -3900,6 +3922,9 @@ convert_for_assignment (tree type, tree rhs, enum impl_conv errtype,
       error ("void value not ignored as it ought to be");
       return error_mark_node;
     }
+  rhs = require_complete_type (rhs);
+  if (rhs == error_mark_node)
+    return error_mark_node;
   /* A type converts to a reference to it.
      This code doesn't fully support references, it's just for the
      special case of va_start and va_copy.  */

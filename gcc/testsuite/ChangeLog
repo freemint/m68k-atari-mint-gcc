@@ -1,3 +1,328 @@
+2008-02-01  Release Manager
+
+	* GCC 4.2.3 released.
+
+2008-01-27  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	PR 32102
+	* gcc.dg/Wstrict-overflow-21.c: New.
+	* g++.dg/warn/Wstrict-aliasing-8.C: New.
+
+2008-01-25  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/pr29254.c (func1): Mark static when pic.
+
+2008-01-24  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport:
+	2008-01-10  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/pr33826.c: Require nonpic.
+	
+	2007-11-08  Kenneth Zadeck <zadeck@naturalbridge.com>
+	
+	PR middle-end/33826
+	* gcc.dg/pr33826.c: New.
+	* gcc.dg/tree-ssa/20030714-1.c: Removed two tests that depend on 
+	recursive functions being marked pure or const.
+
+2008-01-24  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34953
+	* g++.dg/torture/pr34953.C: New testcase.
+
+2008-01-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20080122-1.c: New test.
+
+2008-01-22  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/vect/vect-ifcvt-9.c: Use inline.
+
+2008-01-22  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34739
+	Backport from mainline
+	2008-01-16  Richard Guenther  <rguenther@suse.de>
+
+	PR c/34768
+	* gcc.c-torture/execute/pr34768-1.c: New testcase.
+	* gcc.c-torture/execute/pr34768-2.c: Likewise.
+
+	2007-11-12  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34070
+	* gcc.c-torture/execute/pr34070-1.c: New testcase.
+	* gcc.c-torture/execute/pr34070-2.c: Likewise.
+
+	2006-10-24  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/28796
+	* gcc.dg/pr28796-1.c: New testcase.
+	* gcc.dg/pr28796-2.c: Likewise.
+
+2008-01-19  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* g++.dg/eh/ia64-2.C: Place "dg-do run" statement before
+	"dg-require-weak" statement.
+	* g++.dg/eh/weak1.C: Likewise.
+
+2008-01-19  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport:
+	2007-03-21  Richard Sandiford  <richard@codesourcery.com>
+	 
+	* gcc.target/i386/pr21291.c: Require nonpic or ! ilp32.
+
+2008-01-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/struct-ret-3.c: New test.
+
+2008-01-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/compile/20080114-1.c: Use empty asm statements.
+
+2008-01-16  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/tree-ssa/loop-19.c: Require nonpic.
+
+2008-01-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/compile/20080114-1.c: New test.
+
+2008-01-11  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.dg/tree-ssa/loadpre5.c: Use static.
+	* gcc.dg/tree-ssa/loadpre8.c: Likewise.
+
+	Backport:
+	2007-09-04  Jan Hubicka  <jh@suse.cz>
+
+	* gcc.dg/tree-ssa/loadpre8.c: Disable inlining.
+	* gcc.dg/tree-ssa/loadpre5.c: Likewise.
+
+2008-01-08  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* gcc.c-torture/execute/builtins/chk.h: Don't check !__PIE__.
+	* gcc.dg/assign-warn-3.c: Use "static inline" instead of "inline".
+	
+	Backport:
+	
+	2007-04-14  Kazu Hirata  <kazu@codesourcery.com>
+	* gcc.c-torture/compile/pr27528.c: Require nonpic.
+
+	2007-03-21  Richard Sandiford  <richard@codesourcery.com>
+	* gcc.c-torture/execute/builtins/chk.h (LOCAL): Define.
+	* gcc.c-torture/execute/builtins/sprintf-chk.c (s1): Make LOCAL.
+	* gcc.c-torture/execute/builtins/stpcpy-chk.c (s1): Likewise.
+	* gcc.c-torture/execute/builtins/strcpy-chk.c (s1): Likewise.
+
+	2007-07-26  Nathan Froyd  <froydnj@codesourcery.com>
+	PR/19232
+	* gcc.dg/assign-warn-3.c (f0): Declare as inline.
+	(f1): Likewise.
+
+	2007-01-15  Dale Johannesen  <dalej@apple.com>
+	* gcc.dg/tree-ssa/loop-3.c:  Disable with -fpic or -fPIC.
+	
+	2007-08-27  Uros Bizjak  <ubizjak@gmail.com>
+	* gcc.target/i386/stack-prot-kernel.c: Require nonpic effective
+	target.
+	
+	2007-03-21  Richard Sandiford  <richard@codesourcery.com>
+	* lib/target-supports.exp (check_effective_target_nonpic): New
+	procedure.
+
+2008-01-08  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR testsuite/30459
+	g++.dg/eh/ia64-2.C: Require weak support.
+
+2008-01-02  Volker Reichelt  <reichelt@netcologne.de>
+
+	Backport:
+	2007-10-31  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33494
+	* g++.dg/template/error35.C: New.
+
+	2007-11-02  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33495
+	* g++.dg/other/error19.C: New.
+
+	2007-09-27  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33493
+	* g++.dg/template/error31.C: New.
+
+	2007-09-18  Paolo Carlini  <pcarlini@suse.de>
+
+	PR c++/33462
+	* g++.dg/ext/va-arg1.C: New.
+
+	2007-09-18  Paolo Carlini  <pcarlini@suse.de>
+ 
+	PR c++/33463
+	* g++.dg/rtti/typeid6.C: New.
+
+2007-12-26  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR c++/33640
+	* g++.dg/other/unused1.C: xfail scan for "class2" in assembler output.
+
+2007-12-25  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR testsuite/34499
+	* g++.dg/ext/visibility/namespace2.C: Add missing argument to
+	dg-require-visibility statement.
+
+2007-12-19  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR rtl-optimization/34456
+	* gcc.c-torture/execute/pr34456.c: New test.
+
+2007-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/34003
+	* gcc.dg/pr34003-1.c: New test.
+	* gcc.dg/pr34003-2.c: New.
+
+2007-12-10  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/34059
+	* g++.dg/parse/crash40.C: New test.
+
+2007-11-28  Rask Ingemann Lambertsen  <rask@sygehus.dk>
+
+	Backport from mainline:
+	2007-11-26  Rask Ingemann Lambertsen  <rask@sygehus.dk>
+
+	PR target/34174
+	* gcc.dg/pr34174-1.c: New.
+
+2007-11-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/34215
+	* gcc.target/i386/pr34215.c: New test.
+
+2007-11-22  Matthias Klose  <doko@ubuntu.com>
+
+	Backport from mainline:
+	2007-11-17  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34130
+	* gcc.c-torture/execute/pr34130.c: New testcase.
+
+2007-11-22  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR rtl-optimization/33848
+	* gcc.dg/torture/pr33848.c: New test.
+
+2007-11-16  Richard Guenther  <rguenther@suse.de>
+
+	PR middle-end/34030
+	* gcc.c-torture/compile/pr34030.c: New testcase.
+
+2007-11-07  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* gcc.dg/out-of-bounds-1.c: New test.
+
+2007-11-02  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	PR rtl-optimization/28062
+	* gcc.c-torture/compile/20071102-1.c: New test.
+
+2007-10-30  Ed Schouten  <ed@fxq.nl>
+
+	PR tree-optimization/32500
+	* gcc.c-torture/execute/pr32500.c: Fix buffer overflow in testcase.
+
+2007-10-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/33744
+	* g++.dg/template/arg6.C: New test.
+
+2007-10-24  Richard Sandiford  <rsandifo@nildram.co.uk>
+
+	PR target/33755
+	* gcc.target/mips/pr33755.c: New test.
+
+2007-10-22  David S. Miller  <davem@davemloft.net>
+
+	* gcc.dg/globalreg-1.c: New test.
+
+2007-10-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/32961
+	* gcc.target/i386/pr32961.c: New testcase.
+
+2007-10-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr31167.c: Add i?86-*-* to target selector.
+	Require lp64 effective target.
+
+2007-10-16  Mark Mitchell  <mark@codesourcery.com>
+
+	* g++.dg/opt/const5.C: New test.
+
+2007-10-15  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/33354
+	* gfortran.dg/minmaxloc_4.f90:  New test.
+
+2007-10-13  Simon Martin  <simartin@users.sourceforge.net>
+
+	PR c++/26698
+	* g++.dg/conversion/op4.C: New test.
+
+2007-10-12  Zdenek Dvorak <ook@ucw.cz>
+
+	PR tree-optimization/33714
+	* gcc.dg/tree-ssa/pr33714.c: New test.
+
+2007-10-10  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/25309
+	* gcc.dg/large-size-array-2.c: Expect diagnostic for too-large
+	array.
+	* gcc.dg/large-size-array-4.c: New.  Copy of large-size-array-2.c
+	without -O2.
+
+2007-10-10  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/32295
+	* gcc.dg/enum-incomplete-1.c: New test.
+
+2007-10-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2007-09-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/33438
+	* gcc.target/i386/pr33438.c: New test.
+
+	2007-09-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/33369
+	* gcc.dg/vect/pr33369.c: New test.
+
+2007-10-10  Richard Guenther  <rguenther@suse.de>
+
+	Backport from mainline:
+	2007-10-03  Doug Kwan  <dougkwan@google.com>
+		Richard Guenther  <rguenther@suse.de>
+
+	PR debug/31899
+	* g++.dg/debug/using3.C: New testcase.
+
+2007-10-10  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/33099
+	PR tree-optimization/33381
+	* gcc.c-torture/execute/pr33099.c: New testcase.
+	* gcc.c-torture/execute/pr33381.c: Likewise.
+
 2007-10-07  Release Manager
 
 	* GCC 4.2.2 released.

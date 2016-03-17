@@ -43,6 +43,7 @@ static void pp_cxx_abstract_declarator (cxx_pretty_printer *, tree);
 static void pp_cxx_statement (cxx_pretty_printer *, tree);
 static void pp_cxx_template_parameter (cxx_pretty_printer *, tree);
 static void pp_cxx_cast_expression (cxx_pretty_printer *, tree);
+static void pp_cxx_typeid_expression (cxx_pretty_printer *, tree);
 
 
 static inline void
@@ -348,7 +349,10 @@ pp_cxx_id_expression (cxx_pretty_printer *pp, tree t)
      :: operator-function-id
      :: qualifier-id
      ( expression )
-     id-expression   */
+     id-expression
+
+   GNU Extensions:
+     __builtin_va_arg ( assignment-expression , type-id )  */
 
 static void
 pp_cxx_primary_expression (cxx_pretty_printer *pp, tree t)
@@ -384,6 +388,10 @@ pp_cxx_primary_expression (cxx_pretty_printer *pp, tree t)
       pp_cxx_left_paren (pp);
       pp_cxx_statement (pp, STMT_EXPR_STMT (t));
       pp_cxx_right_paren (pp);
+      break;
+
+    case VA_ARG_EXPR:
+      pp_cxx_va_arg_expression (pp, t);
       break;
 
     default:
@@ -512,14 +520,7 @@ pp_cxx_postfix_expression (cxx_pretty_printer *pp, tree t)
       break;
 
     case TYPEID_EXPR:
-      t = TREE_OPERAND (t, 0);
-      pp_cxx_identifier (pp, "typeid");
-      pp_left_paren (pp);
-      if (TYPE_P (t))
-	pp_cxx_type_id (pp, t);
-      else
-	pp_cxx_expression (pp, t);
-      pp_right_paren (pp);
+      pp_cxx_typeid_expression (pp, t);
       break;
 
     case PSEUDO_DTOR_EXPR:
@@ -615,10 +616,13 @@ pp_cxx_delete_expression (cxx_pretty_printer *pp, tree t)
       if (DELETE_EXPR_USE_GLOBAL (t))
 	pp_cxx_colon_colon (pp);
       pp_cxx_identifier (pp, "delete");
-      if (code == VEC_DELETE_EXPR)
+      pp_space (pp);
+      if (code == VEC_DELETE_EXPR
+	  || DELETE_EXPR_USE_VEC (t))
 	{
 	  pp_left_bracket (pp);
 	  pp_right_bracket (pp);
+	  pp_space (pp);
 	}
       pp_c_cast_expression (pp_c_base (pp), TREE_OPERAND (t, 0));
       break;
@@ -973,7 +977,7 @@ pp_cxx_expression (cxx_pretty_printer *pp, tree t)
 
     case NON_DEPENDENT_EXPR:
     case MUST_NOT_THROW_EXPR:
-      pp_cxx_expression (pp, t);
+      pp_cxx_expression (pp, TREE_OPERAND (t, 0));
       break;
 
     default:
@@ -1966,6 +1970,30 @@ pp_cxx_declaration (cxx_pretty_printer *pp, tree t)
       pp_unsupported_tree (pp, t);
       break;
     }
+}
+
+static void
+pp_cxx_typeid_expression (cxx_pretty_printer *pp, tree t)
+{
+  t = TREE_OPERAND (t, 0);
+  pp_cxx_identifier (pp, "typeid");
+  pp_cxx_left_paren (pp);
+  if (TYPE_P (t))
+    pp_cxx_type_id (pp, t);
+  else
+    pp_cxx_expression (pp, t);
+  pp_cxx_right_paren (pp);
+}
+
+void
+pp_cxx_va_arg_expression (cxx_pretty_printer *pp, tree t)
+{
+  pp_cxx_identifier (pp, "va_arg");
+  pp_cxx_left_paren (pp);
+  pp_cxx_assignment_expression (pp, TREE_OPERAND (t, 0));
+  pp_cxx_separate_with (pp, ',');
+  pp_cxx_type_id (pp, TREE_TYPE (t));
+  pp_cxx_right_paren (pp);
 }
 
 
