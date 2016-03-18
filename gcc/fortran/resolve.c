@@ -208,11 +208,9 @@ resolve_formal_arglist (gfc_symbol *proc)
 	  continue;
 	}
 
-      if (sym->ts.type == BT_UNKNOWN)
-	{
-	  if (!sym->attr.function || sym->result == sym)
-	    gfc_set_default_type (sym, 1, sym->ns);
-	}
+      if (sym->ts.type == BT_UNKNOWN && !proc->attr.intrinsic
+	  && (!sym->attr.function || sym->result == sym))
+	gfc_set_default_type (sym, 1, sym->ns);
 
       gfc_resolve_array_spec (sym->as, 0);
 
@@ -8854,6 +8852,7 @@ apply_default_init (gfc_symbol *sym)
     return;
 
   build_init_assign (sym, init);
+  sym->attr.referenced = 1;
 }
 
 /* Build an initializer for a local integer, real, complex, logical, or
@@ -10852,6 +10851,46 @@ resolve_fl_namelist (gfc_symbol *sym)
   gfc_namelist *nl;
   gfc_symbol *nlsym;
 
+  for (nl = sym->namelist; nl; nl = nl->next)
+    {
+      /* Reject namelist arrays of assumed shape.  */
+      if (nl->sym->as && nl->sym->as->type == AS_ASSUMED_SHAPE
+	  && gfc_notify_std (GFC_STD_F2003, "NAMELIST array object '%s' "
+			     "must not have assumed shape in namelist "
+			     "'%s' at %L", nl->sym->name, sym->name,
+			     &sym->declared_at) == FAILURE)
+	    return FAILURE;
+
+      /* Reject namelist arrays that are not constant shape.  */
+      if (is_non_constant_shape_array (nl->sym))
+	{
+	  gfc_error ("NAMELIST array object '%s' must have constant "
+		     "shape in namelist '%s' at %L", nl->sym->name,
+		     sym->name, &sym->declared_at);
+	  return FAILURE;
+	}
+
+      /* Namelist objects cannot have allocatable or pointer components.  */
+      if (nl->sym->ts.type != BT_DERIVED)
+	continue;
+
+      if (nl->sym->ts.u.derived->attr.alloc_comp)
+	{
+	  gfc_error ("NAMELIST object '%s' in namelist '%s' at %L cannot "
+		     "have ALLOCATABLE components",
+		     nl->sym->name, sym->name, &sym->declared_at);
+	  return FAILURE;
+	}
+
+      if (nl->sym->ts.u.derived->attr.pointer_comp)
+	{
+	  gfc_error ("NAMELIST object '%s' in namelist '%s' at %L cannot "
+		     "have POINTER components", 
+		     nl->sym->name, sym->name, &sym->declared_at);
+	  return FAILURE;
+	}
+    }
+
   /* Reject PRIVATE objects in a PUBLIC namelist.  */
   if (gfc_check_access(sym->attr.access, sym->ns->default_access))
     {
@@ -10890,46 +10929,6 @@ resolve_fl_namelist (gfc_symbol *sym)
 			 nl->sym->name, sym->name, &sym->declared_at);
 	      return FAILURE;
 	    }
-	}
-    }
-
-  for (nl = sym->namelist; nl; nl = nl->next)
-    {
-      /* Reject namelist arrays of assumed shape.  */
-      if (nl->sym->as && nl->sym->as->type == AS_ASSUMED_SHAPE
-	  && gfc_notify_std (GFC_STD_F2003, "NAMELIST array object '%s' "
-			     "must not have assumed shape in namelist "
-			     "'%s' at %L", nl->sym->name, sym->name,
-			     &sym->declared_at) == FAILURE)
-	    return FAILURE;
-
-      /* Reject namelist arrays that are not constant shape.  */
-      if (is_non_constant_shape_array (nl->sym))
-	{
-	  gfc_error ("NAMELIST array object '%s' must have constant "
-		     "shape in namelist '%s' at %L", nl->sym->name,
-		     sym->name, &sym->declared_at);
-	  return FAILURE;
-	}
-
-      /* Namelist objects cannot have allocatable or pointer components.  */
-      if (nl->sym->ts.type != BT_DERIVED)
-	continue;
-
-      if (nl->sym->ts.u.derived->attr.alloc_comp)
-	{
-	  gfc_error ("NAMELIST object '%s' in namelist '%s' at %L cannot "
-		     "have ALLOCATABLE components",
-		     nl->sym->name, sym->name, &sym->declared_at);
-	  return FAILURE;
-	}
-
-      if (nl->sym->ts.u.derived->attr.pointer_comp)
-	{
-	  gfc_error ("NAMELIST object '%s' in namelist '%s' at %L cannot "
-		     "have POINTER components", 
-		     nl->sym->name, sym->name, &sym->declared_at);
-	  return FAILURE;
 	}
     }
 
@@ -11445,7 +11444,6 @@ resolve_symbol (gfc_symbol *sym)
      described in 14.7.5, to those variables that have not already
      been assigned one.  */
   if (sym->ts.type == BT_DERIVED
-      && sym->attr.referenced
       && sym->ns == gfc_current_ns
       && !sym->value
       && !sym->attr.allocatable
@@ -11455,6 +11453,7 @@ resolve_symbol (gfc_symbol *sym)
 
       if ((!a->save && !a->dummy && !a->pointer
 	   && !a->in_common && !a->use_assoc
+	   && (a->referenced || a->result)
 	   && !(a->function && sym != sym->result))
 	  || (a->dummy && a->intent == INTENT_OUT && !a->pointer))
 	apply_default_init (sym);

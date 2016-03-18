@@ -1,3 +1,71 @@
+2010-12-16  Release Manager
+
+	* GCC 4.5.2 released.
+
+2010-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2010-11-20  Jakub Jelinek  <jakub@redhat.com>
+ 
+	PR c++/46538
+	* decl.c (cp_make_fname_decl): Return error_mark_node if
+	current_binding_level has already sk_function_parms kind.
+
+2010-12-03  Jason Merrill  <jason@redhat.com>
+
+	PR c++/46058
+	* tree.c (lvalue_kind) [SCOPE_REF]: Handle non-dependent case.
+
+2010-11-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2010-11-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/45894
+	* tree.c (lvalue_p_1): Don't crash if ref has NULL type.
+
+	2010-11-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/46160
+	* cp-gimplify.c (cp_gimplify_expr): Drop volatile INDIRECT_REFs
+	on the RHS to avoid infinite recursion with gimplify_expr.
+
+2010-10-15  Jason Merrill  <jason@redhat.com>
+
+	PR c++/45983
+	* tree.c (cp_build_qualified_type_real): Don't reuse a variant
+	with a different typedef variant of the element type.
+
+2010-09-06  Dodji Seketeli  <dodji@redhat.com>
+
+    	PR c++/45200
+    	PR c++/45293
+    	PR c++/45558
+	* tree.c (strip_typedefs): Strip typedefs from the context of
+    	TYPENAME_TYPEs.
+
+2010-08-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/45423
+	* parser.c (cp_parser_omp_atomic): Handle boolean
+	{PRE,POST}_INCREMENT.
+
+2010-08-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44991
+	* parser.c (cp_parser_parameter_declaration): Pop parameter decls
+	after tentative parsing.
+
+2010-08-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/45315
+	* init.c (build_new_1): Don't use build_value_init in a template.
+
+2010-07-31  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	PR c++/45112
+	* decl.c (duplicate_decls): Merge DECL_USER_ALIGN and DECL_PACKED.
+
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.

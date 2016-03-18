@@ -1,3 +1,53 @@
+2010-12-16  Release Manager
+
+	* GCC 4.5.2 released.
+
+2010-11-10  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/46373
+	Backport from mainline:
+	* io/transfer.c (data_transfer_init): Do not call flush_if_preconnected
+	if this is an internal unit.
+
+2010-11-03  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/46010
+	Backport from mainline:
+	* io/list_read.c (nml_parse_qualifier): Add additional conditions for
+	setting the end index for loop specification. Fix some whitespace.
+
+2010-10-21  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/46007
+	Backport from trunk
+	* m4/shape.m4 (shape_'rtype_kind`):  Use variable for rank.
+	Allocate return array if unallocated.
+	* generated/shape_i4.c:  Regenerated.
+	* generated/shape_i8.c:  Regenerated.
+	* generated/shape_i16.c:  Regenerated.
+
+2010-10-06  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline:
+	PR libfortran/45710
+	* io/write.c (namelist_write_newline): Pad character array internal
+	unit records with spaces.
+
+2010-09-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/45532
+	Backport from mainline:
+	* io/list_read.c (nml_get_obj_data): Set first_nl if the previous
+	is NULL.
+
+2010-09-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-08-26  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* config/fpu-387.h (has_sse): Remove cw_sse, unused.
+	Use fixed-length asm.
+
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.

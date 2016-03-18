@@ -1,3 +1,167 @@
+2010-12-16  Release Manager
+
+	* GCC 4.5.2 released.
+
+2010-12-03  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/45693
+	* configure.host (osf*): Set os_include_dir to os/generic.
+	Add -lpthread to OPT_LDFLAGS.
+
+2010-11-01  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/45999
+	* python/libstdcxx/v6/printers.py (StdVectorPrinter): Replace
+	conditional expression with backward-compatible if-else.
+
+2010-10-18  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	Backport from mainline:
+	2010-08-16  Chris Moller  <cmoller@redhat.com>
+
+        http://sourceware.org/bugzilla/show_bug.cgi?id=11874
+        * python/libstdcxx/v6/printers.py (StdVectorPrinter): Added stuff
+        to handle pretty-printing of std::vector<bool>.
+
+2010-10-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/random.tcc (piecewise_linear_distribution<>::
+	operator()): Don't crash when the dist is default-constructed.
+	* testsuite/26_numerics/random/piecewise_linear_distribution/
+	operators/call-default.cc: New.
+
+2010-10-11  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR libstdc++/45711
+	* src/Makefile.am (stamp-debug): Also adjust possibly-relative
+	file names in MKDIR_P, and, for consistency, also top_build_prefix.
+	* src/Makefile.in: Regenerate.
+
+2010-10-08  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/45403
+	* python/libstdcxx/v6/printers.py: Check for lazy_string support.
+
+2010-10-07  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/45924
+	* include/std/functional (_Bind_result::operator()): Do not expand
+	template parameter pack in forward call.
+	* testsuite/20_util/bind/45924.cc: New.
+
+2010-09-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-07-26  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/22_locale/num_put/put/char/14220.cc: XFAIL on Solaris
+	9/x86, 32-bit Solaris 10/x86 and 64-bit Solaris 10/SPARC.
+	* testsuite/22_locale/num_put/put/wchar_t/14220.cc: XFAIL on
+	Solaris 9/x86 and 32-bit Solaris 10/x86.
+
+	* testsuite/27_io/basic_istream/extractors_arithmetic/char/12.cc:
+	Only XFAIL on Solaris 8 and 9.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/wchar_t/12.cc:
+	Likewise.
+
+	* testsuite/ext/enc_filebuf/char/13598.cc: XFAIL before Solaris 11.
+
+2010-09-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* testsuite/29_atomics/atomic/cons/copy_neg.cc: Further adjust
+	dg-error line numbers.
+
+2010-09-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* testsuite/29_atomics/atomic/cons/assign_neg.cc: Adjust dg-error
+	line numbers.
+	* testsuite/29_atomics/atomic/cons/copy_neg.cc: Likewise.
+
+2010-09-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/45398
+	* include/std/atomic (atomic<_TP*>::store): Define.
+
+	* include/std/atomic (atomic<_TP*>::load, exchange): Define inline.
+
+2010-08-26  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * include/bits/stl_iterator_base_types.h: Fix doxygen warning.
+
+	Merge in other doc patches.
+
+	2010-07-08  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * include/bits/stl_heap.h: Update markup.
+        * include/bits/move.h: Same.
+        * include/bits/algorithmfwd.h: Same.
+        * include/bits/random.h: Same.
+        * doc/doxygen/doxygroups.cc: Same.
+        * doc/doxygen/user.cfg.in: Remove include/tr1_impl/regex from
+        input file list.
+        * doc/Makefile.am (doc-pdf-doxygen): Add comment, put generated
+        pdf in location consistent with docbook pdf generation.
+        * doc/Makefile.in: Regenerate.
+
+	2010-07-13  Benjamin Kosnik  <bkoz@redhat.com>
+        * doc/Makefile.in: Regenerate.
+        * doc/Makefile.am: Edit pdf rules, expand default rules.
+        * doc/doxygen/user.cfg.in: Update to Doxygen 1.7.1.
+
+	2010-07-19  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * doc/Makefile.am (doc-texinfo): New rule.
+        (doc-texinfo-docbook): New rule.
+        (DB2TEXI_FLAGS): New.
+        (doc-xml-single-docbook): Just the manual, not the set. Tweak flags.
+        * doc/Makefile.in: Regenerate.
+
+	2010-07-19  Benjamin Kosnik  <bkoz@redhat.com>
+
+        * doc/xml/manual/appendix_contributing.xml: Update for new reality.
+        * doc/Makefile.am (doc-xml): New default rule for XML output.
+        (doc-xml-single-doxygen): Standardize output names.
+        * doc/Makefile.in: Regenerate.
+
+        * doc/doxygen/user.cfg.in: Tweak.
+
+2010-08-15  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/45283
+	* testsuite/performance/30_threads/future/polling.cc: Replace calls to
+	shared_future::is_ready.
+
+2010-08-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/forward_list.h (_M_default_initialize,
+	_M_default_insert_after): Declare.
+	(forward_list<>::forward_list(size_type), resize(size_type)): Fix,
+	use the latter.
+	* include/bits/forward_list.tcc (forward_list<>::_M_default_append,
+	* testsuite/23_containers/forward_list/requirements/dr438/
+	assign_neg.cc: Adjust dg-error line numbers.
+	* testsuite/23_containers/forward_list/requirements/dr438/
+	insert_neg.cc: Likewise.
+	* testsuite/23_containers/forward_list/requirements/dr438/
+	constructor_1_neg.cc: Likewise.
+	* testsuite/23_containers/forward_list/requirements/dr438/
+	constructor_2_neg.cc: Likewise.
+
+2010-08-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/44963
+	* include/bits/stl_iterator.h (insert_iterator<>::
+	operator=(const typename _Container::value_type&,
+	back_insert_iterator<>::
+	operator=(const typename _Container::value_type&),
+	front_insert_iterator<>::
+	operator=(const typename _Container::value_type&))): Add
+	in C++0x mode.
+	* testsuite/ext/rope/44963.cc: New.
+
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.

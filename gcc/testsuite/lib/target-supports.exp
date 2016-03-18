@@ -569,6 +569,17 @@ proc check_effective_target_pcc_bitfield_type_matters { } {
     }]
 }
 
+# Add to FLAGS all the target-specific flags needed to use thread-local storage.
+
+proc add_options_for_tls { flags } {
+    # Tru64 UNIX uses emutls, which relies on a couple of pthread functions
+    # which only live in libpthread, so always pass -pthread for TLS.
+    if { [istarget *-*-osf*] } {
+	return "$flags -pthread"
+    }
+    return $flags
+}
+
 # Return 1 if thread local storage (TLS) is supported, 0 otherwise.
 
 proc check_effective_target_tls {} {
@@ -603,6 +614,20 @@ proc check_effective_target_tls_runtime {} {
 	__thread int thr = 0;
 	int main (void) { return thr; }
     }]
+}
+
+# Return 1 if -ffunction-sections is supported, 0 otherwise.
+
+proc check_effective_target_function_sections {} {
+    # Darwin has its own scheme and silently accepts -ffunction-sections.
+    global target_triplet
+    if { [regexp ".*-.*-darwin.*" $target_triplet] } {
+	return 0
+    }
+    
+    return [check_no_compiler_messages functionsections assembly {
+ 	void foo (void) { }
+    } "-ffunction-sections"]
 }
 
 # Return 1 if compilation with -fgraphite is error-free for trivial 
@@ -2816,6 +2841,7 @@ proc check_effective_target_sync_int_long { } {
 	     || [istarget i?86-*-*]
 	     || [istarget x86_64-*-*]
 	     || [istarget alpha*-*-*] 
+	     || [istarget arm*-*-linux-gnueabi] 
 	     || [istarget bfin*-*linux*]
 	     || [istarget s390*-*-*] 
 	     || [istarget powerpc*-*-*]
@@ -2845,6 +2871,7 @@ proc check_effective_target_sync_char_short { } {
 	     || [istarget i?86-*-*]
 	     || [istarget x86_64-*-*]
 	     || [istarget alpha*-*-*] 
+	     || [istarget arm*-*-linux-gnueabi] 
 	     || [istarget s390*-*-*] 
 	     || [istarget powerpc*-*-*]
 	     || [istarget sparc64-*-*]
@@ -3331,4 +3358,13 @@ proc check_effective_target_c++ { } {
    return 1
     }
  return 0
+}
+
+# Return 1 if expensive testcases should be run.
+
+proc check_effective_target_run_expensive_tests { } {
+    if { [getenv GCC_TEST_RUN_EXPENSIVE] != "" } {
+        return 1
+    }
+    return 0
 }

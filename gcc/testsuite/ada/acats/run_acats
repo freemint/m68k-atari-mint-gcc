@@ -14,9 +14,9 @@ fi
 # Fall back to whence which ksh88 and ksh93 provide, but bash does not.
 
 which () {
-    type -p $* 2>/dev/null && return 0
-    type $* 2>/dev/null | awk '{print $3}' && return 0
-    whence $* 2>/dev/null && return 0
+    path=`type -p $* 2>/dev/null` && { echo $path; return 0; }
+    path=`type $* 2>/dev/null | awk '{print $NF}'` && { echo $path; return 0; }
+    path=`whence $* 2>/dev/null` && { echo $path; return 0; }
     return 1
 }
 
@@ -70,4 +70,4 @@ chmod +x host_gnatmake
 # Limit the stack to 16MB for stack checking
 ulimit -s 16384
 
-exec $SHELL $testdir/run_all.sh ${1+"$@"}
+exec $testdir/run_all.sh ${1+"$@"}

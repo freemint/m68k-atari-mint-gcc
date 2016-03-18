@@ -1,3 +1,39 @@
+2010-12-16  Release Manager
+
+	* GCC 4.5.2 released.
+
+2010-12-03  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-11-09  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libjava.jvmti/jvmti.exp (gcj_jvmti_compile_cxx_to_o):
+	Add -pthread on alpha*-dec-osf*.
+	* testsuite/libjava.jvmti/jvmti-interp.exp
+	(gcj_jni_compile_c_to_so): Likewise.
+
+2010-11-30  Kai Tietz  <kai.tietz@onevision.com>
+
+	Backport from mainline
+	2010-08-12  Tom Tromey  <tromey@redhat.com>
+
+	PR libgcj/42986
+	* gnu/java/security/jce/prng/natVMSecureRandomWin32.cc
+	(natGenerateSeed): Add missing "::".
+
+2010-10-06  Jack Howarth <howarth@bromo.med.uc.edu>
+
+	Backport from mainline
+	2010-05-03  Jack Howarth <howarth@bromo.med.uc.edu>
+
+	PR java/43839
+	* testsuite/Makefile.am: Override automake for site.exp creation
+	and add entry to set libiconv.
+	* testsuite/Makefile.in: Regenerate.
+	* testsuite/libjava.jni/jni.exp (gcj_jni_get_cxxflags_invocation):
+	Add new global variable libiconv to handle alternative libiconv
+	locations.
+
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.

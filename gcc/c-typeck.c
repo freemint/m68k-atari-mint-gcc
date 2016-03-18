@@ -55,13 +55,6 @@ enum impl_conv {
   ic_return
 };
 
-/* Whether we are building a boolean conversion inside
-   convert_for_assignment, or some other late binary operation.  If
-   build_binary_op is called (from code shared with C++) in this case,
-   then the operands have already been folded and the result will not
-   be folded again, so C_MAYBE_CONST_EXPR should not be generated.  */
-bool in_late_binary_op;
-
 /* The level of nesting inside "__alignof__".  */
 int in_alignof;
 
@@ -9091,6 +9084,10 @@ build_binary_op (location_t location, enum tree_code code,
      precision.  */
   bool may_need_excess_precision;
 
+  /* True means this is a boolean operation that converts both its
+     operands to truth-values.  */
+  bool boolean_op = false;
+
   if (location == UNKNOWN_LOCATION)
     location = input_location;
 
@@ -9318,6 +9315,7 @@ build_binary_op (location_t location, enum tree_code code,
 	  op0 = c_common_truthvalue_conversion (location, op0);
 	  op1 = c_common_truthvalue_conversion (location, op1);
 	  converted = 1;
+	  boolean_op = true;
 	}
       if (code == TRUTH_ANDIF_EXPR)
 	{
@@ -9828,7 +9826,8 @@ build_binary_op (location_t location, enum tree_code code,
   if (build_type == NULL_TREE)
     {
       build_type = result_type;
-      if (type0 != orig_type0 || type1 != orig_type1)
+      if ((type0 != orig_type0 || type1 != orig_type1)
+	  && !boolean_op)
 	{
 	  gcc_assert (may_need_excess_precision && common);
 	  semantic_result_type = c_common_type (orig_type0, orig_type1);

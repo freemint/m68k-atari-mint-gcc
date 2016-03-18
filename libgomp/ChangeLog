@@ -1,3 +1,26 @@
+2010-12-16  Release Manager
+
+	* GCC 4.5.2 released.
+
+2010-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2010-12-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/46753
+	* libgomp.fortran/pr46753.f90: New test.
+
+	PR libgomp/45240
+	* parallel.c (GOMP_parallel_end): Unlock gomp_remaining_threads_lock
+	at the end if sync builtins aren't supported.
+
+2010-12-03  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-12-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libgomp.fortran/vla8.f90: Use dg-timeout-factor 2.0.
+
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.

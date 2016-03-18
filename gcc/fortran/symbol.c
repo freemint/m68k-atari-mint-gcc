@@ -2753,6 +2753,17 @@ gfc_symbols_could_alias (gfc_symbol *lsym, gfc_symbol *rsym)
   if (lsym->attr.allocatable && rsym->attr.pointer)
     return 1;
 
+  /* Special case: Argument association, cf. F90 12.4.1.6, F2003 12.4.1.7
+     and F2008 12.5.2.13 items 3b and 4b. The pointer case (a) is already
+     checked above.  */
+  if (lsym->attr.target && rsym->attr.target
+      && ((lsym->attr.dummy
+	   && (!lsym->attr.dimension || lsym->as->type == AS_ASSUMED_SHAPE))
+	  || (rsym->attr.dummy
+	      && (!rsym->attr.dimension
+		  || rsym->as->type == AS_ASSUMED_SHAPE))))
+    return 1;
+
   return 0;
 }
 
@@ -3795,6 +3806,9 @@ gen_cptr_param (gfc_formal_arglist **head,
   formal_arg = gfc_get_formal_arglist ();
   /* Add arg to list of formal args (the CPTR arg).  */
   add_formal_arg (head, tail, formal_arg, param_sym);
+
+  /* Validate changes.  */
+  gfc_commit_symbol (param_sym);
 }
 
 
@@ -3840,6 +3854,9 @@ gen_fptr_param (gfc_formal_arglist **head,
   formal_arg = gfc_get_formal_arglist ();
   /* Add arg to list of formal args.  */
   add_formal_arg (head, tail, formal_arg, param_sym);
+
+  /* Validate changes.  */
+  gfc_commit_symbol (param_sym);
 }
 
 
@@ -3911,6 +3928,9 @@ gen_shape_param (gfc_formal_arglist **head,
   formal_arg = gfc_get_formal_arglist ();
   /* Add arg to list of formal args.  */
   add_formal_arg (head, tail, formal_arg, param_sym);
+
+  /* Validate changes.  */
+  gfc_commit_symbol (param_sym);
 }
 
 
@@ -3973,6 +3993,9 @@ gfc_copy_formal_args (gfc_symbol *dest, gfc_symbol *src)
 
       /* Add arg to list of formal args.  */
       add_formal_arg (&head, &tail, formal_arg, formal_arg->sym);
+
+      /* Validate changes.  */
+      gfc_commit_symbol (formal_arg->sym);
     }
 
   /* Add the interface to the symbol.  */
@@ -4030,6 +4053,9 @@ gfc_copy_formal_args_intr (gfc_symbol *dest, gfc_intrinsic_sym *src)
 
       /* Add arg to list of formal args.  */
       add_formal_arg (&head, &tail, formal_arg, formal_arg->sym);
+
+      /* Validate changes.  */
+      gfc_commit_symbol (formal_arg->sym);
     }
 
   /* Add the interface to the symbol.  */
@@ -4083,6 +4109,9 @@ gfc_copy_formal_args_ppc (gfc_component *dest, gfc_symbol *src)
 
       /* Add arg to list of formal args.  */
       add_formal_arg (&head, &tail, formal_arg, formal_arg->sym);
+
+      /* Validate changes.  */
+      gfc_commit_symbol (formal_arg->sym);
     }
 
   /* Add the interface to the symbol.  */
@@ -4465,6 +4494,7 @@ generate_isocbinding_symbol (const char *mod_name, iso_c_binding_symbol s,
       default:
 	gcc_unreachable ();
     }
+  gfc_commit_symbol (tmp_sym);
 }
 
 
@@ -4837,10 +4867,12 @@ gfc_find_derived_vtab (gfc_symbol *derived)
 		  c->ts.u.derived = vtype;
 		  c->initializer->expr_type = EXPR_NULL;
 		}
+	      gfc_commit_symbol (vtype);
 	    }
 	  vtab->ts.u.derived = vtype;
 
 	  vtab->value = gfc_default_initializer (&vtab->ts);
+	  gfc_commit_symbol (vtab);
 	}
     }
 

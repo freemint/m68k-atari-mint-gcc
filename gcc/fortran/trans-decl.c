@@ -574,6 +574,7 @@ gfc_finish_var_decl (tree decl, gfc_symbol * sym)
   if (sym->attr.volatile_)
     {
       TREE_THIS_VOLATILE (decl) = 1;
+      TREE_SIDE_EFFECTS (decl) = 1;
       new_type = build_qualified_type (TREE_TYPE (decl), TYPE_QUAL_VOLATILE);
       TREE_TYPE (decl) = new_type;
     } 
@@ -1869,9 +1870,18 @@ create_function_arglist (gfc_symbol * sym)
       if (f->sym->attr.proc_pointer)
         type = build_pointer_type (type);
 
+      if (f->sym->attr.volatile_)
+	type = build_qualified_type (type, TYPE_QUAL_VOLATILE);
+
       /* Build the argument declaration.  */
       parm = build_decl (input_location,
 			 PARM_DECL, gfc_sym_identifier (f->sym), type);
+
+      if (f->sym->attr.volatile_)
+	{
+	  TREE_THIS_VOLATILE (parm) = 1;
+	  TREE_SIDE_EFFECTS (parm) = 1;
+	}
 
       /* Fill in arg stuff.  */
       DECL_CONTEXT (parm) = fndecl;
@@ -2252,11 +2262,11 @@ gfc_get_fake_result_decl (gfc_symbol * sym, int parent_flag)
 	       IDENTIFIER_POINTER (DECL_NAME (this_function_decl)));
 
       if (!sym->attr.mixed_entry_master && sym->attr.function)
-	decl = build_decl (input_location,
+	decl = build_decl (DECL_SOURCE_LOCATION (this_function_decl),
 			   VAR_DECL, get_identifier (name),
 			   gfc_sym_type (sym));
       else
-	decl = build_decl (input_location,
+	decl = build_decl (DECL_SOURCE_LOCATION (this_function_decl),
 			   VAR_DECL, get_identifier (name),
 			   TREE_TYPE (TREE_TYPE (this_function_decl)));
       DECL_ARTIFICIAL (decl) = 1;
