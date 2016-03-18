@@ -2056,6 +2056,11 @@ gfc_add_loop_ss_code (gfc_loopinfo * loop, gfc_ss * ss, bool subscript,
   gfc_se se;
   int n;
 
+  /* Don't evaluate the arguments for realloc_lhs_loop_for_fcn_call; otherwise,
+     arguments could get evaluated multiple times.  */
+  if (ss->is_alloc_lhs)
+    return;
+
   /* TODO: This can generate bad code if there are ordering dependencies,
      e.g., a callee allocated function and an unknown size constructor.  */
   gcc_assert (ss != NULL);
@@ -6009,19 +6014,13 @@ gfc_conv_array_parameter (gfc_se * se, gfc_expr * expr, gfc_ss * ss, bool g77,
     this_array_result = false;
 
   /* Passing address of the array if it is not pointer or assumed-shape.  */
-  if (full_array_var && g77 && !this_array_result)
+  if (full_array_var && g77 && !this_array_result
+      && sym->ts.type != BT_DERIVED && sym->ts.type != BT_CLASS)
     {
       tmp = gfc_get_symbol_decl (sym);
 
       if (sym->ts.type == BT_CHARACTER)
 	se->string_length = sym->ts.u.cl->backend_decl;
-
-      if (sym->ts.type == BT_DERIVED || sym->ts.type == BT_CLASS)
-	{
-	  gfc_conv_expr_descriptor (se, expr, ss);
-	  se->expr = gfc_conv_array_data (se->expr);
-	  return;
-	}
 
       if (!sym->attr.pointer
 	    && sym->as
@@ -6561,7 +6560,7 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 	      gfc_add_expr_to_block (&fnblock, tmp);
 	    }
 
-	  if (c->attr.allocatable && c->attr.dimension)
+	  if (c->attr.allocatable && c->attr.dimension && !c->attr.proc_pointer)
 	    {
 	      comp = fold_build3_loc (input_location, COMPONENT_REF, ctype,
 				      decl, cdecl, NULL_TREE);
@@ -6660,7 +6659,8 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 				  cdecl, NULL_TREE);
 	  dcmp = fold_convert (TREE_TYPE (comp), dcmp);
 
-	  if (c->attr.allocatable && !cmp_has_alloc_comps)
+	  if (c->attr.allocatable && !c->attr.proc_pointer
+	      && !cmp_has_alloc_comps)
 	    {
 	      rank = c->as ? c->as->rank : 0;
 	      tmp = gfc_duplicate_allocatable (dcmp, comp, ctype, rank);
@@ -7548,7 +7548,7 @@ gfc_walk_elemental_function_args (gfc_ss * ss, gfc_actual_arglist *arg,
   scalar = 1;
   for (; arg; arg = arg->next)
     {
-      if (!arg->expr)
+      if (!arg->expr || arg->expr->expr_type == EXPR_NULL)
 	continue;
 
       newss = gfc_walk_subexpr (head, arg->expr);

@@ -1,3 +1,48 @@
+2013-04-12  Release Manager
+
+	* GCC 4.6.4 released.
+
+2013-04-04  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline:
+	2013-03-29  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56737
+	* io/format.c (parse_format): With caching, copy
+	dtp->format string.
+	(save_parsed_format): Use dtp->format directly without
+	copying.
+
+	2012-03-29  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56737
+	* io/format.c (parse_format_list): Also cache FMT_STRING.
+	(parse_format): Update call.
+
+2013-04-04  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline:
+	2013-03-28  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56735
+	* io/list_read.c (nml_query): Only abort when
+	an error occured.
+	(namelist_read): Add goto instead of falling through.
+
+2012-10-21  Thomas König  <tkoenig@gcc.gnu.org>
+
+	PR libfortran/54736
+	Backport from trunk
+	* runtime/environ.c (search_unit):  Correct logic
+	for binary search.
+	(mark_single):  Fix index errors.
+
+2012-05-12  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/53310
+	* intrinsics/eoshift2.c (eoshift2): Do not leak
+	memory by allocating it in the loop.
+
 2012-03-01  Release Manager
 
 	* GCC 4.6.3 released.

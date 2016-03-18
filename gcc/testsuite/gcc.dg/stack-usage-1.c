@@ -41,6 +41,8 @@
 #  define SIZE 160 /* 256 -  96 bytes for register save area */
 #elif defined (__SPU__)
 #  define SIZE 224
+#elif defined (__sh__)
+#  define SIZE 252
 #else
 #  define SIZE 256
 #endif

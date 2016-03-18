@@ -1452,7 +1452,7 @@ resolve_intrinsic (gfc_symbol *sym, locus *loc)
 
   if (sym->intmod_sym_id)
     isym = gfc_intrinsic_function_by_id ((gfc_isym_id) sym->intmod_sym_id);
-  else
+  else if (!sym->attr.subroutine)
     isym = gfc_find_function (sym->name);
 
   if (isym)
@@ -3564,7 +3564,7 @@ resolve_call (gfc_code *c)
   if (csym && gfc_current_ns->parent && csym->ns != gfc_current_ns)
     {
       gfc_symtree *st;
-      gfc_find_sym_tree (csym->name, gfc_current_ns, 1, &st);
+      gfc_find_sym_tree (c->symtree->name, gfc_current_ns, 1, &st);
       sym = st ? st->n.sym : NULL;
       if (sym && csym != sym
 	      && sym->ns == gfc_current_ns
@@ -7087,11 +7087,18 @@ resolve_allocate_deallocate (gfc_code *code, const char *fcn)
 
 		      if (pr->next && qr->next)
 			{
+			  int i;
 			  gfc_array_ref *par = &(pr->u.ar);
 			  gfc_array_ref *qar = &(qr->u.ar);
-			  if (gfc_dep_compare_expr (par->start[0],
-						    qar->start[0]) != 0)
-			      break;
+
+			  for (i=0; i<par->dimen; i++)
+			    {
+			      if ((par->start[i] != NULL
+				   || qar->start[i] != NULL)
+				  && gfc_dep_compare_expr (par->start[i],
+							   qar->start[i]) != 0)
+				goto break_label;
+			    }
 			}
 		    }
 		  else
@@ -7103,6 +7110,8 @@ resolve_allocate_deallocate (gfc_code *code, const char *fcn)
 		  pr = pr->next;
 		  qr = qr->next;
 		}
+	    break_label:
+	      ;
 	    }
 	}
     }
@@ -9700,7 +9709,8 @@ build_default_init_expr (gfc_symbol *sym)
       || sym->attr.data
       || sym->module
       || sym->attr.cray_pointee
-      || sym->attr.cray_pointer)
+      || sym->attr.cray_pointer
+      || sym->assoc)
     return NULL;
 
   /* Now we'll try to build an initializer expression.  */
@@ -11749,6 +11759,8 @@ resolve_fl_derived0 (gfc_symbol *sym)
 	{
 	  gfc_error ("Component '%s' with CLASS at %L must be allocatable "
 		     "or pointer", c->name, &c->loc);
+	  /* Prevent a recurrence of the error.  */
+	  c->ts.type = BT_UNKNOWN;
 	  return FAILURE;
 	}
 
@@ -12908,10 +12920,9 @@ gfc_impure_variable (gfc_symbol *sym)
     }
 
   proc = sym->ns->proc_name;
-  if (sym->attr.dummy && gfc_pure (proc)
-	&& ((proc->attr.subroutine && sym->attr.intent == INTENT_IN)
-		||
-	     proc->attr.function))
+  if (sym->attr.dummy
+      && ((proc->attr.subroutine && sym->attr.intent == INTENT_IN)
+	  || proc->attr.function))
     return 1;
 
   /* TODO: Sort out what can be storage associated, if anything, and include

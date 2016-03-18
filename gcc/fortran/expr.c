@@ -3704,7 +3704,8 @@ gfc_default_initializer (gfc_typespec *ts)
      types (otherwise we could use gfc_has_default_initializer()).  */
   for (comp = ts->u.derived->components; comp; comp = comp->next)
     if (comp->initializer || comp->attr.allocatable
-	|| (comp->ts.type == BT_CLASS && CLASS_DATA (comp)->attr.allocatable))
+	|| (comp->ts.type == BT_CLASS && CLASS_DATA (comp)
+	    && CLASS_DATA (comp)->attr.allocatable))
       break;
 
   if (!comp)
@@ -4345,28 +4346,35 @@ gfc_is_simply_contiguous (gfc_expr *expr, bool strict)
    want to add arguments but with a NULL-expression.  */
 
 gfc_expr*
-gfc_build_intrinsic_call (const char* name, locus where, unsigned numarg, ...)
+gfc_build_intrinsic_call (gfc_namespace *ns, gfc_isym_id id, const char* name,
+			  locus where, unsigned numarg, ...)
 {
   gfc_expr* result;
   gfc_actual_arglist* atail;
   gfc_intrinsic_sym* isym;
   va_list ap;
   unsigned i;
+  const char *mangled_name = gfc_get_string (GFC_PREFIX ("%s"), name);
 
-  isym = gfc_find_function (name);
+  isym = gfc_intrinsic_function_by_id (id);
   gcc_assert (isym);
   
   result = gfc_get_expr ();
   result->expr_type = EXPR_FUNCTION;
   result->ts = isym->ts;
   result->where = where;
-  result->value.function.name = name;
+  result->value.function.name = mangled_name;
   result->value.function.isym = isym;
 
-  result->symtree = gfc_find_symtree (gfc_current_ns->sym_root, name);
+  gfc_get_sym_tree (mangled_name, ns, &result->symtree, false);
+  gfc_commit_symbol (result->symtree->n.sym);
   gcc_assert (result->symtree
 	      && (result->symtree->n.sym->attr.flavor == FL_PROCEDURE
 		  || result->symtree->n.sym->attr.flavor == FL_UNKNOWN));
+
+  result->symtree->n.sym->intmod_sym_id = id;
+  result->symtree->n.sym->attr.flavor = FL_PROCEDURE;
+  result->symtree->n.sym->attr.intrinsic = 1;
 
   va_start (ap, numarg);
   atail = NULL;
@@ -4474,7 +4482,11 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
       if (ptr_component && ref->type == REF_COMPONENT)
 	check_intentin = false;
       if (ref->type == REF_COMPONENT && ref->u.c.component->attr.pointer)
-	ptr_component = true;
+	{
+	  ptr_component = true;
+	  if (!pointer)
+	    check_intentin = false;
+	}
     }
   if (check_intentin && sym->attr.intent == INTENT_IN)
     {

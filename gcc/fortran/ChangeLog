@@ -1,3 +1,178 @@
+2013-04-12  Release Manager
+
+	* GCC 4.6.4 released.
+
+2013-03-15  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56615
+	* trans-intrinsic.c (gfc_conv_intrinsic_transfer): Pack arrays
+	if they are not simply contiguous.
+
+2013-03-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/56575
+	* expr.c (gfc_default_initializer): Check that a class declared
+	type has any components.
+	* resolve.c (resolve_fl_derived0): On failing the test for C437
+	set the type to BT_UNKNOWN to prevent repeat error messages.
+
+2013-03-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/55362
+	* check.c (array_check): It is an error if a procedure is
+	passed.
+
+2013-02-23  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/56385
+	* trans-array.c (structure_alloc_comps): Handle procedure-pointer
+	components with allocatable result.
+
+2013-02-15  Tobias Burnus  <burnus@net-b.de>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/56318
+	* simplify.c (gfc_simplify_matmul): Fix result shape
+	and matmul result.
+
+2013-02-13  Tobias Burnus  <burnus@net-b.de>
+
+	Backported from mainline
+	2013-01-07  Tobias Burnus  <burnus@net-b.de>
+		    Thomas Koenig  <tkoenig@gcc.gnu.org>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/55852
+	* expr.c (gfc_build_intrinsic_call): Avoid clashes
+	with user's procedures.
+	* gfortran.h (gfc_build_intrinsic_call): Update prototype.
+	(GFC_PREFIX): Define.
+	* simplify.c (gfc_simplify_size): Update call.
+
+2013-02-03  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/50627
+	PR fortran/56054
+	* decl.c (gfc_match_end):  Remove half-ready namespace
+	from parent if the end of a block is missing.
+	* parse.c (parse_module):  Do not put namespace into
+	gsymbol on error.
+
+2013-01-14  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/55072
+	* trans-array.c (gfc_conv_array_parameter): No packing was done for
+	full arrays of derived type.
+
+2013-01-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/55618
+	* trans-expr.c (gfc_conv_procedure_call): Dereference scalar
+	character function arguments to elemental procedures in
+	scalarization loops.
+
+2013-01-08  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/42769
+	PR fortran/45836
+	PR fortran/45900
+	* module.c (read_module): Don't reuse local symtree if the associated
+	symbol isn't exactly the one wanted.  Don't reuse local symtree if it is
+	ambiguous.
+	* resolve.c (resolve_call): Use symtree's name instead of symbol's to
+	lookup the symtree.
+
+2013-01-07  Steven G. Kargl  <kargl@gcc.gnu.org>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/55827
+	* trans-expr.c (gfc_conv_function_expr): Init sym earlier. Use it.
+
+2012-11-24  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/55314
+	Backport from trunk
+	* resolve.c (resolve_allocate_deallocate):  Compare all
+	subscripts when deciding if to reject a (de)allocate
+	statement.
+
+2012-09-13  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/54225
+	PR fortran/53306
+	* array.c (match_subscript, gfc_match_array_ref): Fix
+	diagnostic of coarray's '*'.
+
+2012-09-13  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/54556
+	* resolve.c (gfc_impure_variable): Don't check gfc_pure such
+	that the function also works for gfc_implicit_pure procedures.
+
+2012-09-12  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/54208
+	* simplify.c (simplify_bound_dim): Resolve array spec before
+	proceeding with simplification.
+
+2012-07-14  Mikael Morin  <mikael@gcc.gnu.org>
+
+	Backport from trunk:
+	2012-01-09  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/51758
+	* trans-array.c (gfc_walk_elemental_function_args):
+	Skip over NULL() actual arguments.
+
+2012-06-14  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/53597
+	* decl.c (match_attr_spec): Only mark module variables
+	as SAVE_IMPLICIT for Fortran 2008 and later.
+
+2012-06-05  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50619
+	* resolve.c (build_default_init_expr): Don't initialize
+	ASSOCIATE names.
+
+2012-06-01  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/53521
+	* trans.c (gfc_deallocate_scalar_with_status): Properly
+	handle the case size == 0.
+
+2012-05-23  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/53389
+	* trans-array.c (gfc_add_loop_ss_code): Don't evaluate
+	expression, if ss->is_alloc_lhs is set.
+
+2012-05-02  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2012-04-12  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/52864
+	* expr.c (gfc_check_vardef_context): Fix assignment check for
+	pointer components.
+
+2012-03-10  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/52469
+	* trans-types.c (gfc_get_function_type): Handle backend_decl
+	of a procedure pointer.
+
+2012-03-06  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2012-03-02  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/52452
+	* resolve.c (resolve_intrinsic): Don't search for a
+	function if we know that it is a subroutine.
+
 2012-03-01  Release Manager
 
 	* GCC 4.6.3 released.

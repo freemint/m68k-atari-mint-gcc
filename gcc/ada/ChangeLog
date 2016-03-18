@@ -1,3 +1,40 @@
+2013-04-12  Release Manager
+
+	* GCC 4.6.4 released.
+
+2013-02-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/56258
+	* gnat-style.texi (@title): Remove @hfill.
+	* projects.texi: Avoid line wrapping inside of @pxref or
+	@xref.
+
+2013-02-07  Simon Wright  <simon@pushface.org>
+
+	PR target/50678
+	* init.c (__darwin_major_version): New function for x86-64/Darwin.
+	(__gnat_adjust_context_for_raise) [Darwin]: Disable the workaround
+	on Darwin 12 and above.
+
+2012-12-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/54614
+	Backport from mainline
+
+	2012-10-01  Vincent Pucci  <pucci@adacore.com>
+
+	* s-gearop.adb (Vector_Matrix_Product): Fix dimension check and index
+	of Left in S evaluation.
+
+2012-05-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (variant_desc): Rename 'record' to 'new_type'.
+	(build_variant_list): Adjust to above renaming.
+	(gnat_to_gnu_entity) <E_Record_Subtype>: Likewise.  Give a unique name
+	to the type of the variant containers.
+	(create_variant_part_from): Likewise.  Give a unique name to the type
+	of the variant part.
+
 2012-03-01  Release Manager
 
 	* GCC 4.6.3 released.
