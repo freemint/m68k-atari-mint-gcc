@@ -485,22 +485,46 @@ variable_check (gfc_expr *e, int n, bool allow_proc)
       && (gfc_current_intrinsic_arg[n]->intent == INTENT_OUT
 	  || gfc_current_intrinsic_arg[n]->intent == INTENT_INOUT))
     {
-      gfc_error ("'%s' argument of '%s' intrinsic at %L cannot be INTENT(IN)",
-		 gfc_current_intrinsic_arg[n]->name, gfc_current_intrinsic,
-		 &e->where);
-      return FAILURE;
+      gfc_ref *ref;
+      bool pointer = e->symtree->n.sym->ts.type == BT_CLASS
+		     && CLASS_DATA (e->symtree->n.sym)
+		     ? CLASS_DATA (e->symtree->n.sym)->attr.class_pointer
+		     : e->symtree->n.sym->attr.pointer;
+
+      for (ref = e->ref; ref; ref = ref->next)
+	{
+	  if (pointer && ref->type == REF_COMPONENT)
+	    break;
+	  if (ref->type == REF_COMPONENT
+	      && ((ref->u.c.component->ts.type == BT_CLASS
+		   && CLASS_DATA (ref->u.c.component)->attr.class_pointer)
+		  || (ref->u.c.component->ts.type != BT_CLASS
+		      && ref->u.c.component->attr.pointer)))
+	    break;
+	} 
+
+      if (!ref)
+	{
+	  gfc_error ("'%s' argument of '%s' intrinsic at %L cannot be "
+		     "INTENT(IN)", gfc_current_intrinsic_arg[n]->name,
+		     gfc_current_intrinsic, &e->where);
+	  return FAILURE;
+	}
     }
 
   if (e->expr_type == EXPR_VARIABLE
       && e->symtree->n.sym->attr.flavor != FL_PARAMETER
-      && (allow_proc
-	  || !e->symtree->n.sym->attr.function
-	  || (e->symtree->n.sym == e->symtree->n.sym->result
-	      && (e->symtree->n.sym == gfc_current_ns->proc_name
-		  || (gfc_current_ns->parent
-		      && e->symtree->n.sym
-			 == gfc_current_ns->parent->proc_name)))))
+      && (allow_proc || !e->symtree->n.sym->attr.function))
     return SUCCESS;
+
+  if (e->expr_type == EXPR_VARIABLE && e->symtree->n.sym->attr.function
+      && e->symtree->n.sym == e->symtree->n.sym->result)
+    {
+      gfc_namespace *ns;
+      for (ns = gfc_current_ns; ns; ns = ns->parent)
+	if (ns->proc_name == e->symtree->n.sym)
+	  return SUCCESS;
+    }
 
   gfc_error ("'%s' argument of '%s' intrinsic at %L must be a variable",
 	     gfc_current_intrinsic_arg[n]->name, gfc_current_intrinsic, &e->where);

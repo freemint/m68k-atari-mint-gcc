@@ -1,3 +1,22 @@
+2012-03-01  Release Manager
+
+	* GCC 4.6.3 released.
+
+2011-11-12  Iain Sandoe  <iains@gcc.gnu.org>
+
+	Backport from mainline
+	2011-10-29  Iain Sandoe  <iains@gcc.gnu.org>
+	
+	PR target/47997
+	* objc-act.c (objc_build_string_object): Remove redundant second
+	call to fix_string_type ().  Add a checking assert that we are,
+	indeed, passed a STRING_CST.
+
+2011-11-12  Iain Sandoe  <iains@gcc.gnu.org>
+
+	* objc-next-runtime-abi-01.c (objc_eh_personality): Use gcc personality
+	for Objective-C m32.
+
 2011-10-26  Release Manager
 
 	* GCC 4.6.2 released.

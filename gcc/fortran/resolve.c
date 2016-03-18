@@ -1053,6 +1053,7 @@ resolve_structure_cons (gfc_expr *expr, int init)
 	  && comp->ts.u.cl->length->expr_type == EXPR_CONSTANT
 	  && cons->expr->ts.u.cl && cons->expr->ts.u.cl->length
 	  && cons->expr->ts.u.cl->length->expr_type == EXPR_CONSTANT
+	  && cons->expr->rank != 0
 	  && mpz_cmp (cons->expr->ts.u.cl->length->value.integer,
 		      comp->ts.u.cl->length->value.integer) != 0)
 	{
@@ -3132,10 +3133,10 @@ resolve_function (gfc_expr *expr)
 		     "procedure within a PURE procedure", name, &expr->where);
 	  t = FAILURE;
 	}
-    }
 
-  if (!pure_function (expr, &name) && name && gfc_implicit_pure (NULL))
-    gfc_current_ns->proc_name->attr.implicit_pure = 0;
+      if (gfc_implicit_pure (NULL))
+	gfc_current_ns->proc_name->attr.implicit_pure = 0;
+    }
 
   /* Functions without the RECURSIVE attribution are not allowed to
    * call themselves.  */
@@ -3195,6 +3196,9 @@ pure_subroutine (gfc_code *c, gfc_symbol *sym)
   else if (gfc_pure (NULL))
     gfc_error ("Subroutine call to '%s' at %L is not PURE", sym->name,
 	       &c->loc);
+
+  if (gfc_implicit_pure (NULL))
+    gfc_current_ns->proc_name->attr.implicit_pure = 0;
 }
 
 
@@ -9687,7 +9691,7 @@ build_default_init_expr (gfc_symbol *sym)
   int i;
 
   /* These symbols should never have a default initialization.  */
-  if ((sym->attr.dimension && !gfc_is_compile_time_shape (sym->as))
+  if (sym->attr.allocatable
       || sym->attr.external
       || sym->attr.dummy
       || sym->attr.pointer
@@ -9811,6 +9815,26 @@ build_default_init_expr (gfc_symbol *sym)
 	  gfc_free_expr (init_expr);
 	  init_expr = NULL;
 	}
+      if (!init_expr && gfc_option.flag_init_character == GFC_INIT_CHARACTER_ON
+	  && sym->ts.u.cl->length)
+	{
+	  gfc_actual_arglist *arg;
+	  init_expr = gfc_get_expr ();
+	  init_expr->where = sym->declared_at;
+	  init_expr->ts = sym->ts;
+	  init_expr->expr_type = EXPR_FUNCTION;
+	  init_expr->value.function.isym =
+		gfc_intrinsic_function_by_id (GFC_ISYM_REPEAT);
+	  init_expr->value.function.name = "repeat";
+	  arg = gfc_get_actual_arglist ();
+	  arg->expr = gfc_get_character_expr (sym->ts.kind, &sym->declared_at,
+					      NULL, 1);
+	  arg->expr->value.character.string[0]
+		= gfc_option.flag_init_character_value;
+	  arg->next = gfc_get_actual_arglist ();
+	  arg->next->expr = gfc_copy_expr (sym->ts.u.cl->length);
+	  init_expr->value.function.actual = arg;
+	}
       break;
 	  
     default:
@@ -9837,10 +9861,12 @@ apply_default_init_local (gfc_symbol *sym)
   if (init == NULL)
     return;
 
-  /* For saved variables, we don't want to add an initializer at 
-     function entry, so we just add a static initializer.  */
+  /* For saved variables, we don't want to add an initializer at function
+     entry, so we just add a static initializer. Note that automatic variables
+     are stack allocated even with -fno-automatic.  */
   if (sym->attr.save || sym->ns->save_all 
-      || gfc_option.flag_max_stack_var_size == 0)
+      || (gfc_option.flag_max_stack_var_size == 0
+	  && (!sym->attr.dimension || !is_non_constant_shape_array (sym))))
     {
       /* Don't clobber an existing initializer!  */
       gcc_assert (sym->value == NULL);
@@ -11394,6 +11420,14 @@ resolve_fl_derived0 (gfc_symbol *sym)
 
   for (c = sym->components; c != NULL; c = c->next)
     {
+      /* See PRs 51550, 47545, 48654, 49050, 51075 - and 45170.  */
+      if (c->ts.type == BT_CHARACTER && c->ts.deferred)
+	{
+	  gfc_error ("Deferred-length character component '%s' at %L is not "
+		     "yet supported", c->name, &c->loc);
+	  return FAILURE;
+	}
+
       /* F2008, C442.  */
       if (c->attr.codimension /* FIXME: c->as check due to PR 43412.  */
 	  && (!c->attr.allocatable || (c->as && c->as->type != AS_DEFERRED)))
@@ -12925,24 +12959,25 @@ gfc_pure (gfc_symbol *sym)
 int
 gfc_implicit_pure (gfc_symbol *sym)
 {
-  symbol_attribute attr;
+  gfc_namespace *ns;
 
   if (sym == NULL)
     {
-      /* Check if the current namespace is implicit_pure.  */
-      sym = gfc_current_ns->proc_name;
-      if (sym == NULL)
-	return 0;
-      attr = sym->attr;
-      if (attr.flavor == FL_PROCEDURE
-	    && attr.implicit_pure && !attr.pure)
-	return 1;
-      return 0;
+      /* Check if the current procedure is implicit_pure.  Walk up
+	 the procedure list until we find a procedure.  */
+      for (ns = gfc_current_ns; ns; ns = ns->parent)
+	{
+	  sym = ns->proc_name;
+	  if (sym == NULL)
+	    return 0;
+	  
+	  if (sym->attr.flavor == FL_PROCEDURE)
+	    break;
+	}
     }
-
-  attr = sym->attr;
-
-  return attr.flavor == FL_PROCEDURE && attr.implicit_pure && !attr.pure;
+  
+  return sym->attr.flavor == FL_PROCEDURE && sym->attr.implicit_pure
+    && !sym->attr.pure;
 }
 
 

@@ -808,16 +808,30 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		    && No (Address_Clause (gnat_entity))))
 	    && TREE_CODE (TYPE_SIZE (gnu_type)) == INTEGER_CST)
 	  {
-	    /* No point in jumping through all the hoops needed in order
+	    unsigned int size_cap, align_cap;
+
+	    /* No point in promoting the alignment if this doesn't prevent
+	       BLKmode access to the object, in particular block copy, as
+	       this will for example disable the NRV optimization for it.
+	       No point in jumping through all the hoops needed in order
 	       to support BIGGEST_ALIGNMENT if we don't really have to.
 	       So we cap to the smallest alignment that corresponds to
 	       a known efficient memory access pattern of the target.  */
-	    unsigned int align_cap = Is_Atomic (gnat_entity)
-				     ? BIGGEST_ALIGNMENT
-				     : get_mode_alignment (ptr_mode);
+	    if (Is_Atomic (gnat_entity))
+	      {
+		size_cap = UINT_MAX;
+		align_cap = BIGGEST_ALIGNMENT;
+	      }
+	    else
+	      {
+		size_cap = MAX_FIXED_MODE_SIZE;
+		align_cap = get_mode_alignment (ptr_mode);
+	      }
 
 	    if (!host_integerp (TYPE_SIZE (gnu_type), 1)
-		|| compare_tree_int (TYPE_SIZE (gnu_type), align_cap) >= 0)
+		|| compare_tree_int (TYPE_SIZE (gnu_type), size_cap) > 0)
+	      align = 0;
+	    else if (compare_tree_int (TYPE_SIZE (gnu_type), align_cap) > 0)
 	      align = align_cap;
 	    else
 	      align = ceil_alignment (tree_low_cst (TYPE_SIZE (gnu_type), 1));
@@ -1009,6 +1023,14 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		   entity is always accessed indirectly through it.  */
 		else
 		  {
+		    /* We need to preserve the volatileness of the renamed
+		       object through the indirection.  */
+		    if (TREE_THIS_VOLATILE (gnu_expr)
+			&& !TYPE_VOLATILE (gnu_type))
+		      gnu_type
+			= build_qualified_type (gnu_type,
+						(TYPE_QUALS (gnu_type)
+						 | TYPE_QUAL_VOLATILE));
 		    gnu_type = build_reference_type (gnu_type);
 		    inner_const_flag = TREE_READONLY (gnu_expr);
 		    const_flag = true;

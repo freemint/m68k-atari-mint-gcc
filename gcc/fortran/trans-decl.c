@@ -677,7 +677,7 @@ gfc_get_module_backend_decl (gfc_symbol *sym)
 	}
       else if (s->backend_decl)
 	{
-	  if (sym->ts.type == BT_DERIVED)
+	  if (sym->ts.type == BT_DERIVED || sym->ts.type == BT_CLASS)
 	    gfc_copy_dt_decls_ifequal (s->ts.u.derived, sym->ts.u.derived,
 				       true);
 	  else if (sym->ts.type == BT_CHARACTER)
@@ -1352,7 +1352,6 @@ gfc_get_symbol_decl (gfc_symbol * sym)
       gfc_finish_var_decl (span, sym);
       TREE_STATIC (span) = TREE_STATIC (decl);
       DECL_ARTIFICIAL (span) = 1;
-      DECL_INITIAL (span) = build_int_cst (gfc_array_index_type, 0);
 
       GFC_DECL_SPAN (decl) = span;
       GFC_TYPE_ARRAY_SPAN (TREE_TYPE (decl)) = span;
@@ -1602,6 +1601,11 @@ gfc_get_extern_function_decl (gfc_symbol * sym)
       gfc_find_symbol (sym->name, gsym->ns, 0, &s);
       if (s && s->backend_decl)
 	{
+	  if (sym->ts.type == BT_DERIVED || sym->ts.type == BT_CLASS)
+	    gfc_copy_dt_decls_ifequal (s->ts.u.derived, sym->ts.u.derived,
+				       true);
+	  else if (sym->ts.type == BT_CHARACTER)
+	    sym->ts.u.cl->backend_decl = s->ts.u.cl->backend_decl;
 	  sym->backend_decl = s->backend_decl;
 	  return sym->backend_decl;
 	}
@@ -3389,6 +3393,17 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
       if (sym->assoc)
 	continue;
 
+      if (sym->attr.subref_array_pointer
+	  && GFC_DECL_SPAN (sym->backend_decl)
+	  && !TREE_STATIC (GFC_DECL_SPAN (sym->backend_decl)))
+	{
+	  gfc_init_block (&tmpblock);
+	  gfc_add_modify (&tmpblock, GFC_DECL_SPAN (sym->backend_decl),
+			  build_int_cst (gfc_array_index_type, 0));
+	  gfc_add_init_cleanup (block, gfc_finish_block (&tmpblock),
+				NULL_TREE);
+	}
+
       if (sym->attr.dimension)
 	{
           /* Assumed-size Cray pointees need to be treated as AS_EXPLICIT.  */
@@ -4179,10 +4194,16 @@ generate_local_decl (gfc_symbol * sym)
 			     "declared INTENT(OUT) but was not set and "
 			     "does not have a default initializer",
 			     sym->name, &sym->declared_at);
+	      if (sym->backend_decl != NULL_TREE)
+		TREE_NO_WARNING(sym->backend_decl) = 1;
 	    }
 	  else if (gfc_option.warn_unused_dummy_argument)
-	    gfc_warning ("Unused dummy argument '%s' at %L", sym->name,
+	    {
+	      gfc_warning ("Unused dummy argument '%s' at %L", sym->name,
 			 &sym->declared_at);
+	      if (sym->backend_decl != NULL_TREE)
+		TREE_NO_WARNING(sym->backend_decl) = 1;
+	    }
 	}
 
       /* Warn for unused variables, but not if they're inside a common
@@ -4227,11 +4248,6 @@ generate_local_decl (gfc_symbol * sym)
 	mark the symbol now, as well as in traverse_ns, to prevent
 	getting stuck in a circular dependency.  */
       sym->mark = 1;
-
-      /* We do not want the middle-end to warn about unused parameters
-         as this was already done above.  */
-      if (sym->attr.dummy && sym->backend_decl != NULL_TREE)
-	  TREE_NO_WARNING(sym->backend_decl) = 1;
     }
   else if (sym->attr.flavor == FL_PARAMETER)
     {
@@ -4846,11 +4862,11 @@ gfc_generate_function_code (gfc_namespace * ns)
       if (result == NULL_TREE)
 	{
 	  /* TODO: move to the appropriate place in resolve.c.  */
-	  if (warn_return_type && !sym->attr.referenced && sym == sym->result)
+	  if (warn_return_type && sym == sym->result)
 	    gfc_warning ("Return value of function '%s' at %L not set",
 			 sym->name, &sym->declared_at);
-
-	  TREE_NO_WARNING(sym->backend_decl) = 1;
+	  if (warn_return_type)
+	    TREE_NO_WARNING(sym->backend_decl) = 1;
 	}
       else
 	gfc_add_expr_to_block (&body, gfc_generate_return ());

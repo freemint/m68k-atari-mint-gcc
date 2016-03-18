@@ -3679,6 +3679,8 @@ gfc_has_default_initializer (gfc_symbol *der)
         if (!c->attr.pointer
 	     && gfc_has_default_initializer (c->ts.u.derived))
 	  return true;
+	if (c->attr.pointer && c->initializer)
+	  return true;
       }
     else
       {
@@ -3688,6 +3690,7 @@ gfc_has_default_initializer (gfc_symbol *der)
 
   return false;
 }
+
 
 /* Get an expression for a default initializer.  */
 
@@ -4360,6 +4363,11 @@ gfc_build_intrinsic_call (const char* name, locus where, unsigned numarg, ...)
   result->value.function.name = name;
   result->value.function.isym = isym;
 
+  result->symtree = gfc_find_symtree (gfc_current_ns->sym_root, name);
+  gcc_assert (result->symtree
+	      && (result->symtree->n.sym->attr.flavor == FL_PROCEDURE
+		  || result->symtree->n.sym->attr.flavor == FL_UNKNOWN));
+
   va_start (ap, numarg);
   atail = NULL;
   for (i = 0; i < numarg; ++i)
@@ -4520,9 +4528,24 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
       return FAILURE;
     }
 
-  if (!pointer && gfc_implicit_pure (NULL) && gfc_impure_variable (sym))
-    gfc_current_ns->proc_name->attr.implicit_pure = 0;
+  if (!pointer && context && gfc_implicit_pure (NULL)
+      && gfc_impure_variable (sym))
+    {
+      gfc_namespace *ns;
+      gfc_symbol *sym;
 
+      for (ns = gfc_current_ns; ns; ns = ns->parent)
+	{
+	  sym = ns->proc_name;
+	  if (sym == NULL)
+	    break;
+	  if (sym->attr.flavor == FL_PROCEDURE)
+	    {
+	      sym->attr.implicit_pure = 0;
+	      break;
+	    }
+	}
+    }
   /* Check variable definition context for associate-names.  */
   if (!pointer && sym->assoc)
     {
