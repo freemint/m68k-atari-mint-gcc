@@ -1,3 +1,31 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-06-10  Iain Sandoe <iains@gcc.gnu.org>
+
+	Backport from mainline:
+	PR objc/35996
+	* objc-act.c (objc_init): Warn that -fobjc-gc is ignored for
+	-fgnu-runtime and set flag_objc_gc to zero.
+
+2010-06-10  Iain Sandoe <iains@gcc.gnu.org>
+
+	Backport from mainline:
+	2010-04-30  Iain Sandoe  <iains@gcc.gnu.org>
+	PR objc++/32052
+	* objc-act.c (encode_aggregate_within): Encode structure tags
+	with template args for ObjC++.
+
+2010-06-07  Iain Sandoe <iains@gcc.gnu.org>
+
+	Backport from mainline:
+	2010-04-07  Iain Sandoe <iains@gcc.gnu.org>
+
+	PR objc++/23716
+	* objc-act.c (build_module_initializer_routine): Make the argument
+	to objc_start_function NULL_TREE when compiling ObjC++.
+
 2010-04-14  Release Manager
 
 	* GCC 4.5.0 released.

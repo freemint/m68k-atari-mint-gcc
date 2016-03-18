@@ -927,6 +927,29 @@ arm*linux*eabi)
     extra_ldflags_libjava=-liconv
     ;;
 esac
+
+# Check for --no-merge-exidx-entries, an ARM-specific linker option.
+AC_CACHE_CHECK([for --no-merge-exidx-entries], [libgcj_cv_exidx],
+  [saved_ldflags="$LDFLAGS"
+   LDFLAGS="${LDFLAGS} -Wl,--no-merge-exidx-entries"
+   # The IRIX 6 ld doesn't recognize --no-merge-exidx-entries, but only
+   # warns about unknown options, which breaks the testsuite.  So enable
+   # AC_LANG_WERROR, but there's currently (autoconf 2.64) no way to turn
+   # it off again.  As a workaround, save and restore werror flag like
+   # AC_PATH_XTRA.
+   ac_xsave_[]_AC_LANG_ABBREV[]_werror_flag=$ac_[]_AC_LANG_ABBREV[]_werror_flag
+   AC_LANG_WERROR
+   AC_LINK_IFELSE([int main(void){ return 0;} ],
+		      [eval "libgcj_cv_exidx=yes"],
+		      [eval "libgcj_cv_exidx=no"])
+   ac_[]_AC_LANG_ABBREV[]_werror_flag=$ac_xsave_[]_AC_LANG_ABBREV[]_werror_flag
+   LDFLAGS="${saved_ldflags}"]
+)
+if test "${libgcj_cv_exidx}" = "yes"; then
+  SYSTEMSPEC="${SYSTEMSPEC} --no-merge-exidx-entries"
+  extra_ldflags="${extra_ldflags} -Wl,--no-merge-exidx-entries"
+fi   
+
 AC_SUBST(extra_ldflags_libjava)
 AC_SUBST(extra_ldflags)
 AC_SUBST(LIBSTDCXXSPEC)
@@ -1657,8 +1680,8 @@ case "${host}" in
  i?86-*-linux*)
     SIGNAL_HANDLER=include/i386-signal.h
     ;;
- sparc*-sun-solaris*)
-    SIGNAL_HANDLER=include/sparc-signal.h
+ *-*-solaris2*)
+    SIGNAL_HANDLER=include/solaris-signal.h
     ;;
 # ia64-*)
 #    SYSDEP_SOURCES=sysdep/ia64.c
@@ -1755,8 +1778,8 @@ AM_CONDITIONAL(ANONVERSCRIPT, test "$libjava_cv_anon_version_script" = yes)
 # Check if linker supports static linking on a per library basis
 LD_START_STATIC_SPEC=
 LD_FINISH_STATIC_SPEC=
-if $LD --help 2>&1 | grep -q -e -call_shared ; then
-  if $LD --help 2>&1 | grep -q -e -non_shared ; then
+if $LD --help 2>&1 | grep -- -call_shared >/dev/null 2>&1; then
+  if $LD --help 2>&1 | grep -- -non_shared >/dev/null 2>&1; then
     LD_START_STATIC_SPEC='%{static-libgcj:-non_shared}'
     LD_FINISH_STATIC_SPEC='%{static-libgcj:-call_shared}'
   fi

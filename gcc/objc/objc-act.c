@@ -545,6 +545,13 @@ objc_init (void)
 	 structure-returning methods.  */
       default_constant_string_class_name = "NXConstantString";
       flag_typed_selectors = 1;
+      /* GNU runtime does not need the compiler to change code
+         in order to do GC. */
+      if (flag_objc_gc)
+	{
+	  warning_at (0, 0, "%<-fobjc-gc%> is ignored for %<-fgnu-runtime%>");
+	  flag_objc_gc=0;
+	}
     }
 
   init_objc ();
@@ -2391,11 +2398,17 @@ build_module_initializer_routine (void)
 
   objc_push_parm (build_decl (input_location,
 			      PARM_DECL, NULL_TREE, void_type_node));
+#ifdef OBJCPLUS
+  objc_start_function (get_identifier (TAG_GNUINIT),
+		       build_function_type (void_type_node,
+					    OBJC_VOID_AT_END),
+		       NULL_TREE, NULL_TREE);
+#else
   objc_start_function (get_identifier (TAG_GNUINIT),
 		       build_function_type (void_type_node,
 					    OBJC_VOID_AT_END),
 		       NULL_TREE, objc_get_parm_info (0));
-
+#endif
   body = c_begin_compound_stmt (true);
   add_stmt (build_function_call
 	    (input_location,
@@ -8114,15 +8127,21 @@ encode_aggregate_within (tree type, int curtype, int format, int left,
 
   /* Encode the struct/union tag name, or '?' if a tag was
      not provided.  Typedef aliases do not qualify.  */
-  if (name && TREE_CODE (name) == IDENTIFIER_NODE
 #ifdef OBJCPLUS
+  /* For compatibility with the NeXT runtime, ObjC++ encodes template
+     args as a composite struct tag name. */
+  if (name && TREE_CODE (name) == IDENTIFIER_NODE
       /* Did this struct have a tag?  */
-      && !TYPE_WAS_ANONYMOUS (type)
-#endif
-      )
+      && !TYPE_WAS_ANONYMOUS (type))
+    obstack_grow (&util_obstack,
+		  decl_as_string (type, TFF_DECL_SPECIFIERS | TFF_UNQUALIFIED_NAME),
+		  strlen (decl_as_string (type, TFF_DECL_SPECIFIERS | TFF_UNQUALIFIED_NAME)));
+#else
+  if (name && TREE_CODE (name) == IDENTIFIER_NODE)
     obstack_grow (&util_obstack,
 		  IDENTIFIER_POINTER (name),
 		  strlen (IDENTIFIER_POINTER (name)));
+#endif
   else
     obstack_1grow (&util_obstack, '?');
 

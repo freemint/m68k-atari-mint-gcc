@@ -1,3 +1,123 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-06-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/44708
+	* include/ext/algorithm (copy_n): Qualify __copy_n call with
+	__gnu_cxx::
+	* testsuite/ext/rope/44708.cc: New.
+
+2010-06-22  Matthias Klose  <doko@ubuntu.com>
+
+	* python/libstdcxx/v6/printers.py: Don't use string exceptions.
+
+2010-06-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/44630
+	* include/profile/impl/profiler_trace.h (__min, __max): Remove,
+	use std::min, std::max everywhere.
+	* include/profile/impl/profiler_container_size.h: Use std::min and
+	std::max.
+	* include/profile/impl/profiler_hash_func.h: Likewise.
+	* include/profile/impl/profiler_list_to_vector.h: Likewise.
+
+2010-06-16  Matthias Klose  <doko@ubuntu.com>
+
+	* src/compatibility.cc: Export long double versions of "C" math
+	library for arm-linux-gnueabi, m68k-linux-gnu (ColdFire),
+	mips*-linux-gnu (o32 ABI), sh*-linux-gnu (32 bit).
+
+2010-06-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/44487
+	* include/bits/stl_pair.h (pair(pair&&)): Remove.
+	(pair(pair<_U1, _U2>&&): Use forward, consistently with Bullet 5
+	of LWG 1326.
+	* include/std/tuple (tuple(pair<_U1, _U2>&&)): Likewise.
+	* testsuite/20_util/pair/44487.cc: Add.
+	* testsuite/20_util/tuple/cons/44487.cc: Likewise.
+
+2010-06-10  Iain Sandoe  <iains@gcc.gnu.org>
+
+	PR bootstrap/43170
+	* configure: Regenerate.
+
+2010-05-31  Alexander Monakov  <amonakov@ispras.ru>
+
+	* testsuite/22_locale/codecvt/unshift/char/1.cc (test01): Clarify
+	size definition.  Use memcpy and memcmp to avoid access beyond
+	allocated memory.
+
+2010-05-27  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/40497
+	* include/bits/cpp_type_traits.h (__is_iterator): Add.
+	* include/bits/stl_iterator_base_funcs.h (next, prev): Use it.
+	* testsuite/24_iterators/operations/40497.cc: New.
+
+2010-05-19  Eelis van der Weegen  <gcc-bugzilla@contacts.eelis.net>
+
+	PR libstdc++/44190
+	* include/debug/vector (vector<>::resize): Call
+	_M_update_guaranteed_capacity.
+	* testsuite/23_containers/vector/capacity/44190.cc: New.
+
+2010-05-14  Silvius Rus  <silvius.rus@gmail.com>
+
+	PR libstdc++/43259
+	* include/profile/impl/profiler.h
+	(_GLIBCXX_PROFILE_DEFINE_UNINIT_DATA): Add.
+	* include/profile/impl/profiler_trace.h
+	(__mutex_t, __lock, __unlock): Remove.
+	(__lock_object_table, __lock_stack_table): Remove. Replace uses with
+	calls to __gnu_cxx::__mutex::lock.
+	(__unlock_object_table, __unlock_stack_table): Remove. Replace uses
+	with calls to __gnu_cxx::__mutex::unlock.
+
+2010-05-06  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* include/bits/basic_string.h: Escape class names in doxygen docs.
+
+2010-05-06  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/44014
+	* include/bits/stringfwd.h: Add doxygen comments and new group.
+	* include/bits/basic_string.h: Add to new doxygen group.
+	* doc/doxygen/user.cfg.in (ALIASES): Link to correct group.
+
+2010-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* testsuite/23_containers/vector/bool/capacity/29134.cc: Adjust
+	for profile-mode too.
+	* testsuite/23_containers/vector/bool/modifiers/insert/31370.cc:
+	Likewise.
+
+2010-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/profile/unordered_map (unordered_map<>::insert(_InputIter,
+	_InputIter), unordered_multimap<>::insert(_InputIter, _InputIter)):
+	Fix typo, don't call base() on __first and __last.
+
+2010-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Fix profile-mode vs -std=c++0x
+	* include/profile/impl/profiler_trace.h: Do not include the
+	whole <algorithm>, include <bits/stl_heap.h> (additionally
+	to <bits/stl_algobase.h>).
+	(__write_cost_factors): Replace std::for_each with open-coding.
+	(__set_cost_factors): Likewise.
+	(__report): Likewise; use std::make_heap / std::sort_heap
+	instead of std::sort.
+	(__report_cost_factors): Replace std::remove with open-coding.
+	(__warn, __cost_factor_writer, __cost_factor_setter): Remove.
+
+2010-04-27  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/43865
+	* include/c_global/cstdlib (abort, exit): _GLIBCXX_NORETURN typo.
+
 2010-04-14  Release Manager
 
 	* GCC 4.5.0 released.

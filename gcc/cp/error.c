@@ -840,6 +840,7 @@ dump_simple_decl (tree t, tree type, int flags)
       pp_maybe_space (cxx_pp);
     }
   if (! (flags & TFF_UNQUALIFIED_NAME)
+      && TREE_CODE (t) != PARM_DECL
       && (!DECL_INITIAL (t)
 	  || TREE_CODE (DECL_INITIAL (t)) != TEMPLATE_PARM_INDEX))
     dump_scope (CP_DECL_CONTEXT (t), flags);
@@ -1724,7 +1725,9 @@ dump_expr (tree t, int flags)
 	if (TREE_CODE (fn) == OBJ_TYPE_REF)
 	  fn = resolve_virtual_fun_from_obj_type_ref (fn);
 
-	if (TREE_TYPE (fn) != NULL_TREE && NEXT_CODE (fn) == METHOD_TYPE)
+	if (TREE_TYPE (fn) != NULL_TREE
+	    && NEXT_CODE (fn) == METHOD_TYPE
+	    && call_expr_nargs (t))
 	  {
 	    tree ob = CALL_EXPR_ARG (t, 0);
 	    if (TREE_CODE (ob) == ADDR_EXPR)

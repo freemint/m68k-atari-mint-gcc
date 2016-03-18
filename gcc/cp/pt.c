@@ -1563,6 +1563,12 @@ iterative_hash_template_arg (tree arg, hashval_t val)
       val = iterative_hash_template_arg (TREE_TYPE (arg), val);
       return iterative_hash_template_arg (TYPE_DOMAIN (arg), val);
 
+    case LAMBDA_EXPR:
+      /* A lambda can't appear in a template arg, but don't crash on
+	 erroneous input.  */
+      gcc_assert (errorcount > 0);
+      return val;
+
     default:
       switch (tclass)
 	{
@@ -3720,15 +3726,17 @@ maybe_update_decl_type (tree orig_type, tree scope)
 	 TYPENAME_TYPEs and SCOPE_REFs that were previously dependent.  */
       tree args = current_template_args ();
       tree auto_node = type_uses_auto (type);
+      tree pushed;
       if (auto_node)
 	{
 	  tree auto_vec = make_tree_vec (1);
 	  TREE_VEC_ELT (auto_vec, 0) = auto_node;
 	  args = add_to_template_args (args, auto_vec);
 	}
-      push_scope (scope);
+      pushed = push_scope (scope);
       type = tsubst (type, args, tf_warning_or_error, NULL_TREE);
-      pop_scope (scope);
+      if (pushed)
+	pop_scope (scope);
     }
 
   if (type == error_mark_node)
@@ -4873,6 +4881,36 @@ check_valid_ptrmem_cst_expr (tree type, tree expr)
   return false;
 }
 
+/* Returns TRUE iff the address of OP is value-dependent.
+
+   14.6.2.4 [temp.dep.temp]:
+   A non-integral non-type template-argument is dependent if its type is
+   dependent or it has either of the following forms
+     qualified-id
+     & qualified-id
+   and contains a nested-name-specifier which specifies a class-name that
+   names a dependent type.
+
+   We generalize this to just say that the address of a member of a
+   dependent class is value-dependent; the above doesn't cover the
+   address of a static data member named with an unqualified-id.  */
+
+static bool
+has_value_dependent_address (tree op)
+{
+  /* We could use get_inner_reference here, but there's no need;
+     this is only relevant for template non-type arguments, which
+     can only be expressed as &id-expression.  */
+  if (DECL_P (op))
+    {
+      tree ctx = CP_DECL_CONTEXT (op);
+      if (TYPE_P (ctx) && dependent_type_p (ctx))
+	return true;
+    }
+
+  return false;
+}
+
 /* Attempt to convert the non-type template parameter EXPR to the
    indicated TYPE.  If the conversion is successful, return the
    converted value.  If the conversion is unsuccessful, return
@@ -4911,6 +4949,11 @@ convert_nontype_argument (tree type, tree expr)
       return NULL_TREE;
     }
 
+  /* Add the ADDR_EXPR now for the benefit of
+     value_dependent_expression_p.  */
+  if (TYPE_PTROBV_P (type))
+    expr = decay_conversion (expr);
+
   /* If we are in a template, EXPR may be non-dependent, but still
      have a syntactic, rather than semantic, form.  For example, EXPR
      might be a SCOPE_REF, rather than the VAR_DECL to which the
@@ -4918,7 +4961,11 @@ convert_nontype_argument (tree type, tree expr)
      so that access checking can be performed when the template is
      instantiated -- but here we need the resolved form so that we can
      convert the argument.  */
-  expr = fold_non_dependent_expr (expr);
+  if (TYPE_REF_OBJ_P (type)
+      && has_value_dependent_address (expr))
+    /* If we want the address and it's value-dependent, don't fold.  */;
+  else
+    expr = fold_non_dependent_expr (expr);
   if (error_operand_p (expr))
     return error_mark_node;
   expr_type = TREE_TYPE (expr);
@@ -8234,7 +8281,7 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
   int i, len = -1;
   tree result;
   int incomplete = 0;
-  bool very_local_specializations = false;
+  htab_t saved_local_specializations = NULL;
 
   gcc_assert (PACK_EXPANSION_P (t));
   pattern = PACK_EXPANSION_PATTERN (t);
@@ -8252,13 +8299,15 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 
       if (TREE_CODE (parm_pack) == PARM_DECL)
 	{
-	  arg_pack = retrieve_local_specialization (parm_pack);
-	  if (arg_pack == NULL_TREE)
+	  if (!cp_unevaluated_operand)
+	    arg_pack = retrieve_local_specialization (parm_pack);
+	  else
 	    {
-	      /* This can happen for a parameter name used later in a function
-		 declaration (such as in a late-specified return type).  Just
-		 make a dummy decl, since it's only used for its type.  */
-	      gcc_assert (cp_unevaluated_operand != 0);
+	      /* We can't rely on local_specializations for a parameter
+		 name used later in a function declaration (such as in a
+		 late-specified return type).  Even if it exists, it might
+		 have the wrong value for a recursive call.  Just make a
+		 dummy decl, since it's only used for its type.  */
 	      arg_pack = tsubst_decl (parm_pack, args, complain);
 	      arg_pack = make_fnparm_pack (arg_pack);
 	    }
@@ -8364,11 +8413,13 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
   if (len < 0)
     return error_mark_node;
 
-  if (!local_specializations)
+  if (cp_unevaluated_operand)
     {
-      /* We're in a late-specified return type, so we don't have a local
-	 specializations table.  Create one for doing this expansion.  */
-      very_local_specializations = true;
+      /* We're in a late-specified return type, so create our own local
+	 specializations table; the current table is either NULL or (in the
+	 case of recursive unification) might have bindings that we don't
+	 want to use or alter.  */
+      saved_local_specializations = local_specializations;
       local_specializations = htab_create (37,
 					   hash_local_specialization,
 					   eq_local_specializations,
@@ -8459,10 +8510,10 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
         }
     }
 
-  if (very_local_specializations)
+  if (saved_local_specializations)
     {
       htab_delete (local_specializations);
-      local_specializations = NULL;
+      local_specializations = saved_local_specializations;
     }
   
   return result;
@@ -10460,6 +10511,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 				     in_decl, /*entering_scope=*/1);
 	tree f = tsubst_copy (TYPENAME_TYPE_FULLNAME (t), args,
 			      complain, in_decl);
+	int quals;
 
 	if (ctx == error_mark_node || f == error_mark_node)
 	  return error_mark_node;
@@ -10510,8 +10562,15 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 		     t, f);
 	  }
 
-	return cp_build_qualified_type_real
-	  (f, cp_type_quals (f) | cp_type_quals (t), complain);
+	/* cv-quals from the template are discarded when
+	   substituting in a function or reference type.  */
+	if (TREE_CODE (f) == FUNCTION_TYPE
+	    || TREE_CODE (f) == METHOD_TYPE
+	    || TREE_CODE (f) == REFERENCE_TYPE)
+	  quals = cp_type_quals (f);
+	else
+	  quals = cp_type_quals (f) | cp_type_quals (t);
+	return cp_build_qualified_type_real (f, quals, complain);
       }
 
     case UNBOUND_CLASS_TEMPLATE:
@@ -10672,6 +10731,8 @@ tsubst_baselink (tree baselink, tree object_type,
     if (IDENTIFIER_TYPENAME_P (name))
       name = mangle_conv_op_name_for_type (optype);
     baselink = lookup_fnfields (qualifying_scope, name, /*protect=*/1);
+    if (!baselink)
+      return error_mark_node;
 
     /* If lookup found a single function, mark it as used at this
        point.  (If it lookup found multiple functions the one selected
@@ -15923,11 +15984,12 @@ most_specialized_class (tree type, tree tmpl)
       tree parms = TREE_VALUE (t);
 
       partial_spec_args = CLASSTYPE_TI_ARGS (TREE_TYPE (t));
+
+      ++processing_template_decl;
+
       if (outer_args)
 	{
 	  int i;
-
-	  ++processing_template_decl;
 
 	  /* Discard the outer levels of args, and then substitute in the
 	     template args from the enclosing class.  */
@@ -15945,7 +16007,6 @@ most_specialized_class (tree type, tree tmpl)
 	    TREE_VEC_ELT (parms, i) =
 	      tsubst (TREE_VEC_ELT (parms, i), outer_args, tf_none, NULL_TREE);
 
-	  --processing_template_decl;
 	}
 
       partial_spec_args =
@@ -15955,6 +16016,8 @@ most_specialized_class (tree type, tree tmpl)
 				 tmpl, tf_none,
 				 /*require_all_args=*/true,
 				 /*use_default_args=*/true);
+
+      --processing_template_decl;
 
       if (partial_spec_args == error_mark_node)
 	return error_mark_node;
@@ -17589,6 +17652,13 @@ value_dependent_expression_p (tree expression)
     case MODOP_EXPR:
       return ((value_dependent_expression_p (TREE_OPERAND (expression, 0)))
 	      || (value_dependent_expression_p (TREE_OPERAND (expression, 2))));
+
+    case ADDR_EXPR:
+      {
+	tree op = TREE_OPERAND (expression, 0);
+	return (value_dependent_expression_p (op)
+		|| has_value_dependent_address (op));
+      }
 
     default:
       /* A constant expression is value-dependent if any subexpression is

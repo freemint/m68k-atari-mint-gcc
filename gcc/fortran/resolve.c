@@ -1808,20 +1808,7 @@ resolve_global_procedure (gfc_symbol *sym, locus *where,
 	&& not_in_recursive (sym, gsym->ns)
 	&& not_entry_self_reference (sym, gsym->ns))
     {
-      /* Make sure that translation for the gsymbol occurs before
-	 the procedure currently being resolved.  */
-      ns = gsym->ns->resolved ? NULL : gfc_global_ns_list;
-      for (; ns && ns != gsym->ns; ns = ns->sibling)
-	{
-	  if (ns->sibling == gsym->ns)
-	    {
-	      ns->sibling = gsym->ns->sibling;
-	      gsym->ns->sibling = gfc_global_ns_list;
-	      gfc_global_ns_list = gsym->ns;
-	      break;
-	    }
-	}
-
+      /* Resolve the gsymbol namespace if needed.  */
       if (!gsym->ns->resolved)
 	{
 	  gfc_dt_list *old_dt_list;
@@ -1841,34 +1828,157 @@ resolve_global_procedure (gfc_symbol *sym, locus *where,
 	  gfc_derived_types = old_dt_list;
 	}
 
-      if (gsym->ns->proc_name->attr.function
-	    && gsym->ns->proc_name->as
-	    && gsym->ns->proc_name->as->rank
-	    && (!sym->as || sym->as->rank != gsym->ns->proc_name->as->rank))
-	gfc_error ("The reference to function '%s' at %L either needs an "
-		   "explicit INTERFACE or the rank is incorrect", sym->name,
-		   where);
-     
-      /* Non-assumed length character functions.  */
-      if (sym->attr.function && sym->ts.type == BT_CHARACTER
-	    && gsym->ns->proc_name->ts.u.cl != NULL
-	    && gsym->ns->proc_name->ts.u.cl->length != NULL)
+      /* Make sure that translation for the gsymbol occurs before
+	 the procedure currently being resolved.  */
+      ns = gfc_global_ns_list;
+      for (; ns && ns != gsym->ns; ns = ns->sibling)
 	{
-	  gfc_charlen *cl = sym->ts.u.cl;
-
-	  if (!sym->attr.entry_master && sym->attr.if_source == IFSRC_UNKNOWN
-                && cl && cl->length && cl->length->expr_type != EXPR_CONSTANT)
+	  if (ns->sibling == gsym->ns)
 	    {
-              gfc_error ("Nonconstant character-length function '%s' at %L "
-			 "must have an explicit interface", sym->name,
-			 &sym->declared_at);
+	      ns->sibling = gsym->ns->sibling;
+	      gsym->ns->sibling = gfc_global_ns_list;
+	      gfc_global_ns_list = gsym->ns;
+	      break;
 	    }
 	}
 
+      /* Differences in constant character lengths.  */
+      if (sym->attr.function && sym->ts.type == BT_CHARACTER)
+	{
+	  long int l1 = 0, l2 = 0;
+	  gfc_charlen *cl1 = sym->ts.u.cl;
+	  gfc_charlen *cl2 = gsym->ns->proc_name->ts.u.cl;
+
+	  if (cl1 != NULL
+	      && cl1->length != NULL
+	      && cl1->length->expr_type == EXPR_CONSTANT)
+	    l1 = mpz_get_si (cl1->length->value.integer);
+
+  	  if (cl2 != NULL
+	      && cl2->length != NULL
+	      && cl2->length->expr_type == EXPR_CONSTANT)
+	    l2 = mpz_get_si (cl2->length->value.integer);
+
+	  if (l1 && l2 && l1 != l2)
+	    gfc_error ("Character length mismatch in return type of "
+		       "function '%s' at %L (%ld/%ld)", sym->name,
+		       &sym->declared_at, l1, l2);
+	}
+
+     /* Type mismatch of function return type and expected type.  */
+     if (sym->attr.function
+	 && !gfc_compare_types (&sym->ts, &gsym->ns->proc_name->ts))
+	gfc_error ("Return type mismatch of function '%s' at %L (%s/%s)",
+		   sym->name, &sym->declared_at, gfc_typename (&sym->ts),
+		   gfc_typename (&gsym->ns->proc_name->ts));
+
+      if (gsym->ns->proc_name->formal)
+	{
+	  gfc_formal_arglist *arg = gsym->ns->proc_name->formal;
+	  for ( ; arg; arg = arg->next)
+	    if (!arg->sym)
+	      continue;
+	    /* F2003, 12.3.1.1 (2a); F2008, 12.4.2.2 (2a)  */
+	    else if (arg->sym->attr.allocatable
+		     || arg->sym->attr.asynchronous
+		     || arg->sym->attr.optional
+		     || arg->sym->attr.pointer
+		     || arg->sym->attr.target
+		     || arg->sym->attr.value
+		     || arg->sym->attr.volatile_)
+	      {
+		gfc_error ("Dummy argument '%s' of procedure '%s' at %L "
+			   "has an attribute that requires an explicit "
+			   "interface for this procedure", arg->sym->name,
+			   sym->name, &sym->declared_at);
+		break;
+	      }
+	    /* F2003, 12.3.1.1 (2b); F2008, 12.4.2.2 (2b)  */
+	    else if (arg->sym && arg->sym->as
+		     && arg->sym->as->type == AS_ASSUMED_SHAPE)
+	      {
+		gfc_error ("Procedure '%s' at %L with assumed-shape dummy "
+			   "argument '%s' must have an explicit interface",
+			   sym->name, &sym->declared_at, arg->sym->name);
+		break;
+	      }
+	    /* F2008, 12.4.2.2 (2c)  */
+	    else if (false) /* TODO: is co-array  */
+	      {
+		gfc_error ("Procedure '%s' at %L with coarray dummy argument "
+			   "'%s' must have an explicit interface",
+			   sym->name, &sym->declared_at, arg->sym->name);
+		break;
+	      }
+	    /* F2003, 12.3.1.1 (2c); F2008, 12.4.2.2 (2d)   */
+	    else if (false) /* TODO: is a parametrized derived type  */
+	      {
+		gfc_error ("Procedure '%s' at %L with parametrized derived "
+			   "type argument '%s' must have an explicit "
+			   "interface", sym->name, &sym->declared_at,
+			   arg->sym->name);
+		break;
+	      }
+	    /* F2003, 12.3.1.1 (2d); F2008, 12.4.2.2 (2e)   */
+	    else if (arg->sym->ts.type == BT_CLASS)
+	      {
+		gfc_error ("Procedure '%s' at %L with polymorphic dummy "
+			   "argument '%s' must have an explicit interface",
+			   sym->name, &sym->declared_at, arg->sym->name);
+		break;
+	      }
+	}
+
+      if (gsym->ns->proc_name->attr.function)
+	{
+	  /* F2003, 12.3.1.1 (3a); F2008, 12.4.2.2 (3a) */
+	  if (gsym->ns->proc_name->as
+	      && gsym->ns->proc_name->as->rank
+	      && (!sym->as || sym->as->rank != gsym->ns->proc_name->as->rank))
+	    gfc_error ("The reference to function '%s' at %L either needs an "
+		       "explicit INTERFACE or the rank is incorrect", sym->name,
+		       where);
+
+	  /* F2003, 12.3.1.1 (3b); F2008, 12.4.2.2 (3b) */
+	  if (gsym->ns->proc_name->result->attr.pointer
+	      || gsym->ns->proc_name->result->attr.allocatable)
+	    gfc_error ("Function '%s' at %L with a POINTER or ALLOCATABLE "
+		       "result must have an explicit interface", sym->name,
+		       where);
+
+	  /* F2003, 12.3.1.1 (3c); F2008, 12.4.2.2 (3c)  */
+	  if (sym->ts.type == BT_CHARACTER
+	      && gsym->ns->proc_name->ts.u.cl->length != NULL)
+	    {
+	      gfc_charlen *cl = sym->ts.u.cl;
+
+	      if (!sym->attr.entry_master && sym->attr.if_source == IFSRC_UNKNOWN
+		  && cl && cl->length && cl->length->expr_type != EXPR_CONSTANT)
+		{
+		  gfc_error ("Nonconstant character-length function '%s' at %L "
+			     "must have an explicit interface", sym->name,
+			     &sym->declared_at);
+		}
+	    }
+	}
+
+      /* F2003, 12.3.1.1 (4); F2008, 12.4.2.2 (4) */
+      if (gsym->ns->proc_name->attr.elemental)
+	{
+	  gfc_error ("ELEMENTAL procedure '%s' at %L must have an explicit "
+		     "interface", sym->name, &sym->declared_at);
+	}
+
+      /* F2003, 12.3.1.1 (5); F2008, 12.4.2.2 (5) */
+      if (gsym->ns->proc_name->attr.is_bind_c)
+	{
+	  gfc_error ("Procedure '%s' at %L with BIND(C) attribute must have "
+		     "an explicit interface", sym->name, &sym->declared_at);
+	}
+
       if (gfc_option.flag_whole_file == 1
-	    || ((gfc_option.warn_std & GFC_STD_LEGACY)
-		  &&
-	       !(gfc_option.warn_std & GFC_STD_GNU)))
+	  || ((gfc_option.warn_std & GFC_STD_LEGACY)
+	      && !(gfc_option.warn_std & GFC_STD_GNU)))
 	gfc_errors_to_warnings (1);
 
       gfc_procedure_use (gsym->ns->proc_name, actual, where);
@@ -4564,6 +4674,15 @@ resolve_variable (gfc_expr *e)
 	sym->entry_id = current_entry_id + 1;
     }
 
+  /* If a symbol has been host_associated mark it.  This is used latter,
+     to identify if aliasing is possible via host association.  */
+  if (sym->attr.flavor == FL_VARIABLE
+	&& gfc_current_ns->parent
+	&& (gfc_current_ns->parent == sym->ns
+	      || (gfc_current_ns->parent->parent
+		    && gfc_current_ns->parent->parent == sym->ns)))
+    sym->attr.host_assoc = 1;
+
 resolve_procedure:
   if (t == SUCCESS && resolve_procedure_expression (e) == FAILURE)
     t = FAILURE;
@@ -6375,8 +6494,29 @@ resolve_allocate_deallocate (gfc_code *code, const char *fcn)
 
       for (p = code->ext.alloc.list; p; p = p->next)
 	if (p->expr->symtree->n.sym->name == stat->symtree->n.sym->name)
-	  gfc_error ("Stat-variable at %L shall not be %sd within "
-		     "the same %s statement", &stat->where, fcn, fcn);
+	  {
+	    gfc_ref *ref1, *ref2;
+	    bool found = true;
+
+	    for (ref1 = p->expr->ref, ref2 = stat->ref; ref1 && ref2;
+		 ref1 = ref1->next, ref2 = ref2->next)
+	      {
+		if (ref1->type != REF_COMPONENT || ref2->type != REF_COMPONENT)
+		  continue;
+		if (ref1->u.c.component->name != ref2->u.c.component->name)
+		  {
+		    found = false;
+		    break;
+		  }
+	      }
+
+	    if (found)
+	      {
+		gfc_error ("Stat-variable at %L shall not be %sd within "
+			   "the same %s statement", &stat->where, fcn, fcn);
+		break;
+	      }
+	  }
     }
 
   /* Check the errmsg variable.  */
@@ -6404,8 +6544,29 @@ resolve_allocate_deallocate (gfc_code *code, const char *fcn)
 
       for (p = code->ext.alloc.list; p; p = p->next)
 	if (p->expr->symtree->n.sym->name == errmsg->symtree->n.sym->name)
-	  gfc_error ("Errmsg-variable at %L shall not be %sd within "
-		     "the same %s statement", &errmsg->where, fcn, fcn);
+	  {
+	    gfc_ref *ref1, *ref2;
+	    bool found = true;
+
+	    for (ref1 = p->expr->ref, ref2 = errmsg->ref; ref1 && ref2;
+		 ref1 = ref1->next, ref2 = ref2->next)
+	      {
+		if (ref1->type != REF_COMPONENT || ref2->type != REF_COMPONENT)
+		  continue;
+		if (ref1->u.c.component->name != ref2->u.c.component->name)
+		  {
+		    found = false;
+		    break;
+		  }
+	      }
+
+	    if (found)
+	      {
+		gfc_error ("Errmsg-variable at %L shall not be %sd within "
+			   "the same %s statement", &errmsg->where, fcn, fcn);
+		break;
+	      }
+	  }
     }
 
   /* Check that an allocate-object appears only once in the statement.  
@@ -10302,7 +10463,9 @@ ensure_not_abstract_walker (gfc_symbol* sub, gfc_symtree* st)
     {
       gfc_symtree* overriding;
       overriding = gfc_find_typebound_proc (sub, NULL, st->name, true, NULL);
-      gcc_assert (overriding && overriding->n.tb);
+      if (!overriding)
+	return FAILURE;
+      gcc_assert (overriding->n.tb);
       if (overriding->n.tb->deferred)
 	{
 	  gfc_error ("Derived-type '%s' declared at %L must be ABSTRACT because"
@@ -10431,8 +10594,12 @@ resolve_fl_derived (gfc_symbol *sym)
 	      /* Copy char length.  */
 	      if (ifc->ts.type == BT_CHARACTER && ifc->ts.u.cl)
 		{
-		  c->ts.u.cl = gfc_new_charlen (sym->ns, ifc->ts.u.cl);
-		  gfc_expr_replace_comp (c->ts.u.cl->length, c);
+		  gfc_charlen *cl = gfc_new_charlen (sym->ns, ifc->ts.u.cl);
+		  gfc_expr_replace_comp (cl->length, c);
+		  if (cl->length && !cl->resolved
+		        && gfc_resolve_expr (cl->length) == FAILURE)
+		    return FAILURE;
+		  c->ts.u.cl = cl;
 		}
 	    }
 	  else if (c->ts.interface->name[0] != '\0')
@@ -10945,6 +11112,9 @@ resolve_symbol (gfc_symbol *sym)
 	    {
 	      sym->ts.u.cl = gfc_new_charlen (sym->ns, ifc->ts.u.cl);
 	      gfc_expr_replace_symbols (sym->ts.u.cl->length, sym);
+	      if (sym->ts.u.cl->length && !sym->ts.u.cl->resolved
+		    && gfc_resolve_expr (sym->ts.u.cl->length) == FAILURE)
+		return;
 	    }
 	}
       else if (sym->ts.interface->name[0] != '\0')

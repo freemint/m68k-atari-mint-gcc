@@ -956,17 +956,14 @@ gfc_is_intrinsic (gfc_symbol* sym, int subroutine_flag, locus loc)
   /* See if this intrinsic is allowed in the current standard.  */
   if (gfc_check_intrinsic_standard (isym, &symstd, false, loc) == FAILURE)
     {
-      if (sym->attr.proc == PROC_UNKNOWN)
-	{
-	  if (gfc_option.warn_intrinsics_std)
-	    gfc_warning_now ("The intrinsic '%s' at %L is not included in the"
-			     " selected standard but %s and '%s' will be"
-			     " treated as if declared EXTERNAL.  Use an"
-			     " appropriate -std=* option or define"
-			     " -fall-intrinsics to allow this intrinsic.",
-			     sym->name, &loc, symstd, sym->name);
-	  gfc_add_external (&sym->attr, &loc);
-	}
+      if (sym->attr.proc == PROC_UNKNOWN
+	  && gfc_option.warn_intrinsics_std)
+	gfc_warning_now ("The intrinsic '%s' at %L is not included in the"
+			 " selected standard but %s and '%s' will be"
+			 " treated as if declared EXTERNAL.  Use an"
+			 " appropriate -std=* option or define"
+			 " -fall-intrinsics to allow this intrinsic.",
+			 sym->name, &loc, symstd, sym->name);
 
       return false;
     }
@@ -1356,7 +1353,7 @@ add_functions (void)
   make_generic ("bit_size", GFC_ISYM_BIT_SIZE, GFC_STD_F95);
 
   add_sym_2 ("btest", GFC_ISYM_BTEST, CLASS_ELEMENTAL, ACTUAL_NO, BT_LOGICAL, dl, GFC_STD_F95,
-	     gfc_check_btest, gfc_simplify_btest, gfc_resolve_btest,
+	     gfc_check_bitfcn, gfc_simplify_btest, gfc_resolve_btest,
 	     i, BT_INTEGER, di, REQUIRED, pos, BT_INTEGER, di, REQUIRED);
 
   make_generic ("btest", GFC_ISYM_BTEST, GFC_STD_F95);
@@ -1742,7 +1739,7 @@ add_functions (void)
   make_generic ("iargc", GFC_ISYM_IARGC, GFC_STD_GNU);
 
   add_sym_2 ("ibclr", GFC_ISYM_IBCLR, CLASS_ELEMENTAL, ACTUAL_NO, BT_INTEGER, di, GFC_STD_F95,
-	     gfc_check_ibclr, gfc_simplify_ibclr, gfc_resolve_ibclr,
+	     gfc_check_bitfcn, gfc_simplify_ibclr, gfc_resolve_ibclr,
 	     i, BT_INTEGER, di, REQUIRED, pos, BT_INTEGER, di, REQUIRED);
 
   make_generic ("ibclr", GFC_ISYM_IBCLR, GFC_STD_F95);
@@ -1755,7 +1752,7 @@ add_functions (void)
   make_generic ("ibits", GFC_ISYM_IBITS, GFC_STD_F95);
 
   add_sym_2 ("ibset", GFC_ISYM_IBSET, CLASS_ELEMENTAL, ACTUAL_NO, BT_INTEGER, di, GFC_STD_F95,
-	     gfc_check_ibset, gfc_simplify_ibset, gfc_resolve_ibset,
+	     gfc_check_bitfcn, gfc_simplify_ibset, gfc_resolve_ibset,
 	     i, BT_INTEGER, di, REQUIRED, pos, BT_INTEGER, di, REQUIRED);
 
   make_generic ("ibset", GFC_ISYM_IBSET, GFC_STD_F95);
@@ -3264,7 +3261,7 @@ keywords:
 
       if (f->actual != NULL)
 	{
-	  gfc_error ("Argument '%s' is appears twice in call to '%s' at %L",
+	  gfc_error ("Argument '%s' appears twice in call to '%s' at %L",
 		     f->name, name, where);
 	  return FAILURE;
 	}

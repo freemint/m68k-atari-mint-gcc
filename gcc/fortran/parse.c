@@ -2235,9 +2235,9 @@ loop:
     {
       if (current_state == COMP_NONE)
 	{
-	  if (new_state == COMP_FUNCTION)
+	  if (new_state == COMP_FUNCTION && sym)
 	    gfc_add_function (&sym->attr, sym->name, NULL);
-	  else if (new_state == COMP_SUBROUTINE)
+	  else if (new_state == COMP_SUBROUTINE && sym)
 	    gfc_add_subroutine (&sym->attr, sym->name, NULL);
 
 	  current_state = new_state;
@@ -3594,6 +3594,7 @@ gfc_fixup_sibling_symbols (gfc_symbol *sym, gfc_namespace *siblings)
 		  || (old_sym->ts.type != BT_UNKNOWN
 			&& !old_sym->attr.implicit_type)
 		  || old_sym->attr.flavor == FL_PARAMETER
+		  || old_sym->attr.use_assoc
 		  || old_sym->attr.in_common
 		  || old_sym->attr.in_equivalence
 		  || old_sym->attr.data

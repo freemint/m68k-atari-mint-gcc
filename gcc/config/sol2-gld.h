@@ -1,4 +1,4 @@
-/* Definitions of target machine for GCC, for SPARC running Solaris 2
+/* Definitions of target machine for GCC, for any machine running Solaris 2
    using the GNU linker.
 
    Copyright (C) 2002, 2010 Free Software Foundation, Inc.
@@ -25,3 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef SUPPORTS_INIT_PRIORITY
 #define SUPPORTS_INIT_PRIORITY 1
+
+/* GNU ld needs --export-dynamic to implement -rdynamic.  */
+#undef RDYNAMIC_SPEC
+#define RDYNAMIC_SPEC "--export-dynamic"

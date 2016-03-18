@@ -1,3 +1,182 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-07-23  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43016
+	PR c++/45008
+	* decl.c (start_preparsed_function): Do defer nested functions.
+
+2010-07-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44996
+	* semantics.c (finish_decltype_type): Correct decltype
+	of parenthesized rvalue reference variable.
+
+2010-07-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44703
+	* call.c (is_std_init_list): Look through typedefs.
+
+2010-07-02  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/44039
+	* pt.c (tsubst_baselink): Return error_mark_node if lookup_fnfields
+	returns NULL_TREE.
+
+2010-06-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/44628
+	* typeck.c (cp_build_unary_op): Early return error_mark_node when
+	arg is NULL_TREE too.
+	* call.c (convert_class_to_reference): Return error_mark_node when
+	expr is NULL_TREE.
+
+2010-06-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44587
+	* pt.c (has_value_dependent_address): New.
+	(value_dependent_expression_p): Check it.
+	(convert_nontype_argument): Likewise.  Call decay_conversion before
+	folding if we want a pointer.
+	* semantics.c (finish_id_expression): Don't add SCOPE_REF if the
+	scope is the current instantiation.
+
+2010-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/44627
+	* error.c (dump_expr): Don't look at CALL_EXPR_ARG (t, 0) if
+	the CALL_EXPR has no arguments.
+
+2010-06-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44366
+	* error.c (dump_simple_decl): Don't print the scope of a
+	PARM_DECL.
+
+2010-06-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44401
+	* parser.c (cp_parser_lookup_name): Fix naming the constructor.
+
+2010-06-01  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44358
+	* call.c (build_list_conv): Set list-initialization flags properly.
+
+2010-05-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43555
+	* decl.c (grokdeclarator) [cdk_pointer et al]: Force evaluation of
+	anonymous VLA size.
+
+2010-05-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43382
+	* pt.c (tsubst_pack_expansion): Don't get confused by recursive
+	unification.
+
+2010-05-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/41510
+	* decl.c (check_initializer): Don't wrap an init-list in a
+	TREE_LIST.
+	* init.c (build_aggr_init): Don't assume copy-initialization if
+	init has CONSTRUCTOR_IS_DIRECT_INIT.
+	* call.c (build_new_method_call): Sanity check.
+
+2010-05-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44193
+	* pt.c (tsubst) [TYPENAME_TYPE]: Discard cv-quals on
+	function/reference type.
+
+	* call.c (struct z_candidate): Add explicit_targs field.
+	(add_template_candidate_real): Set it.
+	(build_over_call): Use it to control init-list warning.
+
+	PR c++/44157
+	* call.c (build_over_call): Limit init-list deduction warning to
+	cases where the argument is actually an init-list.
+
+	PR c++/44158
+	* call.c (build_over_call): Don't do bitwise copy for move ctor.
+
+2010-05-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44127
+	* except.c (dtor_nothrow): Return nonzero for type with
+	trivial destructor.
+
+	PR c++/44127
+	* cp-gimplify.c (gimplify_must_not_throw_expr): Use
+	gimple_build_eh_must_not_throw.
+
+2010-05-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43787
+	* cp-gimplify.c (cp_gimplify_expr): Remove copies of empty classes.
+	* call.c (build_over_call): Don't try to avoid INIT_EXPR copies here.
+
+2010-05-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/38064
+	* typeck.c (cp_build_binary_op): Allow enums for <> as well.
+
+2010-05-03  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/43953
+	* pt.c (most_specialized_class): Pretend we are processing
+	a template decl during the call to coerce_template_parms.
+
+2010-04-30  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43868
+	* cxx-pretty-print.c (pp_cxx_type_specifier_seq): Handle pmfs.
+
+2010-04-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43856
+	* name-lookup.c (qualify_lookup): Disqualify lambda op().
+	* semantics.c (nonlambda_method_basetype): New.
+	* cp-tree.h: Declare them.
+	* tree.c (maybe_dummy_object): Handle implicit 'this' capture.
+
+	PR c++/43875
+	* semantics.c (lambda_return_type): Complain about
+	braced-init-list.
+
+	* parser.c (cp_parser_lambda_expression): Complain about lambda in
+	unevaluated context.
+	* pt.c (iterative_hash_template_arg): Don't crash on lambda.
+
+2010-04-19  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/43704
+	* typeck.c (structural_comptypes): Test dependent typedefs
+	incompatibility before testing for their main variant based
+	equivalence.
+	(incompatible_dependent_types_p): If one of the
+	compared types if not a typedef then honour their main variant
+	equivalence.
+
+2010-04-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/43641
+	* semantics.c (maybe_add_lambda_conv_op): Use build_call_a and tweak
+	return value directly.
+
+	PR c++/43621
+	* pt.c (maybe_update_decl_type): Check the return value from
+	push_scope.
+
+2010-04-15  Richard Guenther  <rguenther@suse.de>
+
+	PR c++/43611
+	* semantics.c (expand_or_defer_fn_1): Do not keep extern
+	template inline functions.
+
 2010-04-14  Release Manager
 
 	* GCC 4.5.0 released.

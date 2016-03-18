@@ -910,6 +910,53 @@ proc check_750cl_hw_available { } {
     }]
 }
 
+# Return 1 if the target OS supports running SSE executables, 0
+# otherwise.  Cache the result.
+
+proc check_sse_os_support_available { } {
+    return [check_cached_effective_target sse_os_support_available {
+	# If this is not the right target then we can skip the test.
+	if { !([istarget x86_64-*-*] || [istarget i?86-*-*]) } {
+	    expr 0
+	} elseif { [istarget i?86-*-solaris2*] } {
+	    # The Solaris 2 kernel doesn't save and restore SSE registers
+	    # before Solaris 9 4/04.  Before that, executables die with SIGILL.
+	    check_runtime_nocache sse_os_support_available {
+		int main ()
+		{
+		    __asm__ volatile ("movss %xmm2,%xmm1");
+		    return 0;
+		}
+	    } "-msse"
+	} else {
+	    expr 1
+	}
+    }]
+}
+
+# Return 1 if the target supports executing SSE instructions, 0
+# otherwise.  Cache the result.
+
+proc check_sse_hw_available { } {
+    return [check_cached_effective_target sse_hw_available {
+	# If this is not the right target then we can skip the test.
+	if { !([istarget x86_64-*-*] || [istarget i?86-*-*]) } {
+	    expr 0
+	} else {
+	    check_runtime_nocache sse_hw_available {
+		#include "cpuid.h"
+		int main ()
+		{
+		  unsigned int eax, ebx, ecx, edx = 0;
+		  if (__get_cpuid (1, &eax, &ebx, &ecx, &edx))
+		    return !(edx & bit_SSE);
+		  return 1;
+		}
+	    } ""
+	}
+    }]
+}
+
 # Return 1 if the target supports executing SSE2 instructions, 0
 # otherwise.  Cache the result.
 
@@ -931,6 +978,26 @@ proc check_sse2_hw_available { } {
 	    } ""
 	}
     }]
+}
+
+# Return 1 if the target supports running SSE executables, 0 otherwise.
+
+proc check_effective_target_sse_runtime { } {
+    if { [check_sse_hw_available] && [check_sse_os_support_available] } {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+# Return 1 if the target supports running SSE2 executables, 0 otherwise.
+
+proc check_effective_target_sse2_runtime { } {
+    if { [check_sse2_hw_available] && [check_sse_os_support_available] } {
+	return 1
+    } else {
+	return 0
+    }
 }
 
 # Return 1 if the target supports executing VSX instructions, 0
@@ -3133,6 +3200,29 @@ proc check_effective_target_avx { } {
     } "-O2 -mavx" ]
 }
 
+# Return 1 if sse instructions can be compiled.
+proc check_effective_target_sse { } {
+    return [check_no_compiler_messages sse object {
+	int main ()
+	{
+	    __builtin_ia32_stmxcsr ();
+	    return 0;
+	}
+    } "-O2 -msse" ]
+}
+
+# Return 1 if sse2 instructions can be compiled.
+proc check_effective_target_sse2 { } {
+    return [check_no_compiler_messages sse2 object {
+	typedef long long __m128i __attribute__ ((__vector_size__ (16)));
+	
+	__m128i _mm_srli_si128 (__m128i __A, int __N)
+	{
+	    return (__m128i)__builtin_ia32_psrldqi128 (__A, 8);
+	}
+    } "-O2 -msse2" ]
+}
+
 # Return 1 if C wchar_t type is compatible with char16_t.
 
 proc check_effective_target_wchar_t_char16_t_compatible { } {
@@ -3191,6 +3281,28 @@ proc check_effective_target_correct_iso_cpp_string_wchar_protos { } {
 	int i;
 	#endif
     }]
+}
+
+# Return 1 if GNU as is used.
+
+proc check_effective_target_gas { } {
+    global use_gas_saved
+    global tool
+
+    if {![info exists use_gas_saved]} {
+	# Check if the as used by gcc is GNU as.
+	set gcc_as [lindex [${tool}_target_compile "-print-prog-name=as" "" "none" ""] 0]
+	# Provide /dev/null as input, otherwise gas times out reading from
+	# stdin.
+	set status [remote_exec host "$gcc_as" "-v /dev/null"]
+	set as_output [lindex $status 1]
+	if { [ string first "GNU" $as_output ] >= 0 } {
+	    set use_gas_saved 1
+	} else {
+	    set use_gas_saved 0
+	}
+    }
+    return $use_gas_saved
 }
 
 # Return 1 if the compiler has been configure with link-time optimization

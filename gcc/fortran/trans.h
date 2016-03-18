@@ -126,8 +126,9 @@ typedef enum
      scalarization loop.  */
   GFC_SS_SCALAR,
 
-  /* Like GFC_SS_SCALAR except it evaluates a pointer to the expression.
-     Used for elemental function parameters.  */
+  /* Like GFC_SS_SCALAR it evaluates the expression outside the
+     loop. Is always evaluated as a reference to the temporary.
+     Used for elemental function arguments.  */
   GFC_SS_REFERENCE,
 
   /* An array section.  Scalarization indices will be substituted during
@@ -518,6 +519,7 @@ bool gfc_get_array_descr_info (const_tree, struct array_descr_info *);
 /* In trans-openmp.c */
 bool gfc_omp_privatize_by_reference (const_tree);
 enum omp_clause_default_kind gfc_omp_predetermined_sharing (tree);
+tree gfc_omp_report_decl (tree);
 tree gfc_omp_clause_default_ctor (tree, tree, tree);
 tree gfc_omp_clause_copy_ctor (tree, tree, tree);
 tree gfc_omp_clause_assign_op (tree, tree, tree);
@@ -771,7 +773,6 @@ void gfc_apply_interface_mapping (gfc_interface_mapping *,
 
 
 /* Standard error messages used in all the trans-*.c files.  */
-extern const char gfc_msg_bounds[];
 extern const char gfc_msg_fault[];
 extern const char gfc_msg_wrong_return[];
 

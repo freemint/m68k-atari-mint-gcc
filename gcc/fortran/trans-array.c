@@ -2046,9 +2046,10 @@ gfc_add_loop_ss_code (gfc_loopinfo * loop, gfc_ss * ss, bool subscript,
 	  break;
 
 	case GFC_SS_REFERENCE:
-	  /* Scalar reference.  Evaluate this now.  */
+	  /* Scalar argument to elemental procedure.  Evaluate this
+	     now.  */
 	  gfc_init_se (&se, NULL);
-	  gfc_conv_expr_reference (&se, ss->expr);
+	  gfc_conv_expr (&se, ss->expr);
 	  gfc_add_block_to_block (&loop->pre, &se.pre);
 	  gfc_add_block_to_block (&loop->post, &se.post);
 
@@ -2316,10 +2317,6 @@ gfc_trans_array_bound_check (gfc_se * se, tree descriptor, tree index, int n,
       && se->loop->ss->loop_chain->expr->symtree)
     name = se->loop->ss->loop_chain->expr->symtree->name;
 
-  if (!name && se->loop && se->loop->ss && se->loop->ss->loop_chain
-      && se->loop->ss->loop_chain->expr->symtree)
-    name = se->loop->ss->loop_chain->expr->symtree->name;
-
   if (!name && se->loop && se->loop->ss && se->loop->ss->expr)
     {
       if (se->loop->ss->expr->expr_type == EXPR_FUNCTION
@@ -2330,6 +2327,9 @@ gfc_trans_array_bound_check (gfc_se * se, tree descriptor, tree index, int n,
 	    || se->loop->ss->type == GFC_SS_SCALAR)
 	  name = "unnamed constant";
     }
+
+  if (TREE_CODE (descriptor) == VAR_DECL)
+    name = IDENTIFIER_POINTER (DECL_NAME (descriptor));
 
   /* If upper bound is present, include both bounds in the error message.  */
   if (check_upper)
@@ -3355,13 +3355,15 @@ gfc_conv_ss_startstride (gfc_loopinfo * loop)
 	      if (size[n])
 		{
 		  tmp3 = fold_build2 (NE_EXPR, boolean_type_node, tmp, size[n]);
-		  asprintf (&msg, "%s, size mismatch for dimension %d "
-			    "of array '%s' (%%ld/%%ld)", gfc_msg_bounds,
+		  asprintf (&msg, "Array bound mismatch for dimension %d "
+			    "of array '%s' (%%ld/%%ld)",
 			    info->dim[n]+1, ss->expr->symtree->name);
+
 		  gfc_trans_runtime_check (true, false, tmp3, &inner,
 					   &ss->expr->where, msg,
 			fold_convert (long_integer_type_node, tmp),
 			fold_convert (long_integer_type_node, size[n]));
+
 		  gfc_free (msg);
 		}
 	      else
@@ -4608,15 +4610,26 @@ gfc_trans_dummy_array_bias (gfc_symbol * sym, tree tmpdesc, tree body)
 	    {
 	      /* Check (ubound(a) - lbound(a) == ubound(b) - lbound(b)).  */
 	      char * msg;
+	      tree temp;
 
-	      tmp = fold_build2 (MINUS_EXPR, gfc_array_index_type,
-				 ubound, lbound);
-              stride2 = fold_build2 (MINUS_EXPR, gfc_array_index_type,
+	      temp = fold_build2 (MINUS_EXPR, gfc_array_index_type,
+				  ubound, lbound);
+	      temp = fold_build2 (PLUS_EXPR, gfc_array_index_type,
+				  gfc_index_one_node, temp);
+
+	      stride2 = fold_build2 (MINUS_EXPR, gfc_array_index_type,
 				     dubound, dlbound);
-              tmp = fold_build2 (NE_EXPR, gfc_array_index_type, tmp, stride2);
-	      asprintf (&msg, "%s for dimension %d of array '%s'",
-			gfc_msg_bounds, n+1, sym->name);
-	      gfc_trans_runtime_check (true, false, tmp, &block, &loc, msg);
+	      stride2 = fold_build2 (PLUS_EXPR, gfc_array_index_type,
+				     gfc_index_one_node, stride2);
+
+              tmp = fold_build2 (NE_EXPR, gfc_array_index_type, temp, stride2);
+	      asprintf (&msg, "Dimension %d of array '%s' has extent "
+		        "%%ld instead of %%ld", n+1, sym->name);
+
+	      gfc_trans_runtime_check (true, false, tmp, &block, &loc, msg, 
+			fold_convert (long_integer_type_node, temp),
+			fold_convert (long_integer_type_node, stride2));
+
 	      gfc_free (msg);
 	    }
 	}
