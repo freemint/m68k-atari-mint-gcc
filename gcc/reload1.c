@@ -1,7 +1,7 @@
 /* Reload pseudo regs into hard regs for insns that require hard regs.
    Copyright (C) 1987, 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
-   Free Software Foundation, Inc.
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+   2011 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -457,7 +457,7 @@ static void emit_reload_insns (struct insn_chain *);
 static void delete_output_reload (rtx, int, int, rtx);
 static void delete_address_reloads (rtx, rtx);
 static void delete_address_reloads_1 (rtx, rtx, rtx);
-static rtx inc_for_reload (rtx, rtx, rtx, int);
+static void inc_for_reload (rtx, rtx, rtx, int);
 #ifdef AUTO_INC_DEC
 static void add_auto_inc_notes (rtx, rtx);
 #endif
@@ -6266,17 +6266,6 @@ choose_reload_regs (struct insn_chain *chain)
 	      && (rld[r].nregs == max_group_size
 		  || ! reg_classes_intersect_p (rld[r].rclass, group_class)))
 	    search_equiv = rld[r].in;
-	  /* If this is an output reload from a simple move insn, look
-	     if an equivalence for the input is available.  */
-	  else if (inheritance && rld[r].in == 0 && rld[r].out != 0)
-	    {
-	      rtx set = single_set (insn);
-
-	      if (set
-		  && rtx_equal_p (rld[r].out, SET_DEST (set))
-		  && CONSTANT_P (SET_SRC (set)))
-		search_equiv = SET_SRC (set);
-	    }
 
 	  if (search_equiv)
 	    {
@@ -6829,22 +6818,12 @@ emit_input_reload_insns (struct insn_chain *chain, struct reload *rl,
 
       old = XEXP (rl->in_reg, 0);
 
-      if (optimize && REG_P (oldequiv)
-	  && REGNO (oldequiv) < FIRST_PSEUDO_REGISTER
-	  && spill_reg_store[REGNO (oldequiv)]
-	  && REG_P (old)
-	  && (dead_or_set_p (insn,
-			     spill_reg_stored_to[REGNO (oldequiv)])
-	      || rtx_equal_p (spill_reg_stored_to[REGNO (oldequiv)],
-			      old)))
-	delete_output_reload (insn, j, REGNO (oldequiv), reloadreg);
-
       /* Prevent normal processing of this reload.  */
       special = 1;
-      /* Output a special code sequence for this case.  */
-      new_spill_reg_store[REGNO (reloadreg)]
-	= inc_for_reload (reloadreg, oldequiv, rl->out,
-			  rl->inc);
+      /* Output a special code sequence for this case, and forget about
+	 spill reg information.  */
+      new_spill_reg_store[REGNO (reloadreg)] = NULL;
+      inc_for_reload (reloadreg, oldequiv, rl->out, rl->inc);
     }
 
   /* If we are reloading a pseudo-register that was set by the previous
@@ -7759,10 +7738,22 @@ emit_reload_insns (struct insn_chain *chain)
 	  /* Maybe the spill reg contains a copy of reload_out.  */
 	  if (rld[r].out != 0
 	      && (REG_P (rld[r].out)
-#ifdef AUTO_INC_DEC
-		  || ! rld[r].out_reg
-#endif
-		  || REG_P (rld[r].out_reg)))
+		  || (rld[r].out_reg
+		      ? REG_P (rld[r].out_reg)
+		      /* The reload value is an auto-modification of
+			 some kind.  For PRE_INC, POST_INC, PRE_DEC
+			 and POST_DEC, we record an equivalence
+			 between the reload register and the operand
+			 on the optimistic assumption that we can make
+			 the equivalence hold.  reload_as_needed must
+			 then either make it hold or invalidate the
+			 equivalence.
+
+			 PRE_MODIFY and POST_MODIFY addresses are reloaded
+			 somewhat differently, and allowing them here leads
+			 to problems.  */
+		      : (GET_CODE (rld[r].out) != POST_MODIFY
+			 && GET_CODE (rld[r].out) != PRE_MODIFY))))
 	    {
 	      rtx reg;
 	      enum machine_mode mode;
@@ -8642,11 +8633,9 @@ delete_address_reloads_1 (rtx dead_insn, rtx x, rtx current_insn)
    IN is either identical to VALUE, or some cheaper place to reload from.
 
    INC_AMOUNT is the number to increment or decrement by (always positive).
-   This cannot be deduced from VALUE.
+   This cannot be deduced from VALUE.  */
 
-   Return the instruction that stores into RELOADREG.  */
-
-static rtx
+static void
 inc_for_reload (rtx reloadreg, rtx in, rtx value, int inc_amount)
 {
   /* REG or MEM to be copied and incremented.  */
@@ -8658,7 +8647,6 @@ inc_for_reload (rtx reloadreg, rtx in, rtx value, int inc_amount)
   rtx inc;
   rtx add_insn;
   int code;
-  rtx store;
   rtx real_in = in == value ? incloc : in;
 
   /* No hard register is equivalent to this register after
@@ -8707,8 +8695,7 @@ inc_for_reload (rtx reloadreg, rtx in, rtx value, int inc_amount)
 
 	      if (! post)
 		emit_insn (gen_move_insn (reloadreg, incloc));
-
-	      return add_insn;
+	      return;
 	    }
 	}
       delete_insns_since (last);
@@ -8724,7 +8711,7 @@ inc_for_reload (rtx reloadreg, rtx in, rtx value, int inc_amount)
       if (in != reloadreg)
 	emit_insn (gen_move_insn (reloadreg, real_in));
       emit_insn (gen_add2_insn (reloadreg, inc));
-      store = emit_insn (gen_move_insn (incloc, reloadreg));
+      emit_insn (gen_move_insn (incloc, reloadreg));
     }
   else
     {
@@ -8738,14 +8725,12 @@ inc_for_reload (rtx reloadreg, rtx in, rtx value, int inc_amount)
 	 the original value.  */
 
       emit_insn (gen_add2_insn (reloadreg, inc));
-      store = emit_insn (gen_move_insn (incloc, reloadreg));
+      emit_insn (gen_move_insn (incloc, reloadreg));
       if (CONST_INT_P (inc))
 	emit_insn (gen_add2_insn (reloadreg, GEN_INT (-INTVAL (inc))));
       else
 	emit_insn (gen_sub2_insn (reloadreg, inc));
     }
-
-  return store;
 }
 
 #ifdef AUTO_INC_DEC

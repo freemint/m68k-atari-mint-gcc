@@ -2483,8 +2483,6 @@ int gfc_get_sym_tree (const char *, gfc_namespace *, gfc_symtree **, bool);
 int gfc_get_ha_symbol (const char *, gfc_symbol **);
 int gfc_get_ha_sym_tree (const char *, gfc_symtree **);
 
-int gfc_symbols_could_alias (gfc_symbol *, gfc_symbol *);
-
 void gfc_undo_symbols (void);
 void gfc_commit_symbols (void);
 void gfc_commit_symbol (gfc_symbol *);
@@ -2577,11 +2575,14 @@ void gfc_free_case_list (gfc_case *);
 gfc_expr *gfc_get_parentheses (gfc_expr *);
 
 /* openmp.c */
+struct gfc_omp_saved_state { void *ptrs[2]; int ints[1]; };
 void gfc_free_omp_clauses (gfc_omp_clauses *);
 void gfc_resolve_omp_directive (gfc_code *, gfc_namespace *);
 void gfc_resolve_do_iterator (gfc_code *, gfc_symbol *);
 void gfc_resolve_omp_parallel_blocks (gfc_code *, gfc_namespace *);
 void gfc_resolve_omp_do_blocks (gfc_code *, gfc_namespace *);
+void gfc_omp_save_and_clear_state (struct gfc_omp_saved_state *);
+void gfc_omp_restore_state (struct gfc_omp_saved_state *);
 
 /* expr.c */
 void gfc_free_actual_arglist (gfc_actual_arglist *);

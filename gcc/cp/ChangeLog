@@ -1,3 +1,123 @@
+2011-04-28  Release Manager
+
+	* GCC 4.5.3 released.
+
+2011-04-26  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/46824
+	* call.c (add_builtin_candidate)<case INDIRECT_REF>: The type of
+	the argument of the indirection operator should not be dependent.
+	Fix the comment.
+
+2011-04-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/42687
+	* parser.c (cp_parser_primary_expression): Set *idk to
+	CP_ID_KIND_NONE for a parenthesized identifier.
+
+2011-04-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/48594
+	* decl2.c (build_offset_ref_call_from_tree): Fix calling a functor
+	or pointer to (non-member) function.
+
+2011-04-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/46304
+	* typeck.c (cp_build_binary_op): Fold COMPLEX_EXPR.
+
+2011-04-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/45267
+	* decl.c (duplicate_decls): Keep always_inline attribute
+	in sync with DECL_DISREGARD_INLINE_LIMITS.
+
+2011-04-18  Richard Guenther  <rguenther@suse.de>
+
+	Backported from 4.6 branch 
+	2011-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/48035
+	* init.c (build_zero_init_1): Extracted from build_zero_init.
+	Add FIELD_SIZE argument, if non-NULL and field bit_position
+	as not smaller than that, don't add that field's initializer.
+	Pass DECL_SIZE as last argument to build_zero_init_1
+	for DECL_FIELD_IS_BASE fields.
+	(build_zero_init): Use build_zero_init_1.
+
+2011-03-28  Jason Merrill  <jason@redhat.com>
+
+	Revert:
+	PR c++/48289
+	* pt.c (build_non_dependent_expr): Keep dereferences outside the
+	NON_DEPENDENT_EXPR.
+
+2011-03-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/48289
+	* pt.c (build_non_dependent_expr): Keep dereferences outside the
+	NON_DEPENDENT_EXPR.
+
+2011-03-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/47125
+	* pt.c (tsubst) [TYPENAME_TYPE]: Only give errors if tf_error.
+
+2011-03-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/48029
+	* pt.c (iterative_hash_template_arg): Remove special case for
+	ARRAY_TYPE.
+
+2011-03-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44629
+	* pt.c (unify): An unresolved overload is a nondeduced context.
+
+2011-03-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/45651
+	* pt.c (instantiate_decl): Don't clear DECL_INTERFACE_KNOWN on
+	!TREE_PUBLIC decls.
+
+2011-03-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/47289
+	* pt.c (coerce_template_parms): Fix error recovery.
+
+2011-03-08  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/47705
+	* pt.c (convert_nontype_argument): Only call decay_conversion on
+	arrays.
+
+2011-03-08  Dodji Seketeli  <dodji@redhat.com>
+
+	* name-lookup.c (binding_to_template_parms_of_scope_p): Only
+	consider scopes of primary template definitions.  Adjust comments.
+
+2011-03-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/47488
+	* mangle.c (write_template_arg_literal) [STRING_CST]: Sorry.
+
+2011-03-08  Richard Guenther  <rguenther@suse.de>
+
+	PR tree-optimization/47278
+	* decl.c (finish_function): Use decl_replaceable_p.
+
+2011-03-01  Jason Merrill  <jason@redhat.com>
+
+	PR c++/46159
+	* parser.c (cp_parser_primary_expression): Don't warn about a
+	failed tentative parse.
+
+2011-02-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/47904
+	* tree.c (cp_tree_equal) [PARM_DECL]: Don't crash on
+	DECL_ARTIFICIAL parms.
+
 2010-12-16  Release Manager
 
 	* GCC 4.5.2 released.

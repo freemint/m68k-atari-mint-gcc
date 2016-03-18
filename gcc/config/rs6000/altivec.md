@@ -1,5 +1,5 @@
 ;; AltiVec patterns.
-;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+;; Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
 ;; Free Software Foundation, Inc.
 ;; Contributed by Aldy Hernandez (aldy@quesejoda.com)
 
@@ -98,7 +98,7 @@
    (UNSPEC_STVE         203)
    (UNSPEC_SET_VSCR     213)
    (UNSPEC_GET_VRSAVE   214)
-   ;; 215 deleted
+   (UNSPEC_LVX		215)
    (UNSPEC_REDUC_PLUS   217)
    (UNSPEC_VECSH        219)
    (UNSPEC_EXTEVEN_V4SI 220)
@@ -171,6 +171,7 @@
 (define_mode_iterator VM2 [V4SI V8HI V16QI V4SF V2DF V2DI])
 
 (define_mode_attr VI_char [(V4SI "w") (V8HI "h") (V16QI "b")])
+(define_mode_attr VI_scalar [(V4SI "SI") (V8HI "HI") (V16QI "QI")])
 
 ;; Vector move instructions.
 (define_insn "*altivec_mov<mode>"
@@ -1751,17 +1752,19 @@
   "lvxl %0,%y1"
   [(set_attr "type" "vecload")])
 
-(define_insn "altivec_lvx"
-  [(set (match_operand:V4SI 0 "register_operand" "=v")
-	(match_operand:V4SI 1 "memory_operand" "Z"))]
+(define_insn "altivec_lvx_<mode>"
+  [(parallel
+    [(set (match_operand:VM2 0 "register_operand" "=v")
+	  (match_operand:VM2 1 "memory_operand" "Z"))
+     (unspec [(const_int 0)] UNSPEC_LVX)])]
   "TARGET_ALTIVEC"
   "lvx %0,%y1"
   [(set_attr "type" "vecload")])
 
-(define_insn "altivec_stvx"
+(define_insn "altivec_stvx_<mode>"
   [(parallel
-    [(set (match_operand:V4SI 0 "memory_operand" "=Z")
-	  (match_operand:V4SI 1 "register_operand" "v"))
+    [(set (match_operand:VM2 0 "memory_operand" "=Z")
+	  (match_operand:VM2 1 "register_operand" "v"))
      (unspec [(const_int 0)] UNSPEC_STVX)])]
   "TARGET_ALTIVEC"
   "stvx %1,%y0"
@@ -1777,19 +1780,15 @@
   [(set_attr "type" "vecstore")])
 
 (define_insn "altivec_stve<VI_char>x"
-  [(parallel
-    [(set (match_operand:VI 0 "memory_operand" "=Z")
-	  (match_operand:VI 1 "register_operand" "v"))
-     (unspec [(const_int 0)] UNSPEC_STVE)])]
+  [(set (match_operand:<VI_scalar> 0 "memory_operand" "=Z")
+	(unspec:<VI_scalar> [(match_operand:VI 1 "register_operand" "v")] UNSPEC_STVE))]
   "TARGET_ALTIVEC"
   "stve<VI_char>x %1,%y0"
   [(set_attr "type" "vecstore")])
 
 (define_insn "*altivec_stvesfx"
-  [(parallel
-    [(set (match_operand:V4SF 0 "memory_operand" "=Z")
-	  (match_operand:V4SF 1 "register_operand" "v"))
-     (unspec [(const_int 0)] UNSPEC_STVE)])]
+  [(set (match_operand:SF 0 "memory_operand" "=Z")
+	(unspec:SF [(match_operand:V4SF 1 "register_operand" "v")] UNSPEC_STVE))]
   "TARGET_ALTIVEC"
   "stvewx %1,%y0"
   [(set_attr "type" "vecstore")])

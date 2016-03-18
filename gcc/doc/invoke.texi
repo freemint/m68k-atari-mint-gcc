@@ -604,6 +604,11 @@ Objective-C and Objective-C++ Dialects}.
 -m32  -m64 -mlarge-data-threshold=@var{num} @gol
 -msse2avx}
 
+@emph{i386 and x86-64 Windows Options}
+@gccoptlist{-mconsole -mcygwin -mno-cygwin -mdll
+-mnop-fun-dllimport -mthread -municode -mwin32 -mwindows
+-fno-set-stack-executable}
+
 @emph{IA-64 Options}
 @gccoptlist{-mbig-endian  -mlittle-endian  -mgnu-as  -mgnu-ld  -mno-pic @gol
 -mvolatile-asm-stop  -mregister-names  -msdata -mno-sdata @gol
@@ -879,11 +884,6 @@ See RS/6000 and PowerPC Options.
 
 @emph{x86-64 Options}
 See i386 and x86-64 Options.
-
-@emph{i386 and x86-64 Windows Options}
-@gccoptlist{-mconsole -mcygwin -mno-cygwin -mdll
--mnop-fun-dllimport -mthread -municode -mwin32 -mwindows
--fno-set-stack-executable}
 
 @emph{Xstormy16 Options}
 @gccoptlist{-msim}
@@ -2417,7 +2417,7 @@ In this example, G++ will synthesize a default @samp{A& operator =
 @cindex Objective-C and Objective-C++ options, command line
 @cindex options, Objective-C and Objective-C++
 (NOTE: This manual does not describe the Objective-C and Objective-C++
-languages themselves.  See @xref{Standards,,Language Standards
+languages themselves.  @xref{Standards,,Language Standards
 Supported by GCC}, for references.)
 
 This section describes the command-line options that are only meaningful
@@ -6538,7 +6538,7 @@ Enabled by default at @option{-O} and higher.
 @opindex fipa-struct-reorg
 Perform structure reorganization optimization, that change C-like structures
 layout in order to better utilize spatial locality.  This transformation is
-affective for programs containing arrays of structures.  Available in two
+effective for programs containing arrays of structures.  Available in two
 compilation modes: profile-based (enabled with @option{-fprofile-generate})
 or static (which uses built-in heuristics).  Require @option{-fipa-type-escape}
 to provide the safety of this transformation.  It works only in whole program
@@ -9647,10 +9647,10 @@ Compile code for big endian mode.
 
 @item -mmangle-cpu
 @opindex mmangle-cpu
-Prepend the name of the cpu to all public symbol names.
+Prepend the name of the CPU to all public symbol names.
 In multiple-processor systems, there are many ARC variants with different
 instruction and register set characteristics.  This flag prevents code
-compiled for one cpu to be linked with code compiled for another.
+compiled for one CPU to be linked with code compiled for another.
 No facility exists for handling variants that are ``almost identical''.
 This is an all or nothing option.
 
@@ -9830,7 +9830,7 @@ instead of specifying the actual target processor type, and hence
 restricting which instructions can be used, it specifies that GCC should
 tune the performance of the code as if the target were of the type
 specified in this option, but still choosing the instructions that it
-will generate based on the cpu specified by a @option{-mcpu=} option.
+will generate based on the CPU specified by a @option{-mcpu=} option.
 For some ARM implementations better performance can be obtained by using
 this option.
 
@@ -11879,7 +11879,7 @@ Some 387 emulators do not support the @code{sin}, @code{cos} and
 @code{sqrt} instructions for the 387.  Specify this option to avoid
 generating those instructions.  This option is the default on FreeBSD,
 OpenBSD and NetBSD@.  This option is overridden when @option{-march}
-indicates that the target cpu will always have an FPU and so the
+indicates that the target CPU will always have an FPU and so the
 instruction will not need emulation.  As of revision 2.6.1, these
 instructions are not generated unless you also use the
 @option{-funsafe-math-optimizations} switch.
@@ -12338,6 +12338,94 @@ be statically or dynamically linked.
 Generate code for the large model: This model makes no assumptions
 about addresses and sizes of sections.
 @end table
+
+@node i386 and x86-64 Windows Options
+@subsection i386 and x86-64 Windows Options
+@cindex i386 and x86-64 Windows Options
+
+These additional options are available for Windows targets:
+
+@table @gcctabopt
+@item -mconsole
+@opindex mconsole
+This option is available for Cygwin and MinGW targets.  It
+specifies that a console application is to be generated, by
+instructing the linker to set the PE header subsystem type
+required for console applications.
+This is the default behavior for Cygwin and MinGW targets.
+
+@item -mcygwin
+@opindex mcygwin
+This option is available for Cygwin targets.  It specifies that
+the Cygwin internal interface is to be used for predefined
+preprocessor macros, C runtime libraries and related linker
+paths and options.  For Cygwin targets this is the default behavior.
+This option is deprecated and will be removed in a future release.
+
+@item -mno-cygwin
+@opindex mno-cygwin
+This option is available for Cygwin targets.  It specifies that
+the MinGW internal interface is to be used instead of Cygwin's, by
+setting MinGW-related predefined macros and linker paths and default
+library options.
+This option is deprecated and will be removed in a future release.
+
+@item -mdll
+@opindex mdll
+This option is available for Cygwin and MinGW targets.  It
+specifies that a DLL - a dynamic link library - is to be
+generated, enabling the selection of the required runtime
+startup object and entry point.
+
+@item -mnop-fun-dllimport
+@opindex mnop-fun-dllimport
+This option is available for Cygwin and MinGW targets.  It
+specifies that the dllimport attribute should be ignored.
+
+@item -mthread
+@opindex mthread
+This option is available for MinGW targets. It specifies
+that MinGW-specific thread support is to be used.
+
+@item -municode
+@opindex municode
+This option is available for mingw-w64 targets.  It specifies
+that the UNICODE macro is getting pre-defined and that the
+unicode capable runtime startup code is chosen.
+
+@item -mwin32
+@opindex mwin32
+This option is available for Cygwin and MinGW targets.  It
+specifies that the typical Windows pre-defined macros are to
+be set in the pre-processor, but does not influence the choice
+of runtime library/startup code.
+
+@item -mwindows
+@opindex mwindows
+This option is available for Cygwin and MinGW targets.  It
+specifies that a GUI application is to be generated by
+instructing the linker to set the PE header subsystem type
+appropriately.
+
+@item -fno-set-stack-executable
+@opindex fno-set-stack-executable
+This option is available for MinGW targets. It specifies that
+the executable flag for stack used by nested functions isn't
+set. This is necessary for binaries running in kernel mode of
+Windows, as there the user32 API, which is used to set executable
+privileges, isn't available.
+
+@item -mpe-aligned-commons
+@opindex mpe-aligned-commons
+This option is available for Cygwin and MinGW targets.  It
+specifies that the GNU extension to the PE file format that
+permits the correct alignment of COMMON variables should be
+used when generating code.  It will be enabled by default if
+GCC detects that the target assembler found during configuration
+supports the feature.
+@end table
+
+See also under @ref{i386 and x86-64 Options} for standard options.
 
 @node IA-64 Options
 @subsection IA-64 Options
@@ -15554,7 +15642,7 @@ This is because the RX FPU instructions are themselves unsafe.
 @opindex -patch
 Selects the type of RX CPU to be targeted.  Currently three types are
 supported, the generic @var{RX600} and @var{RX200} series hardware and
-the specific @var{RX610} cpu.  The default is @var{RX600}.
+the specific @var{RX610} CPU.  The default is @var{RX600}.
 
 The only difference between @var{RX600} and @var{RX610} is that the
 @var{RX610} does not support the @code{MVTIPL} instruction.
@@ -16372,7 +16460,7 @@ option @option{-mcpu=@var{cpu_type}} would.
 
 The same values for @option{-mcpu=@var{cpu_type}} can be used for
 @option{-mtune=@var{cpu_type}}, but the only useful values are those
-that select a particular cpu implementation.  Those are @samp{cypress},
+that select a particular CPU implementation.  Those are @samp{cypress},
 @samp{supersparc}, @samp{hypersparc}, @samp{f930}, @samp{f934},
 @samp{sparclite86x}, @samp{tsc701}, @samp{ultrasparc},
 @samp{ultrasparc3}, @samp{niagara}, and @samp{niagara2}.
@@ -16811,94 +16899,6 @@ is defined for compatibility with Diab.
 @cindex x86-64 options
 
 These are listed under @xref{i386 and x86-64 Options}.
-
-@node i386 and x86-64 Windows Options
-@subsection i386 and x86-64 Windows Options
-@cindex i386 and x86-64 Windows Options
-
-These additional options are available for Windows targets:
-
-@table @gcctabopt
-@item -mconsole
-@opindex mconsole
-This option is available for Cygwin and MinGW targets.  It
-specifies that a console application is to be generated, by
-instructing the linker to set the PE header subsystem type
-required for console applications.
-This is the default behavior for Cygwin and MinGW targets.
-
-@item -mcygwin
-@opindex mcygwin
-This option is available for Cygwin targets.  It specifies that
-the Cygwin internal interface is to be used for predefined
-preprocessor macros, C runtime libraries and related linker
-paths and options.  For Cygwin targets this is the default behavior.
-This option is deprecated and will be removed in a future release.
-
-@item -mno-cygwin
-@opindex mno-cygwin
-This option is available for Cygwin targets.  It specifies that
-the MinGW internal interface is to be used instead of Cygwin's, by
-setting MinGW-related predefined macros and linker paths and default
-library options.
-This option is deprecated and will be removed in a future release.
-
-@item -mdll
-@opindex mdll
-This option is available for Cygwin and MinGW targets.  It
-specifies that a DLL - a dynamic link library - is to be
-generated, enabling the selection of the required runtime
-startup object and entry point.
-
-@item -mnop-fun-dllimport
-@opindex mnop-fun-dllimport
-This option is available for Cygwin and MinGW targets.  It
-specifies that the dllimport attribute should be ignored.
-
-@item -mthread
-@opindex mthread
-This option is available for MinGW targets. It specifies
-that MinGW-specific thread support is to be used.
-
-@item -municode
-@opindex municode
-This option is available for mingw-w64 targets.  It specifies
-that the UNICODE macro is getting pre-defined and that the
-unicode capable runtime startup code is chosen.
-
-@item -mwin32
-@opindex mwin32
-This option is available for Cygwin and MinGW targets.  It
-specifies that the typical Windows pre-defined macros are to
-be set in the pre-processor, but does not influence the choice
-of runtime library/startup code.
-
-@item -mwindows
-@opindex mwindows
-This option is available for Cygwin and MinGW targets.  It
-specifies that a GUI application is to be generated by
-instructing the linker to set the PE header subsystem type
-appropriately.
-
-@item -fno-set-stack-executable
-@opindex fno-set-stack-executable
-This option is available for MinGW targets. It specifies that
-the executable flag for stack used by nested functions isn't
-set. This is necessary for binaries running in kernel mode of
-Windows, as there the user32 API, which is used to set executable
-privileges, isn't available.
-
-@item -mpe-aligned-commons
-@opindex mpe-aligned-commons
-This option is available for Cygwin and MinGW targets.  It
-specifies that the GNU extension to the PE file format that
-permits the correct alignment of COMMON variables should be
-used when generating code.  It will be enabled by default if
-GCC detects that the target assembler found during configuration
-supports the feature.
-@end table
-
-See also under @ref{i386 and x86-64 Options} for standard options.
 
 @node Xstormy16 Options
 @subsection Xstormy16 Options

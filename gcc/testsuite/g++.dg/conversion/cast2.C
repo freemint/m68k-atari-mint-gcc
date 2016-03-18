@@ -8,4 +8,3 @@ struct A
 };
 
 int i = *A();// { dg-error "no match" }
-

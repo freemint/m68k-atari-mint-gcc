@@ -1,3 +1,100 @@
+2011-04-28  Release Manager
+
+	* GCC 4.5.3 released.
+
+2011-03-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/22_locale/num_put/put/char/14220.cc: Don't xfail on
+	sparc*-sun-solaris2.10 && lp64.
+
+2011-03-14  Andrey Zholos  <aaz@althenia.net>
+
+	PR libstdc++/48114
+	* include/bits/random.tcc (binomial_distribution<>::operator()):
+	Fix thinko in computation, __param.p() is a double.
+
+2011-02-25  Johannes Singler  <singler@kit.edu>
+
+        PR libstdc++/47433
+        * include/parallel/losertree.h
+        (_LoserTree<>::__delete_min_insert):
+        Do not qualify swap with std:: for value type,
+        but include a using directive instead.
+        (_LoserTreeUnguarded<>::__delete_min_insert): Likewise.
+        * include/parallel/balanced_quicksort.h (__qsb_divide):
+        Use std::iter_swap instead of std::swap.
+        (__qsb_local_sort_with_helping): Likewise.
+        * include/parallel/partition.h (__parallel_partition):
+        Likewise. (__parallel_nth_element): Likewise.
+
+2011-02-25  Johannes Singler  <singler@kit.edu>
+
+        * include/parallel/numeric (inner_product, partial_sum):
+        Qualify subsequent call with __gnu_parallel instead of
+        _GLIBCXX_STD_P to reenable parallel execution without ambiguity.
+        * include/parallel/algobase.h (equal): Likewise.
+        * include/parallel/algo.h (find_first_of, search_n, merge,
+        nth_element, partial_sort, max_element, min_element): Likewise.
+        * testsuite/25_algorithms/headers/algorithm/
+        parallel_algorithm_mixed1.cc (main): Add respective test cases.
+        * testsuite/25_algorithms/headers/algorithm/
+        parallel_algorithm_mixed2.cc (main): Likewise.
+        * testsuite/26_numerics/headers/numeric/
+        parallel_numeric_mixed1.cc (main): Likewise.
+        * testsuite/26_numerics/headers/numeric/
+        parallel_numeric_mixed2.cc (main): Likewise.
+
+2011-02-13  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/faq.xml: Adjust link to bug database.
+	Remove old item on broken header files.
+
+2011-02-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/47709
+	* include/ext/algorithm (is_heap): In C++0x mode import from
+	namespace std.
+	* testsuite/ext/is_heap/47709.cc: New.
+
+2011-02-08  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/gnu/gpl-2.0.xml: Remove.
+	* doc/Makefile.am: Update.
+	* doc/Makefile.in: Regenerate.
+
+2011-02-06  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/manual/debug.xml: Use GDB instead of gdb.
+	Adjust link to GDB manual.
+
+2011-02-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/46914
+	* include/bits/atomic_0.h (_ATOMIC_STORE_, _ATOMIC_MODIFY_,
+	_ATOMIC_CMPEXCHNG_): Rename __v -> __w, and __m -> __n, to
+	avoid name conflicts.
+
+2011-01-30  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/manual/codecvt.xml: Fix link to The Austin Common
+	Standards Revision Group.
+	* doc/xml/manual/locale.xml: Ditto.
+	* doc/xml/manual/messages.xml: Ditto.
+	* doc/xml/manual/using_exceptions.xml: Ditto.
+
+2011-01-19  Graham Reed  <greed@pobox.com>
+
+	PR libstdc++/47354
+	* src/bitmap_allocator.cc (free_list::_M_get): Lock mutex.
+
+2010-12-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-12-10  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/lib/libstdc++.exp (v3-build_support): Delete
+	libtestc++.a before creation.
+
 2010-12-16  Release Manager
 
 	* GCC 4.5.2 released.

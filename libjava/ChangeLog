@@ -1,3 +1,33 @@
+2011-04-28  Release Manager
+
+	* GCC 4.5.3 released.
+
+2011-04-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libjava.jni/jni.exp (gcj_jni_get_cxxflags_invocation):
+	Add $libiconv to cxxflags for alpha*-dec-osf*.
+
+2011-01-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2011-01-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libjava.jni/jni.exp (gcj_jni_get_cxxflags_invocation):
+	Add -shared-libgcc to cxxflags for *-*-solaris*.
+	Remove -lsocket.
+
+2010-12-13  Andrew John Hughes  <ahughes@redhat.com>
+
+	PR libgcj/46774
+	* libjava/java/security/VMAccessController.java:
+	(DEFAULT_CONTEXT): Create ProtectionDomain with
+	four argument constructor (arguments are the same
+	as those implied by the two argument constructor).
+	(getContext()): Create ProtectionDomain instances
+	with four argument constructor using a null Principal
+	array (as before) but including the classloader, which
+	was always null before.
+
 2010-12-16  Release Manager
 
 	* GCC 4.5.2 released.

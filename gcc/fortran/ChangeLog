@@ -1,3 +1,102 @@
+2011-04-28  Release Manager
+
+	* GCC 4.5.3 released.
+
+2011-04-05  Duncan Sands  <baldrick@free.fr>
+
+	* f95-lang.c (build_builtin_fntypes): Swap frexp and scalbn parameter
+	types.
+
+2011-03-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/47348
+	* trans-array.c (get_array_ctor_all_strlen): Move up in file.
+	(get_array_ctor_var_strlen): Add block dummy and add call to
+	get_array_ctor_all_strlen instead of giving up on substrings.
+	Call gcc_unreachable for default case.
+	(get_array_ctor_strlen): Add extra argument to in call to
+	get_array_ctor_var_strlen.
+
+2011-01-27  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2011-02-26  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47886
+	* openmp.c (gfc_resolve_omp_directive): Resolve if()
+	condition of OpenMP's task.
+
+2011-02-19  Tobias Burnus
+
+	PR fortran/47775
+	* trans-expr.c (arrayfunc_assign_needs_temporary): Use
+	esym to check whether the specific procedure returns an
+	allocatable or pointer.
+
+2011-02-14  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47569
+	* interface.c (compare_parameter): Avoid ICE with
+	character components.
+
+2011-01-25  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2011-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/47331
+	* gfortran.h (struct gfc_omp_saved_state): New type.
+	(gfc_omp_save_and_clear_state, gfc_omp_restore_state): New prototypes.
+	* resolve.c (resolve_global_procedure): Call it around gfc_resolve
+	call.
+	* openmp.c (gfc_omp_save_and_clear_state, gfc_omp_restore_state): New
+	functions.
+
+2011-01-25  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47448
+	* interface.c (gfc_check_operator_interface): Fix
+	defined-assignment check.
+
+2011-01-21  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47394
+	* error.c (gfc_error_now, gfc_fatal_error, gfc_error_check):
+	Use defined instead of magic number exit status codes.
+	* scanner.c (include_line, gfc_new_file): Ditto.
+	* gfortranspec.c (lang_specific_driver): Ditto.
+
+2011-01-16  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2010-12-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/46874
+	* trans-openmp.c (gfc_trans_omp_array_reduction): Handle allocatable
+	dummy variables.
+
+2011-01-16  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/45777
+	* symbol.c (gfc_symbols_could_alias):  Strip gfc_ prefix,
+	make static and move in front of its only caller, to ...
+	* trans-array.c (symbols_could_alias): ... here.
+	Pass information about pointer and target status as
+	arguments.  Allocatable arrays don't alias anything
+	unless they have the POINTER attribute.
+	(gfc_could_be_alias):  Keep track of pointer and target
+	status when following references.  Also check if typespecs
+	of components match those of other components or symbols.
+	* gfortran.h:  Remove prototype for gfc_symbols_could_alias.
+
+2011-01-02  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/45338
+	* resolve.c (resolve_operator):  Mark function for user-defined
+	operator as referenced.
+
 2010-12-16  Release Manager
 
 	* GCC 4.5.2 released.

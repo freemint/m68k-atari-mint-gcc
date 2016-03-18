@@ -163,11 +163,13 @@ typedef struct vn_ssa_aux
   unsigned needs_insertion : 1;
 } *vn_ssa_aux_t;
 
+typedef enum { VN_NOWALK, VN_WALK, VN_WALKREWRITE } vn_lookup_kind;
+
 /* Return the value numbering info for an SSA_NAME.  */
 extern vn_ssa_aux_t VN_INFO (tree);
 extern vn_ssa_aux_t VN_INFO_GET (tree);
 tree vn_get_expr_for (tree);
-bool run_scc_vn (bool);
+bool run_scc_vn (bool, vn_lookup_kind);
 void free_scc_vn (void);
 tree vn_nary_op_lookup (tree, vn_nary_op_t *);
 tree vn_nary_op_lookup_stmt (gimple, vn_nary_op_t *);
@@ -187,8 +189,8 @@ bool ao_ref_init_from_vn_reference (ao_ref *, alias_set_type, tree,
 				    VEC (vn_reference_op_s, heap) *);
 tree vn_reference_lookup_pieces (tree, alias_set_type, tree,
 				 VEC (vn_reference_op_s, heap) *,
-				 vn_reference_t *, bool);
-tree vn_reference_lookup (tree, tree, bool, vn_reference_t *);
+				 vn_reference_t *, vn_lookup_kind);
+tree vn_reference_lookup (tree, tree, vn_lookup_kind, vn_reference_t *);
 vn_reference_t vn_reference_insert (tree, tree, tree);
 vn_reference_t vn_reference_insert_pieces (tree, alias_set_type, tree,
 					   VEC (vn_reference_op_s, heap) *,

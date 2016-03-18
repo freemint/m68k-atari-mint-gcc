@@ -1,5 +1,6 @@
 /* Instruction scheduling pass.  Selective scheduler and pipeliner.
-   Copyright (C) 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011
+   Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1138,6 +1139,9 @@ init_regs_for_mode (enum machine_mode mode)
             /* Can't use regs which aren't saved by
                the prologue.  */
             || !TEST_HARD_REG_BIT (sel_hrd.regs_ever_used, cur_reg + i)
+	    /* Can't use regs with non-null REG_BASE_VALUE, because adjusting
+	       it affects aliasing globally and invalidates all AV sets.  */
+	    || get_reg_base_value (cur_reg + i)
 #ifdef LEAF_REGISTERS
             /* We can't use a non-leaf register if we're in a
                leaf function.  */
@@ -2167,10 +2171,8 @@ moveup_expr (expr_t expr, insn_t through_insn, bool inside_insn_group,
               || ! in_current_region_p (fallthru_bb))
             return MOVEUP_EXPR_NULL;
 
-          /* And it should be mutually exclusive with through_insn, or
-             be an unconditional jump.  */
-          if (! any_uncondjump_p (insn)
-              && ! sched_insns_conditions_mutex_p (insn, through_insn)
+          /* And it should be mutually exclusive with through_insn.  */
+          if (! sched_insns_conditions_mutex_p (insn, through_insn)
 	      && ! DEBUG_INSN_P (through_insn))
             return MOVEUP_EXPR_NULL;
         }
@@ -3735,7 +3737,7 @@ fill_vec_av_set (av_set_t av, blist_t bnds, fence_t fence,
     {
       expr_t expr = VEC_index (expr_t, vec_av_set, n);
       insn_t insn = EXPR_INSN_RTX (expr);
-      char target_available;
+      signed char target_available;
       bool is_orig_reg_p = true;
       int need_cycles, new_prio;
 
@@ -4403,7 +4405,8 @@ find_best_expr (av_set_t *av_vliw_ptr, blist_t bnds, fence_t fence,
     {
       can_issue_more = invoke_aftermath_hooks (fence, EXPR_INSN_RTX (best),
                                                can_issue_more);
-      if (can_issue_more == 0)
+      if (targetm.sched.variable_issue
+	  && can_issue_more == 0)
         *pneed_stall = 1;
     }
 
@@ -5514,7 +5517,7 @@ fill_insns (fence_t fence, int seqno, ilist_t **scheduled_insns_tailpp)
       blist_t *bnds_tailp1, *bndsp;
       expr_t expr_vliw;
       int need_stall;
-      int was_stall = 0, scheduled_insns = 0, stall_iterations = 0;
+      int was_stall = 0, scheduled_insns = 0;
       int max_insns = pipelining_p ? issue_rate : 2 * issue_rate;
       int max_stall = pipelining_p ? 1 : 3;
       bool last_insn_was_debug = false;
@@ -5533,16 +5536,15 @@ fill_insns (fence_t fence, int seqno, ilist_t **scheduled_insns_tailpp)
       do
         {
           expr_vliw = find_best_expr (&av_vliw, bnds, fence, &need_stall);
-          if (!expr_vliw && need_stall)
+          if (! expr_vliw && need_stall)
             {
               /* All expressions required a stall.  Do not recompute av sets
                  as we'll get the same answer (modulo the insns between
                  the fence and its boundary, which will not be available for
-                 pipelining).  */
-              gcc_assert (! expr_vliw && stall_iterations < 2);
-              was_stall++;
-	      /* If we are going to stall for too long, break to recompute av
+                 pipelining).
+		 If we are going to stall for too long, break to recompute av
 		 sets and bring more insns for pipelining.  */
+              was_stall++;
 	      if (need_stall <= 3)
 		stall_for_cycles (fence, need_stall);
 	      else
@@ -6475,7 +6477,7 @@ code_motion_path_driver (insn_t insn, av_set_t orig_ops, ilist_t path,
 
   /* Filter the orig_ops set.  */
   if (AV_SET_VALID_P (insn))
-    av_set_intersect (&orig_ops, AV_SET (insn));
+    av_set_code_motion_filter (&orig_ops, AV_SET (insn));
 
   /* If no more original ops, return immediately.  */
   if (!orig_ops)
@@ -6717,6 +6719,8 @@ init_seqno_1 (basic_block bb, sbitmap visited_bbs, bitmap blocks_to_reschedule)
 
 	  init_seqno_1 (succ, visited_bbs, blocks_to_reschedule);
 	}
+      else if (blocks_to_reschedule)
+        bitmap_set_bit (forced_ebb_heads, succ->index);
     }
 
   for (insn = BB_END (bb); insn != note; insn = PREV_INSN (insn))
@@ -6971,6 +6975,7 @@ reset_sched_cycles_in_current_ebb (void)
   int last_clock = 0;
   int haifa_last_clock = -1;
   int haifa_clock = 0;
+  int issued_insns = 0;
   insn_t insn;
 
   if (targetm.sched.md_init)
@@ -6989,7 +6994,7 @@ reset_sched_cycles_in_current_ebb (void)
     {
       int cost, haifa_cost;
       int sort_p;
-      bool asm_p, real_insn, after_stall;
+      bool asm_p, real_insn, after_stall, all_issued;
       int clock;
 
       if (!INSN_P (insn))
@@ -7025,7 +7030,9 @@ reset_sched_cycles_in_current_ebb (void)
           haifa_cost = cost;
           after_stall = 1;
         }
-
+      all_issued = issued_insns == issue_rate;
+      if (haifa_cost == 0 && all_issued)
+	haifa_cost = 1;
       if (haifa_cost > 0)
 	{
 	  int i = 0;
@@ -7033,6 +7040,7 @@ reset_sched_cycles_in_current_ebb (void)
 	  while (haifa_cost--)
 	    {
 	      advance_state (curr_state);
+	      issued_insns = 0;
               i++;
 
 	      if (sched_verbose >= 2)
@@ -7049,9 +7057,22 @@ reset_sched_cycles_in_current_ebb (void)
                   && haifa_cost > 0
                   && estimate_insn_cost (insn, curr_state) == 0)
                 break;
-	    }
+
+              /* When the data dependency stall is longer than the DFA stall,
+                 and when we have issued exactly issue_rate insns and stalled,
+                 it could be that after this longer stall the insn will again
+                 become unavailable  to the DFA restrictions.  Looks strange
+                 but happens e.g. on x86-64.  So recheck DFA on the last
+                 iteration.  */
+              if ((after_stall || all_issued)
+                  && real_insn
+                  && haifa_cost == 0)
+                haifa_cost = estimate_insn_cost (insn, curr_state);
+            }
 
 	  haifa_clock += i;
+          if (sched_verbose >= 2)
+            sel_print ("haifa clock: %d\n", haifa_clock);
 	}
       else
 	gcc_assert (haifa_cost == 0);
@@ -7065,21 +7086,27 @@ reset_sched_cycles_in_current_ebb (void)
 					    &sort_p))
 	  {
 	    advance_state (curr_state);
+	    issued_insns = 0;
 	    haifa_clock++;
 	    if (sched_verbose >= 2)
               {
                 sel_print ("advance_state (dfa_new_cycle)\n");
                 debug_state (curr_state);
+		sel_print ("haifa clock: %d\n", haifa_clock + 1);
               }
           }
 
       if (real_insn)
 	{
 	  cost = state_transition (curr_state, insn);
+	  issued_insns++;
 
           if (sched_verbose >= 2)
-            debug_state (curr_state);
-
+	    {
+	      sel_print ("scheduled insn %d, clock %d\n", INSN_UID (insn),
+			 haifa_clock + 1);
+              debug_state (curr_state);
+	    }
 	  gcc_assert (cost < 0);
 	}
 
@@ -7492,21 +7519,23 @@ sel_sched_region_1 (void)
             {
               basic_block bb = EBB_FIRST_BB (i);
 
-              if (sel_bb_empty_p (bb))
-                {
-                  bitmap_clear_bit (blocks_to_reschedule, bb->index);
-                  continue;
-                }
-
               if (bitmap_bit_p (blocks_to_reschedule, bb->index))
                 {
+                  if (! bb_ends_ebb_p (bb))
+                    bitmap_set_bit (blocks_to_reschedule, bb_next_bb (bb)->index);
+                  if (sel_bb_empty_p (bb))
+                    {
+                      bitmap_clear_bit (blocks_to_reschedule, bb->index);
+                      continue;
+                    }
                   clear_outdated_rtx_info (bb);
                   if (sel_insn_is_speculation_check (BB_END (bb))
                       && JUMP_P (BB_END (bb)))
                     bitmap_set_bit (blocks_to_reschedule,
                                     BRANCH_EDGE (bb)->dest->index);
                 }
-              else if (INSN_SCHED_TIMES (sel_bb_head (bb)) <= 0)
+              else if (! sel_bb_empty_p (bb)
+                       && INSN_SCHED_TIMES (sel_bb_head (bb)) <= 0)
                 bitmap_set_bit (blocks_to_reschedule, bb->index);
             }
 

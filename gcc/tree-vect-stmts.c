@@ -1014,8 +1014,10 @@ vect_get_vec_def_for_operand (tree op, gimple stmt, tree *scalar_def)
         /* Get the def from the vectorized stmt.  */
         def_stmt_info = vinfo_for_stmt (def_stmt);
         vec_stmt = STMT_VINFO_VEC_STMT (def_stmt_info);
-	gcc_assert (vec_stmt && gimple_code (vec_stmt) == GIMPLE_PHI);
-        vec_oprnd = PHI_RESULT (vec_stmt);
+	if (gimple_code (vec_stmt) == GIMPLE_PHI)
+	  vec_oprnd = PHI_RESULT (vec_stmt);
+	else
+	  vec_oprnd = gimple_get_lhs (vec_stmt);
         return vec_oprnd;
       }
 
@@ -2236,7 +2238,6 @@ vectorizable_operation (gimple stmt, gimple_stmt_iterator *gsi,
   int op_type;
   optab optab;
   int icode;
-  enum machine_mode optab_op2_mode;
   tree def;
   gimple def_stmt;
   enum vect_def_type dt[2] = {vect_unknown_def_type, vect_unknown_def_type};
@@ -2249,8 +2250,6 @@ vectorizable_operation (gimple stmt, gimple_stmt_iterator *gsi,
   int j, i;
   VEC(tree,heap) *vec_oprnds0 = NULL, *vec_oprnds1 = NULL;
   tree vop0, vop1;
-  unsigned int k;
-  bool scalar_shift_arg = false;
   bb_vec_info bb_vinfo = STMT_VINFO_BB_VINFO (stmt_info);
   int vf;
 

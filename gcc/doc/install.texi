@@ -44,9 +44,9 @@
 @settitle Installing GCC: GNU Free Documentation License
 @end ifset
 
-@c Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-@c 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 
-@c 2010 Free Software Foundation, Inc.
+@c Copyright (C) 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997,
+@c 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+@c 2009, 2010, 2011 Free Software Foundation, Inc.
 @c *** Converted to texinfo by Dean Wakerley, dean@wakerley.com
 
 @c IMPORTANT: whenever you modify this file, run `install.texi2html' to
@@ -72,8 +72,8 @@
 @c Part 2 Summary Description and Copyright
 @copying
 Copyright @copyright{} 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997,
-1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
-2008 Free Software Foundation, Inc.
+1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
+2009, 2010, 2011 Free Software Foundation, Inc.
 @sp 1
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.2 or
@@ -2784,10 +2784,6 @@ HP-UX:
 @end itemize
 
 @item
-Motorola 68HC11/68HC12---@uref{http://www.gnu-m68hc11.org,,GNU
-Development Tools for the Motorola 68HC11/68HC12}.
-
-@item
 @uref{http://www.sco.com/skunkware/devtools/index.html#gcc,,SCO
 OpenServer/Unixware}.
 
@@ -3311,22 +3307,7 @@ More specific information to @samp{hppa*-hp-hpux*} targets follows.
 @heading @anchor{hppa-hp-hpux10}hppa*-hp-hpux10
 
 For hpux10.20, we @emph{highly} recommend you pick up the latest sed patch
-@code{PHCO_19798} from HP@.  HP has two sites which provide patches free of
-charge:
-
-@itemize @bullet
-@item
-@html
-<a href="http://us.itrc.hp.com/service/home/home.do">US, Canada, Asia-Pacific, and
-Latin-America</a>
-@end html
-@ifnothtml
-@uref{http://us.itrc.hp.com/service/home/home.do,,} US, Canada, Asia-Pacific,
-and Latin-America.
-@end ifnothtml
-@item
-@uref{http://europe.itrc.hp.com/service/home/home.do,,} Europe.
-@end itemize
+@code{PHCO_19798} from HP@.
 
 The C++ ABI has changed incompatibly in GCC 4.0.  COMDAT subspaces are
 used for one-only code and data.  This resolves many of the previous

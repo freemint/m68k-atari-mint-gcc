@@ -1,3 +1,31 @@
+2011-04-28  Release Manager
+
+	* GCC 4.5.3 released.
+
+2011-02-27  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2011-02-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/47886
+	* testsuite/libgomp.fortran/task3.f90: New test.
+	
+
+2011-01-16  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2010-12-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/46874
+	* libgomp.fortran/allocatable6.f90: New test.
+
+2010-12-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-12-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.tgt (mips-sgi-irix6*): Add -lpthread to XLDFLAGS.
+
 2010-12-16  Release Manager
 
 	* GCC 4.5.2 released.

@@ -482,15 +482,20 @@ try_forward_edges (int mode, basic_block b)
 		  /* When not optimizing, ensure that edges or forwarder
 		     blocks with different locus are not optimized out.  */
 		  int locus = single_succ_edge (target)->goto_locus;
+		  rtx last ;
 
 		  if (locus && goto_locus && !locator_eq (locus, goto_locus))
 		    counter = n_basic_blocks;
 		  else if (locus)
 		    goto_locus = locus;
 
-		  if (INSN_P (BB_END (target)))
+		  last = BB_END (target);
+		  if (DEBUG_INSN_P (last))
+		    last = prev_nondebug_insn (last);
+
+		  if (last && INSN_P (last))
 		    {
-		      locus = INSN_LOCATOR (BB_END (target));
+		      locus = INSN_LOCATOR (last);
 
 		      if (locus && goto_locus
 			  && !locator_eq (locus, goto_locus))
@@ -1923,8 +1928,7 @@ try_optimize_cfg (int mode)
 			}
 		    }
 		  delete_basic_block (b);
-		  if (!(mode & CLEANUP_CFGLAYOUT))
-		    changed = true;
+		  changed = true;
 		  /* Avoid trying to remove ENTRY_BLOCK_PTR.  */
 		  b = (c == ENTRY_BLOCK_PTR ? c->next_bb : c);
 		  continue;
