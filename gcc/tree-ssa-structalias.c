@@ -3349,9 +3349,18 @@ get_constraint_for_1 (tree t, VEC (ce_s, heap) **results, bool address_p,
 
 	      /* If we are not taking the address then make sure to process
 		 all subvariables we might access.  */
+	      if (address_p)
+		return;
+
 	      cs = *VEC_last (ce_s, *results);
-	      if (address_p
-		  || cs.type != SCALAR)
+	      if (cs.type == DEREF)
+		{
+		  /* For dereferences this means we have to defer it
+		     to solving time.  */
+		  VEC_last (ce_s, *results)->offset = UNKNOWN_OFFSET;
+		  return;
+		}
+	      if (cs.type != SCALAR)
 		return;
 
 	      vi = get_varinfo (cs.var);
@@ -4483,15 +4492,6 @@ find_func_aliases (gimple origt)
 	  && (!in_ipa_mode
 	      || DECL_EXTERNAL (lhsop) || TREE_PUBLIC (lhsop)))
 	make_escape_constraint (rhsop);
-      /* If this is a conversion of a non-restrict pointer to a
-	 restrict pointer track it with a new heapvar.  */
-      else if (gimple_assign_cast_p (t)
-	       && POINTER_TYPE_P (TREE_TYPE (rhsop))
-	       && POINTER_TYPE_P (TREE_TYPE (lhsop))
-	       && !TYPE_RESTRICT (TREE_TYPE (rhsop))
-	       && TYPE_RESTRICT (TREE_TYPE (lhsop)))
-	make_constraint_from_restrict (get_vi_for_tree (lhsop),
-				       "CAST_RESTRICT");
     }
   /* Handle escapes through return.  */
   else if (gimple_code (t) == GIMPLE_RETURN

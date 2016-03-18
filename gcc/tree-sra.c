@@ -1020,6 +1020,31 @@ disqualify_ops_if_throwing_stmt (gimple stmt, tree lhs, tree rhs)
   return false;
 }
 
+/* Return true iff type of EXP is not sufficiently aligned.  */
+
+static bool
+tree_non_mode_aligned_mem_p (tree exp)
+{
+  enum machine_mode mode = TYPE_MODE (TREE_TYPE (exp));
+  unsigned int align;
+
+  if (TREE_CODE (exp) == VIEW_CONVERT_EXPR)
+    exp = TREE_OPERAND (exp, 0);
+
+  if (TREE_CODE (exp) == SSA_NAME
+      || TREE_CODE (exp) == MEM_REF
+      || mode == BLKmode
+      || is_gimple_min_invariant (exp)
+      || !STRICT_ALIGNMENT)
+    return false;
+
+  align = get_object_alignment (exp, BIGGEST_ALIGNMENT);
+  if (GET_MODE_ALIGNMENT (mode) > align)
+    return true;
+
+  return false;
+}
+
 /* Scan expressions occuring in STMT, create access structures for all accesses
    to candidates for scalarization and remove those candidates which occur in
    statements or expressions that prevent them from being split apart.  Return
@@ -1044,7 +1069,10 @@ build_accesses_from_assign (gimple stmt)
   lacc = build_access_from_expr_1 (lhs, stmt, true);
 
   if (lacc)
-    lacc->grp_assignment_write = 1;
+    {
+      lacc->grp_assignment_write = 1;
+      lacc->grp_unscalarizable_region |= tree_non_mode_aligned_mem_p (rhs);
+    }
 
   if (racc)
     {
@@ -1052,6 +1080,7 @@ build_accesses_from_assign (gimple stmt)
       if (should_scalarize_away_bitmap && !gimple_has_volatile_ops (stmt)
 	  && !is_gimple_reg_type (racc->type))
 	bitmap_set_bit (should_scalarize_away_bitmap, DECL_UID (racc->base));
+      racc->grp_unscalarizable_region |= tree_non_mode_aligned_mem_p (lhs);
     }
 
   if (lacc && racc
@@ -1419,12 +1448,12 @@ build_ref_for_model (location_t loc, tree base, HOST_WIDE_INT offset,
 {
   if (TREE_CODE (model->expr) == COMPONENT_REF)
     {
-      tree t, exp_type;
-      offset -= int_bit_position (TREE_OPERAND (model->expr, 1));
+      tree t, exp_type, fld = TREE_OPERAND (model->expr, 1);
+      offset -= int_bit_position (fld);
       exp_type = TREE_TYPE (TREE_OPERAND (model->expr, 0));
       t = build_ref_for_offset (loc, base, offset, exp_type, gsi, insert_after);
-      return fold_build3_loc (loc, COMPONENT_REF, model->type, t,
-			      TREE_OPERAND (model->expr, 1), NULL_TREE);
+      return fold_build3_loc (loc, COMPONENT_REF, TREE_TYPE (fld), t, fld,
+			      NULL_TREE);
     }
   else
     return build_ref_for_offset (loc, base, offset, model->type,
@@ -1963,13 +1992,25 @@ analyze_access_subtree (struct access *root, bool allow_replacements,
 	  || ((root->grp_scalar_read || root->grp_assignment_read)
 	      && (root->grp_scalar_write || root->grp_assignment_write))))
     {
+      bool new_integer_type;
+      if (TREE_CODE (root->type) == ENUMERAL_TYPE)
+	{
+	  tree rt = root->type;
+	  root->type = build_nonstandard_integer_type (TYPE_PRECISION (rt),
+						       TYPE_UNSIGNED (rt));
+	  new_integer_type = true;
+	}
+      else
+	new_integer_type = false;
+
       if (dump_file && (dump_flags & TDF_DETAILS))
 	{
 	  fprintf (dump_file, "Marking ");
 	  print_generic_expr (dump_file, root->base, 0);
-	  fprintf (dump_file, " offset: %u, size: %u: ",
+	  fprintf (dump_file, " offset: %u, size: %u ",
 		   (unsigned) root->offset, (unsigned) root->size);
-	  fprintf (dump_file, " to be replaced.\n");
+	  fprintf (dump_file, " to be replaced%s.\n",
+		   new_integer_type ? " with an integer": "");
 	}
 
       root->grp_to_be_replaced = 1;
@@ -2813,7 +2854,8 @@ sra_modify_assign (gimple *stmt, gimple_stmt_iterator *gsi)
      there to do the copying and then load the scalar replacements of the LHS.
      This is what the first branch does.  */
 
-  if (gimple_has_volatile_ops (*stmt)
+  if (modify_this_stmt
+      || gimple_has_volatile_ops (*stmt)
       || contains_vce_or_bfcref_p (rhs)
       || contains_vce_or_bfcref_p (lhs))
     {
@@ -3181,7 +3223,8 @@ ptr_parm_has_direct_uses (tree parm)
 	      && TREE_OPERAND (lhs, 0) == name
 	      && integer_zerop (TREE_OPERAND (lhs, 1))
 	      && types_compatible_p (TREE_TYPE (lhs),
-				     TREE_TYPE (TREE_TYPE (name))))
+				     TREE_TYPE (TREE_TYPE (name)))
+	      && !TREE_THIS_VOLATILE (lhs))
 	    uses_ok++;
 	}
       if (gimple_assign_single_p (stmt))
@@ -3193,7 +3236,8 @@ ptr_parm_has_direct_uses (tree parm)
 	      && TREE_OPERAND (rhs, 0) == name
 	      && integer_zerop (TREE_OPERAND (rhs, 1))
 	      && types_compatible_p (TREE_TYPE (rhs),
-				     TREE_TYPE (TREE_TYPE (name))))
+				     TREE_TYPE (TREE_TYPE (name)))
+	      && !TREE_THIS_VOLATILE (rhs))
 	    uses_ok++;
 	}
       else if (is_gimple_call (stmt))
@@ -3208,7 +3252,8 @@ ptr_parm_has_direct_uses (tree parm)
 		  && TREE_OPERAND (arg, 0) == name
 		  && integer_zerop (TREE_OPERAND (arg, 1))
 		  && types_compatible_p (TREE_TYPE (arg),
-					 TREE_TYPE (TREE_TYPE (name))))
+					 TREE_TYPE (TREE_TYPE (name)))
+		  && !TREE_THIS_VOLATILE (arg))
 		uses_ok++;
 	    }
 	}
@@ -3557,6 +3602,9 @@ access_precludes_ipa_sra_p (struct access *access)
   if (access->write
       && (is_gimple_call (access->stmt)
 	  || gimple_code (access->stmt) == GIMPLE_ASM))
+    return true;
+
+  if (tree_non_mode_aligned_mem_p (access->expr))
     return true;
 
   return false;

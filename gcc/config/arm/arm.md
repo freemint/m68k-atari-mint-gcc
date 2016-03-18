@@ -1178,27 +1178,24 @@
 
 ; ??? Check Thumb-2 split length
 (define_insn_and_split "*arm_subsi3_insn"
-  [(set (match_operand:SI           0 "s_register_operand" "=r,r,rk,r,r")
-	(minus:SI (match_operand:SI 1 "reg_or_int_operand" "rI,r,k,?n,r")
-		  (match_operand:SI 2 "reg_or_int_operand" "r,rI,r, r,?n")))]
+  [(set (match_operand:SI           0 "s_register_operand" "=r,r,rk,r")
+	(minus:SI (match_operand:SI 1 "reg_or_int_operand" "rI,r,k,?n")
+		  (match_operand:SI 2 "reg_or_int_operand" "r,rI,r, r")))]
   "TARGET_32BIT"
   "@
    rsb%?\\t%0, %2, %1
    sub%?\\t%0, %1, %2
    sub%?\\t%0, %1, %2
-   #
    #"
-  "&& ((GET_CODE (operands[1]) == CONST_INT
-       	&& !const_ok_for_arm (INTVAL (operands[1])))
-       || (GET_CODE (operands[2]) == CONST_INT
-	   && !const_ok_for_arm (INTVAL (operands[2]))))"
+  "&& (GET_CODE (operands[1]) == CONST_INT
+       && !const_ok_for_arm (INTVAL (operands[1])))"
   [(clobber (const_int 0))]
   "
   arm_split_constant (MINUS, SImode, curr_insn,
                       INTVAL (operands[1]), operands[0], operands[2], 0);
   DONE;
   "
-  [(set_attr "length" "4,4,4,16,16")
+  [(set_attr "length" "4,4,4,16")
    (set_attr "predicable" "yes")]
 )
 
@@ -8499,18 +8496,22 @@
 ;; Patterns to allow combination of arithmetic, cond code and shifts
 
 (define_insn "*arith_shiftsi"
-  [(set (match_operand:SI 0 "s_register_operand" "=r,r")
+  [(set (match_operand:SI 0 "s_register_operand" "=r,r,r,r")
         (match_operator:SI 1 "shiftable_operator"
           [(match_operator:SI 3 "shift_operator"
-             [(match_operand:SI 4 "s_register_operand" "r,r")
-              (match_operand:SI 5 "shift_amount_operand" "M,r")])
-           (match_operand:SI 2 "s_register_operand" "rk,rk")]))]
+             [(match_operand:SI 4 "s_register_operand" "r,r,r,r")
+              (match_operand:SI 5 "shift_amount_operand" "M,M,M,r")])
+           (match_operand:SI 2 "s_register_operand" "rk,rk,r,rk")]))]
   "TARGET_32BIT"
   "%i1%?\\t%0, %2, %4%S3"
   [(set_attr "predicable" "yes")
    (set_attr "shift" "4")
-   (set_attr "arch" "32,a")
-   ;; We have to make sure to disable the second alternative if
+   (set_attr "arch" "a,t2,t2,a")
+   ;; Thumb2 doesn't allow the stack pointer to be used for 
+   ;; operand1 for all operations other than add and sub. In this case 
+   ;; the minus operation is a candidate for an rsub and hence needs
+   ;; to be disabled.
+   ;; We have to make sure to disable the fourth alternative if
    ;; the shift_operator is MULT, since otherwise the insn will
    ;; also match a multiply_accumulate pattern and validate_change
    ;; will allow a replacement of the constant with a register
@@ -8518,9 +8519,13 @@
    (set_attr_alternative "insn_enabled"
 			 [(const_string "yes")
 			  (if_then_else
+			   (match_operand:SI 1 "add_operator" "")
+			   (const_string "yes") (const_string "no"))
+			  (const_string "yes")
+			  (if_then_else
 			   (match_operand:SI 3 "mult_operator" "")
 			   (const_string "no") (const_string "yes"))])
-   (set_attr "type" "alu_shift,alu_shift_reg")])
+   (set_attr "type" "alu_shift,alu_shift,alu_shift,alu_shift_reg")])
 
 (define_split
   [(set (match_operand:SI 0 "s_register_operand" "")

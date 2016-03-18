@@ -206,7 +206,7 @@ flush_i4 (GFC_INTEGER_4 *unit)
       us = find_unit (*unit);
       if (us != NULL)
 	{
-	  sflush (us->s);
+	  flush_sync (us->s);
 	  unlock_unit (us);
 	}
     }
@@ -229,7 +229,7 @@ flush_i8 (GFC_INTEGER_8 *unit)
       us = find_unit (*unit);
       if (us != NULL)
 	{
-	  sflush (us->s);
+	  flush_sync (us->s);
 	  unlock_unit (us);
 	}
     }

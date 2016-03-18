@@ -10647,7 +10647,15 @@ size_of_die (dw_die_ref die)
 	  size += size_of_sleb128 (AT_int (a));
 	  break;
 	case dw_val_class_unsigned_const:
-	  size += constant_size (AT_unsigned (a));
+	  {
+	    int csize = constant_size (AT_unsigned (a));
+	    if (dwarf_version == 3
+		&& a->dw_attr == DW_AT_data_member_location
+		&& csize >= 4)
+	      size += size_of_uleb128 (AT_unsigned (a));
+	    else
+	      size += csize;
+	  }
 	  break;
 	case dw_val_class_const_double:
 	  size += 2 * HOST_BITS_PER_WIDE_INT / HOST_BITS_PER_CHAR;
@@ -10917,8 +10925,16 @@ value_format (dw_attr_ref a)
 	case 2:
 	  return DW_FORM_data2;
 	case 4:
+	  /* In DWARF3 DW_AT_data_member_location with
+	     DW_FORM_data4 or DW_FORM_data8 is a loclistptr, not
+	     constant, so we need to use DW_FORM_udata if we need
+	     a large constant.  */
+	  if (dwarf_version == 3 && a->dw_attr == DW_AT_data_member_location)
+	    return DW_FORM_udata;
 	  return DW_FORM_data4;
 	case 8:
+	  if (dwarf_version == 3 && a->dw_attr == DW_AT_data_member_location)
+	    return DW_FORM_udata;
 	  return DW_FORM_data8;
 	default:
 	  gcc_unreachable ();
@@ -11225,8 +11241,15 @@ output_die (dw_die_ref die)
 	  break;
 
 	case dw_val_class_unsigned_const:
-	  dw2_asm_output_data (constant_size (AT_unsigned (a)),
-			       AT_unsigned (a), "%s", name);
+	  {
+	    int csize = constant_size (AT_unsigned (a));
+	    if (dwarf_version == 3
+		&& a->dw_attr == DW_AT_data_member_location
+		&& csize >= 4)
+	      dw2_asm_output_data_uleb128 (AT_unsigned (a), "%s", name);
+	    else
+	      dw2_asm_output_data (csize, AT_unsigned (a), "%s", name);
+	  }
 	  break;
 
 	case dw_val_class_const_double:
@@ -14585,7 +14608,8 @@ loc_descriptor (rtx rtl, enum machine_mode mode,
 	 up an entire register.  For now, just assume that it is
 	 legitimate to make the Dwarf info refer to the whole register which
 	 contains the given subreg.  */
-      loc_result = loc_descriptor (SUBREG_REG (rtl), mode, initialized);
+      loc_result = loc_descriptor (SUBREG_REG (rtl),
+				   GET_MODE (SUBREG_REG (rtl)), initialized);
       break;
 
     case REG:
@@ -17118,7 +17142,7 @@ native_encode_initializer (tree init, unsigned char *array, int size)
 		{
 		  int count = tree_low_cst (TREE_OPERAND (index, 1), 0)
 			      - tree_low_cst (TREE_OPERAND (index, 0), 0);
-		  while (count > 0)
+		  while (count-- > 0)
 		    {
 		      if (val)
 			memcpy (array + curpos, array + pos, fieldsize);
@@ -22036,7 +22060,8 @@ dwarf2out_source_line (unsigned int line, const char *filename,
 	      fprintf (asm_out_file, " is_stmt %d", is_stmt ? 1 : 0);
 	      last_is_stmt = is_stmt;
 	    }
-	  if (SUPPORTS_DISCRIMINATOR && discriminator != 0)
+	  if (SUPPORTS_DISCRIMINATOR && discriminator != 0
+	      && (dwarf_version >= 4 || !dwarf_strict))
 	    fprintf (asm_out_file, " discriminator %d", discriminator);
 	  fputc ('\n', asm_out_file);
 

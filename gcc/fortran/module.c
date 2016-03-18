@@ -3597,6 +3597,8 @@ mio_symbol (gfc_symbol *sym)
 
   mio_symbol_attribute (&sym->attr);
   mio_typespec (&sym->ts);
+  if (sym->ts.type == BT_CLASS)
+    sym->attr.class_ok = 1;
 
   if (iomode == IO_OUTPUT)
     mio_namespace_ref (&sym->formal_ns);
@@ -4809,6 +4811,9 @@ static void
 write_dt_extensions (gfc_symtree *st)
 {
   if (!gfc_check_symbol_access (st->n.sym))
+    return;
+  if (!(st->n.sym->ns && st->n.sym->ns->proc_name
+	&& st->n.sym->ns->proc_name->attr.flavor == FL_MODULE))
     return;
 
   mio_lparen ();

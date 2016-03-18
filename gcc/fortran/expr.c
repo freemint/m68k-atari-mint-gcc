@@ -396,6 +396,28 @@ gfc_copy_expr (gfc_expr *p)
 }
 
 
+void
+gfc_clear_shape (mpz_t *shape, int rank)
+{
+  int i;
+
+  for (i = 0; i < rank; i++)
+    mpz_clear (shape[i]);
+}
+
+
+void
+gfc_free_shape (mpz_t **shape, int rank)
+{
+  if (*shape == NULL)
+    return;
+
+  gfc_clear_shape (*shape, rank);
+  gfc_free (*shape);
+  *shape = NULL;
+}
+
+
 /* Workhorse function for gfc_free_expr() that frees everything
    beneath an expression node, but not the node itself.  This is
    useful when we want to simplify a node and replace it with
@@ -404,8 +426,6 @@ gfc_copy_expr (gfc_expr *p)
 static void
 free_expr0 (gfc_expr *e)
 {
-  int n;
-
   switch (e->expr_type)
     {
     case EXPR_CONSTANT:
@@ -474,13 +494,7 @@ free_expr0 (gfc_expr *e)
     }
 
   /* Free a shape array.  */
-  if (e->shape != NULL)
-    {
-      for (n = 0; n < e->rank; n++)
-	mpz_clear (e->shape[n]);
-
-      gfc_free (e->shape);
-    }
+  gfc_free_shape (&e->shape, e->rank);
 
   gfc_free_ref_list (e->ref);
 
@@ -1840,6 +1854,9 @@ gfc_simplify_expr (gfc_expr *p, int type)
 	  if (p->ref && p->ref->u.ss.end)
 	    gfc_extract_int (p->ref->u.ss.end, &end);
 
+	  if (end < 0)
+	    end = 0;
+
 	  s = gfc_get_wide_string (end - start + 2);
 	  memcpy (s, p->value.character.string + start,
 		  (end - start) * sizeof (gfc_char_t));
@@ -2466,6 +2483,9 @@ check_init_expr (gfc_expr *e)
 		       e->symtree->n.sym->name, &e->where);
 	    m = MATCH_ERROR;
 	  }
+
+	if (m == MATCH_ERROR)
+	  return FAILURE;
 
 	/* Try to scalarize an elemental intrinsic function that has an
 	   array argument.  */
@@ -4059,8 +4079,9 @@ gfc_expr_check_typed (gfc_expr* e, gfc_namespace* ns, bool strict)
   return error_found ? FAILURE : SUCCESS;
 }
 
-/* Walk an expression tree and replace all symbols with a corresponding symbol
-   in the formal_ns of "sym". Needed for copying interfaces in PROCEDURE
+
+/* Walk an expression tree and replace all dummy symbols by the corresponding
+   symbol in the formal_ns of "sym". Needed for copying interfaces in PROCEDURE
    statements. The boolean return value is required by gfc_traverse_expr.  */
 
 static bool
@@ -4069,14 +4090,12 @@ replace_symbol (gfc_expr *expr, gfc_symbol *sym, int *i ATTRIBUTE_UNUSED)
   if ((expr->expr_type == EXPR_VARIABLE 
        || (expr->expr_type == EXPR_FUNCTION
 	   && !gfc_is_intrinsic (expr->symtree->n.sym, 0, expr->where)))
-      && expr->symtree->n.sym->ns == sym->ts.interface->formal_ns)
+      && expr->symtree->n.sym->ns == sym->ts.interface->formal_ns
+      && expr->symtree->n.sym->attr.dummy)
     {
-      gfc_symtree *stree;
-      gfc_namespace *ns = sym->formal_ns;
-      /* Don't use gfc_get_symtree as we prefer to fail badly if we don't find
-	 the symtree rather than create a new one (and probably fail later).  */
-      stree = gfc_find_symtree (ns ? ns->sym_root : gfc_current_ns->sym_root,
-		      		expr->symtree->n.sym->name);
+      gfc_symtree *root = sym->formal_ns ? sym->formal_ns->sym_root
+					 : gfc_current_ns->sym_root;
+      gfc_symtree *stree = gfc_find_symtree (root, expr->symtree->n.sym->name);
       gcc_assert (stree);
       stree->n.sym->attr = expr->symtree->n.sym->attr;
       expr->symtree = stree;
@@ -4089,6 +4108,7 @@ gfc_expr_replace_symbols (gfc_expr *expr, gfc_symbol *dest)
 {
   gfc_traverse_expr (expr, dest, &replace_symbol, 0);
 }
+
 
 /* The following is analogous to 'replace_symbol', and needed for copying
    interfaces for procedure pointer components. The argument 'sym' must formally
@@ -4139,7 +4159,7 @@ gfc_is_coindexed (gfc_expr *e)
 }
 
 
-bool
+int
 gfc_get_corank (gfc_expr *e)
 {
   int corank;
@@ -4389,8 +4409,8 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
       sym = e->value.function.esym ? e->value.function.esym : e->symtree->n.sym;
     }
 
-  if (!pointer && e->expr_type == EXPR_FUNCTION
-      && sym->result->attr.pointer)
+  attr = gfc_expr_attr (e);
+  if (!pointer && e->expr_type == EXPR_FUNCTION && attr.pointer)
     {
       if (!(gfc_option.allow_std & GFC_STD_F2008))
 	{
@@ -4427,7 +4447,6 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
 
   /* Find out whether the expr is a pointer; this also means following
      component references to the last one.  */
-  attr = gfc_expr_attr (e);
   is_pointer = (attr.pointer || attr.proc_pointer);
   if (pointer && !is_pointer)
     {
@@ -4459,7 +4478,7 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
 		       sym->name, context, &e->where);
 	  return FAILURE;
 	}
-      if (!pointer && !is_pointer)
+      if (!pointer && !is_pointer && !sym->attr.pointer)
 	{
 	  if (context)
 	    gfc_error ("Dummy argument '%s' with INTENT(IN) in variable"

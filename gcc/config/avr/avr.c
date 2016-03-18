@@ -78,7 +78,7 @@ static rtx avr_function_value (const_tree, const_tree, bool);
 static void avr_insert_attributes (tree, tree *);
 static void avr_asm_init_sections (void);
 static unsigned int avr_section_type_flags (tree, const char *, int);
-
+static void avr_encode_section_info (tree, rtx, int);
 static void avr_reorg (void);
 static void avr_asm_out_ctor (rtx, int);
 static void avr_asm_out_dtor (rtx, int);
@@ -176,6 +176,8 @@ static const struct default_options avr_option_optimization_table[] =
 #define TARGET_INSERT_ATTRIBUTES avr_insert_attributes
 #undef TARGET_SECTION_TYPE_FLAGS
 #define TARGET_SECTION_TYPE_FLAGS avr_section_type_flags
+#undef TARGET_ENCODE_SECTION_INFO
+#define TARGET_ENCODE_SECTION_INFO avr_encode_section_info
 #undef TARGET_REGISTER_MOVE_COST
 #define TARGET_REGISTER_MOVE_COST avr_register_move_cost
 #undef TARGET_MEMORY_MOVE_COST
@@ -533,6 +535,17 @@ sequent_regs_live (void)
 
   for (reg = 0; reg < 18; ++reg)
     {
+      if (fixed_regs[reg])
+        {
+          /* Don't recognize sequences that contain global register
+             variables.  */
+      
+          if (live_seq != 0)
+            return 0;
+          else
+            continue;
+        }
+      
       if (!call_used_regs[reg])
 	{
 	  if (df_regs_ever_live_p (reg))
@@ -1133,8 +1146,7 @@ avr_legitimate_address_p (enum machine_mode mode, rtx x, bool strict)
 		 true_regnum (XEXP (x, 0)));
       debug_rtx (x);
     }
-  if (!strict && GET_CODE (x) == SUBREG)
-	x = SUBREG_REG (x);
+  
   if (REG_P (x) && (strict ? REG_OK_FOR_BASE_STRICT_P (x)
                     : REG_OK_FOR_BASE_NOSTRICT_P (x)))
     r = POINTER_REGS;
@@ -1476,9 +1488,8 @@ notice_update_cc (rtx body ATTRIBUTE_UNUSED, rtx insn)
 	    {
 	      rtx x = XEXP (src, 1);
 
-	      if (GET_CODE (x) == CONST_INT
-		  && INTVAL (x) > 0
-		  && INTVAL (x) != 6)
+	      if (CONST_INT_P (x)
+		  && IN_RANGE (INTVAL (x), 1, 5))
 		{
 		  cc_status.value1 = SET_DEST (set);
 		  cc_status.flags |= CC_OVERFLOW_UNUSABLE;
@@ -3107,8 +3118,11 @@ out_shift_with_cnt (const char *templ, rtx insn, rtx operands[],
     }
   else if (register_operand (operands[2], QImode))
     {
-      if (reg_unused_after (insn, operands[2]))
-	op[3] = op[2];
+      if (reg_unused_after (insn, operands[2])
+          && !reg_overlap_mentioned_p (operands[0], operands[2]))
+        {
+          op[3] = op[2];
+        }
       else
 	{
 	  op[3] = tmp_reg_rtx;
@@ -4395,7 +4409,9 @@ avr_rotate_bytes (rtx operands[])
     if (mode == DImode)
       move_mode = QImode;
     /* Make scratch smaller if needed.  */
-    if (GET_MODE (scratch) == HImode && move_mode == QImode)
+    if (SCRATCH != GET_CODE (scratch)
+        && HImode == GET_MODE (scratch)
+        && QImode == move_mode)
       scratch = simplify_gen_subreg (move_mode, scratch, HImode, 0); 
 
     move_size = GET_MODE_SIZE (move_mode);
@@ -4490,6 +4506,8 @@ avr_rotate_bytes (rtx operands[])
 		   Add move to put dst of blocked move into scratch.
 		   When this move occurs, it will break chain deadlock.
 		   The scratch register is substituted for real move.  */
+
+		gcc_assert (SCRATCH != GET_CODE (scratch));
 
 		move[size].src = move[blocked].dst;
 		move[size].dst =  scratch;
@@ -4961,12 +4979,7 @@ avr_handle_progmem_attribute (tree *node, tree name,
 	}
       else if (TREE_STATIC (*node) || DECL_EXTERNAL (*node))
 	{
-	  if (DECL_INITIAL (*node) == NULL_TREE && !DECL_EXTERNAL (*node))
-	    {
-	      warning (0, "only initialized variables can be placed into "
-		       "program memory area");
-	      *no_add_attrs = true;
-	    }
+          *no_add_attrs = false;
 	}
       else
 	{
@@ -5052,7 +5065,19 @@ avr_insert_attributes (tree node, tree *attributes)
       && (TREE_STATIC (node) || DECL_EXTERNAL (node))
       && avr_progmem_p (node, *attributes))
     {
-      if (TREE_READONLY (node)) 
+      tree node0 = node;
+
+      /* For C++, we have to peel arrays in order to get correct
+         determination of readonlyness.  */
+      
+      do
+        node0 = TREE_TYPE (node0);
+      while (TREE_CODE (node0) == ARRAY_TYPE);
+
+      if (error_mark_node == node0)
+        return;
+      
+      if (TYPE_READONLY (node0))
         {
           static const char dsec[] = ".progmem.data";
 
@@ -5107,8 +5132,35 @@ avr_section_type_flags (tree decl, const char *name, int reloc)
 		 ".noinit section");
     }
 
+  if (0 == strncmp (name, ".progmem.data", strlen (".progmem.data")))
+    flags &= ~SECTION_WRITE;
+  
   return flags;
 }
+
+
+/* Implement `TARGET_ENCODE_SECTION_INFO'.  */
+
+static void
+avr_encode_section_info (tree decl, rtx rtl, int new_decl_p)
+{
+  /* In avr_handle_progmem_attribute, DECL_INITIAL is not yet
+     readily available, see PR34734.  So we postpone the warning
+     about uninitialized data in program memory section until here.  */
+   
+  if (new_decl_p
+      && decl && DECL_P (decl)
+      && NULL_TREE == DECL_INITIAL (decl)
+      && avr_progmem_p (decl, DECL_ATTRIBUTES (decl)))
+    {
+      warning (OPT_Wuninitialized,
+               "uninitialized variable %q+D put into "
+               "program memory area", decl);
+    }
+
+  default_encode_section_info (decl, rtl, new_decl_p);
+}
+
 
 /* Outputs some appropriate text to go at the start of an assembler
    file.  */
@@ -6048,26 +6100,30 @@ jump_over_one_insn_p (rtx insn, rtx dest)
 int
 avr_hard_regno_mode_ok (int regno, enum machine_mode mode)
 {
-  /* Disallow QImode in stack pointer regs.  */
-  if ((regno == REG_SP || regno == (REG_SP + 1)) && mode == QImode)
-    return 0;
-
-  /* The only thing that can go into registers r28:r29 is a Pmode.  */
-  if (regno == REG_Y && mode == Pmode)
+  /* NOTE: 8-bit values must not be disallowed for R28 or R29.
+        Disallowing QI et al. in these regs might lead to code like
+            (set (subreg:QI (reg:HI 28) n) ...)
+        which will result in wrong code because reload does not
+        handle SUBREGs of hard regsisters like this.
+        This could be fixed in reload.  However, it appears
+        that fixing reload is not wanted by reload people.  */
+  
+  /* Any GENERAL_REGS register can hold 8-bit values.  */
+  
+  if (GET_MODE_SIZE (mode) == 1)
     return 1;
 
-  /* Otherwise disallow all regno/mode combinations that span r28:r29.  */
-  if (regno <= (REG_Y + 1) && (regno + GET_MODE_SIZE (mode)) >= (REG_Y + 1))
+  /* FIXME: Ideally, the following test is not needed.
+        However, it turned out that it can reduce the number
+        of spill fails.  AVR and it's poor endowment with
+        address registers is extreme stress test for reload.  */
+  
+  if (GET_MODE_SIZE (mode) >= 4
+      && regno >= REG_X)
     return 0;
 
-  if (mode == QImode)
-    return 1;
-
-  /* Modes larger than QImode occupy consecutive registers.  */
-  if (regno + GET_MODE_SIZE (mode) > FIRST_PSEUDO_REGISTER)
-    return 0;
-
-  /* All modes larger than QImode should start in an even register.  */
+  /* All modes larger than 8 bits should start in an even register.  */
+  
   return !(regno & 1);
 }
 
@@ -6194,13 +6250,23 @@ avr_hard_regno_scratch_ok (unsigned int regno)
       && !df_regs_ever_live_p (regno))
     return false;
 
+  /* Don't allow hard registers that might be part of the frame pointer.
+     Some places in the compiler just test for [HARD_]FRAME_POINTER_REGNUM
+     and don't care for a frame pointer that spans more than one register.  */
+
+  if ((!reload_completed || frame_pointer_needed)
+      && (regno == REG_Y || regno == REG_Y + 1))
+    {
+      return false;
+    }
+
   return true;
 }
 
 /* Return nonzero if register OLD_REG can be renamed to register NEW_REG.  */
 
 int
-avr_hard_regno_rename_ok (unsigned int old_reg ATTRIBUTE_UNUSED,
+avr_hard_regno_rename_ok (unsigned int old_reg,
 			  unsigned int new_reg)
 {
   /* Interrupt functions can only use registers that have already been
@@ -6211,6 +6277,17 @@ avr_hard_regno_rename_ok (unsigned int old_reg ATTRIBUTE_UNUSED,
       && !df_regs_ever_live_p (new_reg))
     return 0;
 
+  /* Don't allow hard registers that might be part of the frame pointer.
+     Some places in the compiler just test for [HARD_]FRAME_POINTER_REGNUM
+     and don't care for a frame pointer that spans more than one register.  */
+
+  if ((!reload_completed || frame_pointer_needed)
+      && (old_reg == REG_Y || old_reg == REG_Y + 1
+          || new_reg == REG_Y || new_reg == REG_Y + 1))
+    {
+      return 0;
+    }
+  
   return 1;
 }
 

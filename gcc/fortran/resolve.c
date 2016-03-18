@@ -950,6 +950,9 @@ resolve_contained_functions (gfc_namespace *ns)
 }
 
 
+static gfc_try resolve_fl_derived0 (gfc_symbol *sym);
+
+
 /* Resolve all of the elements of a structure constructor and make sure that
    the types are correct. The 'init' flag indicates that the given
    constructor is an initializer.  */
@@ -965,7 +968,7 @@ resolve_structure_cons (gfc_expr *expr, int init)
   t = SUCCESS;
 
   if (expr->ts.type == BT_DERIVED)
-    resolve_symbol (expr->ts.u.derived);
+    resolve_fl_derived0 (expr->ts.u.derived);
 
   cons = gfc_constructor_first (expr->value.constructor);
   /* A constructor may have references if it is the result of substituting a
@@ -4552,10 +4555,11 @@ resolve_array_ref (gfc_array_ref *ar)
       /* Fill in the upper bound, which may be lower than the
 	 specified one for something like a(2:10:5), which is
 	 identical to a(2:7:5).  Only relevant for strides not equal
-	 to one.  */
+	 to one.  Don't try a division by zero.  */
       if (ar->dimen_type[i] == DIMEN_RANGE
 	  && ar->stride[i] != NULL && ar->stride[i]->expr_type == EXPR_CONSTANT
-	  && mpz_cmp_si (ar->stride[i]->value.integer, 1L) != 0)
+	  && mpz_cmp_si (ar->stride[i]->value.integer, 1L) != 0
+	  && mpz_cmp_si (ar->stride[i]->value.integer, 0L) != 0)
 	{
 	  mpz_t size, end;
 
@@ -5180,13 +5184,7 @@ check_host_association (gfc_expr *e)
 	      && sym->attr.contained)
 	{
 	  /* Clear the shape, since it might not be valid.  */
-	  if (e->shape != NULL)
-	    {
-	      for (n = 0; n < e->rank; n++)
-		mpz_clear (e->shape[n]);
-
-	      gfc_free (e->shape);
-	    }
+	  gfc_free_shape (&e->shape, e->rank);
 
 	  /* Give the expression the right symtree!  */
 	  gfc_find_sym_tree (e->symtree->name, NULL, 1, &st);
@@ -6530,10 +6528,13 @@ gfc_expr_to_initialize (gfc_expr *e)
 	for (i = 0; i < ref->u.ar.dimen; i++)
 	  ref->u.ar.start[i] = ref->u.ar.end[i] = ref->u.ar.stride[i] = NULL;
 
-	result->rank = ref->u.ar.dimen;
 	break;
       }
 
+  gfc_free_shape (&result->shape, result->rank);
+
+  /* Recalculate rank, shape, etc.  */
+  gfc_resolve_expr (result);
   return result;
 }
 
@@ -6831,7 +6832,7 @@ resolve_allocate_expr (gfc_expr *e, gfc_code *code)
       gfc_find_derived_vtab (ts.u.derived);
     }
 
-  if (pointer || (dimension == 0 && codimension == 0))
+  if (dimension == 0 && codimension == 0)
     goto success;
 
   /* Make sure the last reference node is an array specifiction.  */
@@ -8321,11 +8322,8 @@ ignore:
   result = SUCCESS;
 
 over:
-  for (i--; i >= 0; i--)
-    {
-      mpz_clear (shape[i]);
-      mpz_clear (shape2[i]);
-    }
+  gfc_clear_shape (shape, i);
+  gfc_clear_shape (shape2, i);
   return result;
 }
 
@@ -11242,9 +11240,14 @@ static gfc_try
 resolve_typebound_procedures (gfc_symbol* derived)
 {
   int op;
+  gfc_symbol* super_type;
 
   if (!derived->f2k_derived || !derived->f2k_derived->tb_sym_root)
     return SUCCESS;
+  
+  super_type = gfc_get_derived_super_type (derived);
+  if (super_type)
+    resolve_typebound_procedures (super_type);
 
   resolve_bindings_derived = derived;
   resolve_bindings_result = SUCCESS;
@@ -11356,28 +11359,17 @@ ensure_not_abstract (gfc_symbol* sub, gfc_symbol* ancestor)
 }
 
 
-/* Resolve the components of a derived type.  */
+/* Resolve the components of a derived type. This does not have to wait until
+   resolution stage, but can be done as soon as the dt declaration has been
+   parsed.  */
 
 static gfc_try
-resolve_fl_derived (gfc_symbol *sym)
+resolve_fl_derived0 (gfc_symbol *sym)
 {
   gfc_symbol* super_type;
   gfc_component *c;
 
   super_type = gfc_get_derived_super_type (sym);
-  
-  if (sym->attr.is_class && sym->ts.u.derived == NULL)
-    {
-      /* Fix up incomplete CLASS symbols.  */
-      gfc_component *data = gfc_find_component (sym, "_data", true, true);
-      gfc_component *vptr = gfc_find_component (sym, "_vptr", true, true);
-      if (vptr->ts.u.derived == NULL)
-	{
-	  gfc_symbol *vtab = gfc_find_derived_vtab (data->ts.u.derived);
-	  gcc_assert (vtab);
-	  vptr->ts.u.derived = vtab->ts.u.derived;
-	}
-    }
 
   /* F2008, C432. */
   if (super_type && sym->attr.coarray_comp && !super_type->attr.coarray_comp)
@@ -11389,7 +11381,7 @@ resolve_fl_derived (gfc_symbol *sym)
     }
 
   /* Ensure the extended type gets resolved before we do.  */
-  if (super_type && resolve_fl_derived (super_type) == FAILURE)
+  if (super_type && resolve_fl_derived0 (super_type) == FAILURE)
     return FAILURE;
 
   /* An ABSTRACT type must be extensible.  */
@@ -11742,14 +11734,6 @@ resolve_fl_derived (gfc_symbol *sym)
 	return FAILURE;
     }
 
-  /* Resolve the type-bound procedures.  */
-  if (resolve_typebound_procedures (sym) == FAILURE)
-    return FAILURE;
-
-  /* Resolve the finalizer procedures.  */
-  if (gfc_resolve_finalizers (sym) == FAILURE)
-    return FAILURE;
-
   /* If this is a non-ABSTRACT type extending an ABSTRACT one, ensure that
      all DEFERRED bindings are overridden.  */
   if (super_type && super_type->attr.abstract && !sym->attr.abstract
@@ -11760,6 +11744,42 @@ resolve_fl_derived (gfc_symbol *sym)
   /* Add derived type to the derived type list.  */
   add_dt_to_dt_list (sym);
 
+  return SUCCESS;
+}
+
+
+/* The following procedure does the full resolution of a derived type,
+   including resolution of all type-bound procedures (if present). In contrast
+   to 'resolve_fl_derived0' this can only be done after the module has been
+   parsed completely.  */
+
+static gfc_try
+resolve_fl_derived (gfc_symbol *sym)
+{
+  if (sym->attr.is_class && sym->ts.u.derived == NULL)
+    {
+      /* Fix up incomplete CLASS symbols.  */
+      gfc_component *data = gfc_find_component (sym, "_data", true, true);
+      gfc_component *vptr = gfc_find_component (sym, "_vptr", true, true);
+      if (vptr->ts.u.derived == NULL)
+	{
+	  gfc_symbol *vtab = gfc_find_derived_vtab (data->ts.u.derived);
+	  gcc_assert (vtab);
+	  vptr->ts.u.derived = vtab->ts.u.derived;
+	}
+    }
+  
+  if (resolve_fl_derived0 (sym) == FAILURE)
+    return FAILURE;
+  
+  /* Resolve the type-bound procedures.  */
+  if (resolve_typebound_procedures (sym) == FAILURE)
+    return FAILURE;
+
+  /* Resolve the finalizer procedures.  */
+  if (gfc_resolve_finalizers (sym) == FAILURE)
+    return FAILURE;
+  
   return SUCCESS;
 }
 
@@ -12076,6 +12096,8 @@ resolve_symbol (gfc_symbol *sym)
 	    }
 	}
     }
+  else if (mp_flag && sym->attr.flavor == FL_PROCEDURE && sym->attr.function)
+    gfc_resolve_array_spec (sym->result->as, false);
 
   /* Assumed size arrays and assumed shape arrays must be dummy
      arguments.  Array-spec's of implied-shape should have been resolved to
@@ -12612,8 +12634,8 @@ check_data_variable (gfc_data_variable *var, locus *where)
 	      mpz_set_ui (size, 0);
 	    }
 
-	  t = gfc_assign_data_value_range (var->expr, values.vnode->expr,
-					   offset, range);
+	  t = gfc_assign_data_value (var->expr, values.vnode->expr,
+				     offset, &range);
 
 	  mpz_add (offset, offset, range);
 	  mpz_clear (range);
@@ -12628,7 +12650,8 @@ check_data_variable (gfc_data_variable *var, locus *where)
 	  mpz_sub_ui (values.left, values.left, 1);
 	  mpz_sub_ui (size, size, 1);
 
-	  t = gfc_assign_data_value (var->expr, values.vnode->expr, offset);
+	  t = gfc_assign_data_value (var->expr, values.vnode->expr,
+				     offset, NULL);
 	  if (t == FAILURE)
 	    break;
 

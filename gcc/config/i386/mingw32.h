@@ -124,7 +124,7 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
-  "%{ffast-math|funsafe-math-optimizations:crtfastmath.o%s} \
+  "%{Ofast|ffast-math|funsafe-math-optimizations:crtfastmath.o%s} \
   crtend.o%s"
 
 /* Override startfile prefix defaults.  */
@@ -238,4 +238,10 @@ __enable_execute_stack (void *addr)					\
 
 /* We should find a way to not have to update this manually.  */
 #define LIBGCJ_SONAME "libgcj" /*LIBGCC_EH_EXTN*/ "-12.dll"
+
+/* For 32-bit Windows we need valid frame-pointer for function using
+   setjmp.  */
+#undef SUBTARGET_FRAME_POINTER_REQUIRED
+#define SUBTARGET_FRAME_POINTER_REQUIRED \
+  (!TARGET_64BIT && cfun->calls_setjmp)
 

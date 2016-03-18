@@ -1,3 +1,210 @@
+2011-10-26  Release Manager
+
+	* GCC 4.6.2 released.
+
+2011-10-17  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/47023
+	* primary.c (match_kind_param): Detect ISO_C_BINDING kinds.
+	(get_kind): Pass on 'is_iso_c' flag.
+	(match_integer_constant,match_real_constant,match_logical_constant):
+	Set 'ts.is_c_interop'.
+
+2011-10-15  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/50570
+	* expr.c (gfc_check_vardef_context): Don't throw an error on
+	non-pointer assignments involving an intent(in) pointer dummy.
+
+2011-10-15  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50718
+	* gfortran.dg/pointer_check_11.f90: New.
+	* gfortran.dg/pointer_check_12.f90: New.
+
+2011-10-12  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/50659
+	* expr.c (replace_symbol): Only do replacement if the symbol is a dummy.
+
+2011-10-11  Tobias Burnus  <burnus@net-b.de>
+	    Janus Weil  <janus@gcc.gnu.org>
+
+	* invoke.texi (-fwhole-file): Update wording since -fwhole-file
+	is now enabled by default.
+
+2011-10-11  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50273
+	* trans-common.c (translate_common): Fix -Walign-commons check.
+
+2011-10-07  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/50585
+	* interface.c (get_expr_storage_size): Check if 'length' component is
+	associated.
+
+	PR fortran/50625
+	* class.c (gfc_build_class_symbol): Fix whitespace.
+	* module.c (mio_symbol): Set 'class_ok' attribute.
+	* trans-decl.c (gfc_get_symbol_decl): Make sure the backend_decl has
+	been built for class symbols.
+
+2011-10-04  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/48706
+	* module.c (write_dt_extensions): Do not write extended types which
+	are local to a subroutine.
+
+2011-08-26  Mikael Morin  <mikael.morin@gcc.gnu.org>
+
+	PR fortran/50050
+	* expr.c (gfc_free_shape): Do nothing if shape is NULL.
+	(free_expr0): Remove redundant NULL shape check.
+	* resolve.c (check_host_association): Ditto.
+	* trans-expr.c (gfc_trans_subarray_assign): Assert that shape is
+	non-NULL.
+	* trans-io.c (transfer_array_component): Ditto.
+
+2011-08-25  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50163
+	* check_init_expr (check_init_expr): Return when an error occured.
+
+2011-08-22  Mikael Morin  <mikael.morin@gcc.gnu.org>
+
+	PR fortran/50050
+	* gfortran.h (gfc_clear_shape, gfc_free_shape): New prototypes.
+	* expr.c (gfc_clear_shape, gfc_free_shape): New functions.
+	(free_expr0): Re-use gfc_free_shape.
+	* trans-expr.c (gfc_trans_subarray_assign): Ditto.
+	* trans-io.c (transfer_array_component): Ditto.
+	* resolve.c (check_host_association): Ditto.
+	(gfc_expr_to_initialize): Don't force the rank value and free the shape
+	after updating the expression. Recalculate shape and rank.
+	(resolve_where_shape): Re-use gfc_clear_shape.
+	* array.c (gfc_array_ref_shape): Ditto.
+
+2011-08-22  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/50130
+	* resolve.c (resolve_array_ref):  Don't calculate upper bound
+	if the stride is zero.
+
+2011-08-20  Mikael Morin  <mikael.morin@sfr.fr>
+
+	PR fortran/50129
+	* parse.c (parse_where): Undo changes after emitting an error.
+
+2011-08-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/49792
+	* trans-expr.c (gfc_trans_assignment_1): Set OMPWS_SCALARIZER_WS
+	bit in ompws_flags only if loop.temp_ss is NULL, and clear it if
+	lhs needs reallocation.
+	* trans-openmp.c (gfc_trans_omp_workshare): Don't return early if
+	code is NULL, emit a barrier if workshare emitted no code at all
+	and NOWAIT clause isn't present.
+
+2011-08-05  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/49112
+	* resolve.c (resolve_structure_cons): Don't do the full dt resolution,
+	only call 'resolve_fl_derived0'.
+	(resolve_typebound_procedures): Resolve typebound procedures of
+	parent type.
+	(resolve_fl_derived0): New function, which does a part of the work
+	for 'resolve_fl_derived'.
+	(resolve_fl_derived): Call 'resolve_fl_derived0' and do some additional
+	things.
+
+2011-08-03  Daniel Kraft  <d@domob.eu>
+
+	PR fortran/49885
+	* trans-array.c (gfc_trans_auto_array_allocation): Change
+	gfc_start_block to gfc_init_block to avoid spurious extra-scope.
+
+2011-07-30  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/48876
+	* expr.c (gfc_simplify_expr):  If end of a string is less
+	than zero, set it to zero.
+
+2011-07-28  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/45586
+	* trans-types.c (gfc_get_derived_type): Ensure that pointer
+	component types are marked as nonrestricted.
+
+2011-07-23  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/49708
+	* resolve.c (resolve_allocate_expr): Fix diagnostics for pointers.
+
+2011-07-18  Mikael Morin  <mikael.morin@sfr.fr>
+
+	PR fortran/49648
+	* resolve.c (resolve_symbol): Force resolution of function result's
+	array specification.
+
+2011-07-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/49698
+	* trans-stmt.c (gfc_trans_pointer_assign_need_temp): Initialize
+	inner_size to gfc_index_one_node instead of integer_one_node.
+
+2011-07-10  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/49690
+	* intrinsic.c (add_functions): Use BT_VOID for 2nd argument of SIGNAL.
+
+2011-07-10  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/49562
+	* expr.c (gfc_check_vardef_context): Handle type-bound procedures.
+
+2011-07-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR fortran/48926
+	* expr.c (gfc_get_corank): Change return value to int.
+	* gfortran.h (gfc_get_corank): Update function prototype.
+
+2011-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/49623
+	* gfortranspec.c (lang_specific_driver): Ignore options with
+	CL_ERR_MISSING_ARG errors.
+
+	Backported from mainline
+	2011-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/49540
+	* gfortran.h (gfc_constructor): Add repeat field.
+	* trans-array.c (gfc_conv_array_initializer): Handle repeat > 1.
+	* array.c (current_expand): Add repeat field.
+	(expand_constructor): Copy repeat.
+	* constructor.c (node_free, node_copy, gfc_constructor_get,
+	gfc_constructor_lookup): Handle repeat field.
+	(gfc_constructor_lookup_next, gfc_constructor_remove): New functions.
+	* data.h (gfc_assign_data_value): Add mpz_t * argument.
+	(gfc_assign_data_value_range): Removed.
+	* constructor.h (gfc_constructor_advance): Removed.
+	(gfc_constructor_lookup_next, gfc_constructor_remove): New prototypes.
+	* data.c (gfc_assign_data_value): Add REPEAT argument, handle it and
+	also handle overwriting a range with a single entry.
+	(gfc_assign_data_value_range): Removed.
+	* resolve.c (check_data_variable): Adjust gfc_assign_data_value
+	call.  Use gfc_assign_data_value instead of
+	gfc_assign_data_value_expr.
+
+2011-07-02  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/49466
+	* trans-array.c (structure_alloc_comps): Make sure sub-components
+	and extended types are correctly deallocated.
+
 2011-06-27  Release Manager
 
 	* GCC 4.6.1 released.

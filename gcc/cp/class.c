@@ -1,6 +1,6 @@
 /* Functions related to building classes and their related objects.
    Copyright (C) 1987, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
    Contributed by Michael Tiemann (tiemann@cygnus.com)
 
@@ -677,21 +677,10 @@ get_vtable_name (tree type)
    the abstract.  */
 
 void
-set_linkage_according_to_type (tree type, tree decl)
+set_linkage_according_to_type (tree type ATTRIBUTE_UNUSED, tree decl)
 {
-  /* If TYPE involves a local class in a function with internal
-     linkage, then DECL should have internal linkage too.  Other local
-     classes have no linkage -- but if their containing functions
-     have external linkage, it makes sense for DECL to have external
-     linkage too.  That will allow template definitions to be merged,
-     for example.  */
-  if (no_linkage_check (type, /*relaxed_p=*/true))
-    {
-      TREE_PUBLIC (decl) = 0;
-      DECL_INTERFACE_KNOWN (decl) = 1;
-    }
-  else
-    TREE_PUBLIC (decl) = 1;
+  TREE_PUBLIC (decl) = 1;
+  determine_visibility (decl);
 }
 
 /* Create a VAR_DECL for a primary or secondary vtable for CLASS_TYPE.
@@ -2306,8 +2295,7 @@ update_vtable_entry_for_fn (tree t, tree binfo, tree fn, tree* virtuals,
   else
     BV_VCALL_INDEX (*virtuals) = NULL_TREE;
 
-  if (lost)
-    BV_LOST_PRIMARY (*virtuals) = true;
+  BV_LOST_PRIMARY (*virtuals) = lost;
 }
 
 /* Called from modify_all_vtables via dfs_walk.  */
@@ -4358,6 +4346,40 @@ type_has_user_provided_default_constructor (tree t)
   return false;
 }
 
+/* If default-initialization leaves part of TYPE uninitialized, returns
+   a DECL for the field or TYPE itself (DR 253).  */
+
+tree
+default_init_uninitialized_part (tree type)
+{
+  tree t, r, binfo;
+  int i;
+
+  type = strip_array_types (type);
+  if (!CLASS_TYPE_P (type))
+    return type;
+  if (type_has_user_provided_default_constructor (type))
+    return NULL_TREE;
+  for (binfo = TYPE_BINFO (type), i = 0;
+       BINFO_BASE_ITERATE (binfo, i, t); ++i)
+    {
+      r = default_init_uninitialized_part (BINFO_TYPE (t));
+      if (r)
+	return r;
+    }
+  for (t = TYPE_FIELDS (type); t; t = DECL_CHAIN (t))
+    if (TREE_CODE (t) == FIELD_DECL
+	&& !DECL_ARTIFICIAL (t)
+	&& !DECL_INITIAL (t))
+      {
+	r = default_init_uninitialized_part (TREE_TYPE (t));
+	if (r)
+	  return DECL_P (r) ? r : t;
+      }
+
+  return NULL_TREE;
+}
+
 /* Returns true iff for class T, a synthesized default constructor
    would be constexpr.  */
 
@@ -5715,6 +5737,27 @@ finish_struct_1 (tree t)
 
   /* Finish debugging output for this type.  */
   rest_of_type_compilation (t, ! LOCAL_CLASS_P (t));
+
+  if (TYPE_TRANSPARENT_AGGR (t))
+    {
+      tree field = first_field (t);
+      if (field == NULL_TREE || error_operand_p (field))
+	{
+	  error ("type transparent class %qT does not have any fields", t);
+	  TYPE_TRANSPARENT_AGGR (t) = 0;
+	}
+      else if (DECL_ARTIFICIAL (field))
+	{
+	  if (DECL_FIELD_IS_BASE (field))
+	    error ("type transparent class %qT has base classes", t);
+	  else
+	    {
+	      gcc_checking_assert (DECL_VIRTUAL_P (field));
+	      error ("type transparent class %qT has virtual functions", t);
+	    }
+	  TYPE_TRANSPARENT_AGGR (t) = 0;
+	}
+    }
 }
 
 /* When T was built up, the member declarations were added in reverse

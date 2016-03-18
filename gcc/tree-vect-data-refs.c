@@ -1493,6 +1493,9 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
       stmt = DR_STMT (dr);
       stmt_info = vinfo_for_stmt (stmt);
 
+      if (!STMT_VINFO_RELEVANT (stmt_info))
+	continue;
+
       /* For interleaving, only the alignment of the first access
          matters.  */
       if (STMT_VINFO_STRIDED_ACCESS (stmt_info)
@@ -2047,6 +2050,10 @@ vect_analyze_group_access (struct data_reference *dr)
   HOST_WIDE_INT dr_step = TREE_INT_CST_LOW (step);
   HOST_WIDE_INT stride, last_accessed_element = 1;
   bool slp_impossible = false;
+  struct loop *loop = NULL;
+
+  if (loop_vinfo)
+    loop = LOOP_VINFO_LOOP (loop_vinfo);
 
   /* For interleaving, STRIDE is STEP counted in elements, i.e., the size of the
      interleaving group (including gaps).  */
@@ -2077,11 +2084,18 @@ vect_analyze_group_access (struct data_reference *dr)
 
 	  if (loop_vinfo)
 	    {
-	      LOOP_VINFO_PEELING_FOR_GAPS (loop_vinfo) = true;
-
 	      if (vect_print_dump_info (REPORT_DETAILS))
 		fprintf (vect_dump, "Data access with gaps requires scalar "
 				    "epilogue loop");
+              if (loop->inner)
+                {
+                  if (vect_print_dump_info (REPORT_DETAILS))
+                    fprintf (vect_dump, "Peeling for outer loop is not"
+                                        " supported");
+                  return false;
+                }
+
+              LOOP_VINFO_PEELING_FOR_GAPS (loop_vinfo) = true;
 	    }
 
 	  return true;
@@ -2277,10 +2291,17 @@ vect_analyze_group_access (struct data_reference *dr)
       /* There is a gap in the end of the group.  */
       if (stride - last_accessed_element > 0 && loop_vinfo)
 	{
-	  LOOP_VINFO_PEELING_FOR_GAPS (loop_vinfo) = true;
 	  if (vect_print_dump_info (REPORT_DETAILS))
 	    fprintf (vect_dump, "Data access with gaps requires scalar "
 				"epilogue loop");
+          if (loop->inner)
+            {
+              if (vect_print_dump_info (REPORT_DETAILS))
+                fprintf (vect_dump, "Peeling for outer loop is not supported");
+              return false;
+            }
+
+          LOOP_VINFO_PEELING_FOR_GAPS (loop_vinfo) = true;
 	}
     }
 
@@ -2574,14 +2595,7 @@ vect_analyze_data_refs (loop_vec_info loop_vinfo,
               print_gimple_stmt (vect_dump, stmt, 0, TDF_SLIM);
             }
 
-          if (bb_vinfo)
-            {
-              /* Mark the statement as not vectorizable.  */
-              STMT_VINFO_VECTORIZABLE (stmt_info) = false;
-              continue;
-            }
-          else
-            return false;
+          return false;
         }
 
       if (TREE_CODE (DR_BASE_ADDRESS (dr)) == INTEGER_CST)
@@ -2589,14 +2603,7 @@ vect_analyze_data_refs (loop_vec_info loop_vinfo,
           if (vect_print_dump_info (REPORT_UNVECTORIZED_LOCATIONS))
             fprintf (vect_dump, "not vectorized: base addr of dr is a "
                      "constant");
-          if (bb_vinfo)
-            {
-              /* Mark the statement as not vectorizable.  */
-              STMT_VINFO_VECTORIZABLE (stmt_info) = false;
-              continue;
-            }
-          else
-            return false;
+          return false;
         }
 
       if (TREE_THIS_VOLATILE (DR_REF (dr)))

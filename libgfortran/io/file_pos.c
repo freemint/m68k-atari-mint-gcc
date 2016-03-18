@@ -451,7 +451,7 @@ st_flush (st_parameter_filepos *fpp)
       if (u->flags.form == FORM_FORMATTED)
         fbuf_flush (u, u->mode);
 
-      sflush (u->s);
+      flush_sync (u->s);
       unlock_unit (u);
     }
   else

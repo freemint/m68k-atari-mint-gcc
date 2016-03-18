@@ -360,6 +360,8 @@ use_thunk (tree thunk_fndecl, bool emit_p)
 
 	  /* Output the thunk into the same section as function.  */
 	  DECL_SECTION_NAME (thunk_fndecl) = DECL_SECTION_NAME (function);
+	  if (DECL_COMDAT_GROUP (function))
+	    make_decl_one_only (thunk_fndecl, DECL_COMDAT_GROUP (function));
 	}
     }
 
@@ -1007,8 +1009,7 @@ walk_field_subobs (tree fields, tree fnname, special_function_kind sfk,
 	{
 	  bool bad = true;
 	  if (CP_TYPE_CONST_P (mem_type)
-	      && (!CLASS_TYPE_P (mem_type)
-		  || !type_has_user_provided_default_constructor (mem_type)))
+	      && default_init_uninitialized_part (mem_type))
 	    {
 	      if (msg)
 		error ("uninitialized non-static const member %q#D",

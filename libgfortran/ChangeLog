@@ -1,3 +1,189 @@
+2011-10-26  Release Manager
+
+	* GCC 4.6.2 released.
+
+2011-10-19  Janne Blomqvist  <jb@gcc.gnu.org>
+	    Kai Tietz  <ktietz@redhat.com>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50016
+	* io/unix.h (flush_sync): Add new libgfortran-internal prototype.
+	* io/unix.c (flush_sync): New function, which calls sflush and
+	on MinGW(-w64) also _commit.
+	(flush_all_units, flush_all_units_1): Replace sflush/_commit by
+	flush_sync.
+	* io/file_pos.c (st_flush): Replace sflush/_commit by flush_sync.
+	* io/intrinsics.c (flush_i4, flush_i8): Ditto.
+
+2011-10-18  Tobias Burnus  <burnus@net-b.de>
+	    Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR fortran/50016
+	* io/file_pos.c (st_flush): Call _commit on MinGW(-w64).
+	* io/intrinsics.c (flush_i4, flush_i8): Ditto.
+	* io/unix.c (flush_all_units_1, flush_all_units): Ditto.
+	(buf_flush): Remove _commit call.
+	* io/inquire.c (inquire_via_unit): Flush internal buffer
+	and call file_length instead of invoking stat via file_size.
+
+2011-09-11  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport fron trunk
+	PR fortran/49479
+	* generated/m4/ifunction.m4:  Always call internal_malloc_size
+	even when there is a zero-sized return array.
+	* generated/generated/maxloc1_16_i16.c: Regenerated.
+	* generated/generated/maxloc1_16_i1.c: Regenerated.
+	* generated/generated/maxloc1_16_i2.c: Regenerated.
+	* generated/generated/maxloc1_16_i4.c: Regenerated.
+	* generated/generated/maxloc1_16_i8.c: Regenerated.
+	* generated/generated/maxloc1_16_r10.c: Regenerated.
+	* generated/generated/maxloc1_16_r16.c: Regenerated.
+	* generated/generated/maxloc1_16_r4.c: Regenerated.
+	* generated/generated/maxloc1_16_r8.c: Regenerated.
+	* generated/generated/maxloc1_4_i16.c: Regenerated.
+	* generated/generated/maxloc1_4_i1.c: Regenerated.
+	* generated/generated/maxloc1_4_i2.c: Regenerated.
+	* generated/generated/maxloc1_4_i4.c: Regenerated.
+	* generated/generated/maxloc1_4_i8.c: Regenerated.
+	* generated/generated/maxloc1_4_r10.c: Regenerated.
+	* generated/generated/maxloc1_4_r16.c: Regenerated.
+	* generated/generated/maxloc1_4_r4.c: Regenerated.
+	* generated/generated/maxloc1_4_r8.c: Regenerated.
+	* generated/generated/maxloc1_8_i16.c: Regenerated.
+	* generated/generated/maxloc1_8_i1.c: Regenerated.
+	* generated/generated/maxloc1_8_i2.c: Regenerated.
+	* generated/generated/maxloc1_8_i4.c: Regenerated.
+	* generated/generated/maxloc1_8_i8.c: Regenerated.
+	* generated/generated/maxloc1_8_r10.c: Regenerated.
+	* generated/generated/maxloc1_8_r16.c: Regenerated.
+	* generated/generated/maxloc1_8_r4.c: Regenerated.
+	* generated/generated/maxloc1_8_r8.c: Regenerated.
+	* generated/generated/maxval_i16.c: Regenerated.
+	* generated/generated/maxval_i1.c: Regenerated.
+	* generated/generated/maxval_i2.c: Regenerated.
+	* generated/generated/maxval_i4.c: Regenerated.
+	* generated/generated/maxval_i8.c: Regenerated.
+	* generated/generated/maxval_r10.c: Regenerated.
+	* generated/generated/maxval_r16.c: Regenerated.
+	* generated/generated/maxval_r4.c: Regenerated.
+	* generated/generated/maxval_r8.c: Regenerated.
+	* generated/generated/minloc1_16_i16.c: Regenerated.
+	* generated/generated/minloc1_16_i1.c: Regenerated.
+	* generated/generated/minloc1_16_i2.c: Regenerated.
+	* generated/generated/minloc1_16_i4.c: Regenerated.
+	* generated/generated/minloc1_16_i8.c: Regenerated.
+	* generated/generated/minloc1_16_r10.c: Regenerated.
+	* generated/generated/minloc1_16_r16.c: Regenerated.
+	* generated/generated/minloc1_16_r4.c: Regenerated.
+	* generated/generated/minloc1_16_r8.c: Regenerated.
+	* generated/generated/minloc1_4_i16.c: Regenerated.
+	* generated/generated/minloc1_4_i1.c: Regenerated.
+	* generated/generated/minloc1_4_i2.c: Regenerated.
+	* generated/generated/minloc1_4_i4.c: Regenerated.
+	* generated/generated/minloc1_4_i8.c: Regenerated.
+	* generated/generated/minloc1_4_r10.c: Regenerated.
+	* generated/generated/minloc1_4_r16.c: Regenerated.
+	* generated/generated/minloc1_4_r4.c: Regenerated.
+	* generated/generated/minloc1_4_r8.c: Regenerated.
+	* generated/generated/minloc1_8_i16.c: Regenerated.
+	* generated/generated/minloc1_8_i1.c: Regenerated.
+	* generated/generated/minloc1_8_i2.c: Regenerated.
+	* generated/generated/minloc1_8_i4.c: Regenerated.
+	* generated/generated/minloc1_8_i8.c: Regenerated.
+	* generated/generated/minloc1_8_r10.c: Regenerated.
+	* generated/generated/minloc1_8_r16.c: Regenerated.
+	* generated/generated/minloc1_8_r4.c: Regenerated.
+	* generated/generated/minloc1_8_r8.c: Regenerated.
+	* generated/generated/minval_i16.c: Regenerated.
+	* generated/generated/minval_i1.c: Regenerated.
+	* generated/generated/minval_i2.c: Regenerated.
+	* generated/generated/minval_i4.c: Regenerated.
+	* generated/generated/minval_i8.c: Regenerated.
+	* generated/generated/minval_r10.c: Regenerated.
+	* generated/generated/minval_r16.c: Regenerated.
+	* generated/generated/minval_r4.c: Regenerated.
+	* generated/generated/minval_r8.c: Regenerated.
+	* generated/generated/product_c10.c: Regenerated.
+	* generated/generated/product_c16.c: Regenerated.
+	* generated/generated/product_c4.c: Regenerated.
+	* generated/generated/product_c8.c: Regenerated.
+	* generated/generated/product_i16.c: Regenerated.
+	* generated/generated/product_i1.c: Regenerated.
+	* generated/generated/product_i2.c: Regenerated.
+	* generated/generated/product_i4.c: Regenerated.
+	* generated/generated/product_i8.c: Regenerated.
+	* generated/generated/product_r10.c: Regenerated.
+	* generated/generated/product_r16.c: Regenerated.
+	* generated/generated/product_r4.c: Regenerated.
+	* generated/generated/product_r8.c: Regenerated.
+	* generated/generated/sum_c10.c: Regenerated.
+	* generated/generated/sum_c16.c: Regenerated.
+	* generated/generated/sum_c4.c: Regenerated.
+	* generated/generated/sum_c8.c: Regenerated.
+	* generated/generated/sum_i16.c: Regenerated.
+	* generated/generated/sum_i1.c: Regenerated.
+	* generated/generated/sum_i2.c: Regenerated.
+	* generated/generated/sum_i4.c: Regenerated.
+	* generated/generated/sum_i8.c: Regenerated.
+	* generated/generated/sum_r10.c: Regenerated.
+	* generated/generated/sum_r16.c: Regenerated.
+	* generated/generated/sum_r4.c: Regenerated.
+	* generated/generated/sum_r8.c: Regenerated.
+
+2011-08-29  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR libfortran/50192
+	* intrinsics/string_intrinsics.c (memcmp_char4):  New function.
+	* intrinsics/string_intrinsics_inc.c:  New macro MEMCMP, either
+	set to memcmp or memcmp_char4.
+	(compare_string):  Use MEMCMP, with correct size for it.
+	* libgfortran.h:  Add prototype for memcmp_char4.
+
+2011-08-19  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/50109
+	* io/list_read.c (eat_separator): Fix skipping over "!" lines.
+
+2011-07-27  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2011-07-23  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/49791
+	* io/list_read.c (nml_parse_qualifier): Remove check to
+	enabled extended read for another case.
+
+2011-07-13  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	Backport from trunk:
+	PR libfortran/49296
+	* io/list_read.c (read_logical): Don't error out if a valid value
+	is followed by EOF instead of a normal separator.
+	(read_integer): Likewise.
+
+2011-07-06  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Partial backport from trunk:
+	PR fortran/49479
+	* runtime/memory.c:  If size is zero, allocate a single byte.
+	* m4/eoshift1.m4:  Remove double allocation.
+	* m4/eoshift3.m4:  Likewise.
+	* generated/eoshift1_4.c:  Regenerated.
+	* generated/eoshift1_8.c:  Regenerated.
+	* generated/eoshift1_16.c:  Regenerated.
+	* generated/eoshift3_4.c:  Regenerated.
+	* generated/eoshift3_8.c:  Regenerated.
+	* generated/eoshift3_16.c:  Regenerated.
+
+2011-07-03  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	Backport from mainline:
+	PR libfortran/49296
+	* io/list_read.c (read_character): Accept EOF as a separator when
+	reading string.
+
 2011-06-27  Release Manager
 
 	* GCC 4.6.1 released.

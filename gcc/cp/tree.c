@@ -495,9 +495,16 @@ build_vec_init_elt (tree type, tree init)
 	dummy = move (dummy);
       VEC_quick_push (tree, argvec, dummy);
     }
-  return build_special_member_call (NULL_TREE, complete_ctor_identifier,
+  init = build_special_member_call (NULL_TREE, complete_ctor_identifier,
 				    &argvec, inner_type, LOOKUP_NORMAL,
 				    tf_warning_or_error);
+
+  /* For a trivial constructor, build_over_call creates a TARGET_EXPR.  But
+     we don't want one here.  */
+  if (TREE_CODE (init) == TARGET_EXPR)
+    init = TARGET_EXPR_INITIAL (init);
+
+  return init;
 }
 
 /* Return a TARGET_EXPR which expresses the initialization of an array to
@@ -525,9 +532,6 @@ build_vec_init_expr (tree type, tree init)
       && potential_constant_expression (elt_init))
     VEC_INIT_EXPR_IS_CONSTEXPR (init) = true;
   VEC_INIT_EXPR_VALUE_INIT (init) = value_init;
-
-  init = build_target_expr (slot, init);
-  TARGET_EXPR_IMPLICIT_P (init) = 1;
 
   return init;
 }
@@ -1836,7 +1840,11 @@ bot_manip (tree* tp, int* walk_subtrees, void* data)
       tree u;
 
       if (TREE_CODE (TREE_OPERAND (t, 1)) == AGGR_INIT_EXPR)
-	u = build_cplus_new (TREE_TYPE (t), TREE_OPERAND (t, 1));
+	{
+	  u = build_cplus_new (TREE_TYPE (t), TREE_OPERAND (t, 1));
+	  if (AGGR_INIT_ZERO_FIRST (TREE_OPERAND (t, 1)))
+	    AGGR_INIT_ZERO_FIRST (TREE_OPERAND (u, 1)) = true;
+	}
       else
 	u = build_target_expr_with_type (TREE_OPERAND (t, 1), TREE_TYPE (t));
 
@@ -1857,7 +1865,11 @@ bot_manip (tree* tp, int* walk_subtrees, void* data)
     }
 
   /* Make a copy of this node.  */
-  return copy_tree_r (tp, walk_subtrees, NULL);
+  t = copy_tree_r (tp, walk_subtrees, NULL);
+  if (TREE_CODE (*tp) == CALL_EXPR && !TREE_NOTHROW (*tp)
+      && cfun && cp_function_chain)
+    cp_function_chain->can_throw = 1;
+  return t;
 }
 
 /* Replace all remapped VAR_DECLs in T with their new equivalents.

@@ -1,3 +1,105 @@
+2011-10-26  Release Manager
+
+	* GCC 4.6.2 released.
+
+2011-10-05  Benjamin Kosnik  <bkoz@redhat.com
+            Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+        PR libstdc++/48698
+        * acinclude.m4 (GLIBCXX_ENABLE_SYMVERS): Set libtool_VERSION here.
+        * configure.ac: Move AC_SUBST of libtool_VERSION past call to
+        GLIBCXX_ENABLE_SYMVERS.
+        * configure: Regenerate.
+        * include/bits/c++config: Use __7 as versioned namespace name.
+        * config/abi/pre/gnu-versioned-namespace.ver: Change mangling as
+        per above.
+        * include/c_global/cwchar: Adjust nested namespaces.
+        * testsuite/20_util/bind/48698.cc: Add test case.
+        * testsuite/ext/profile/mutex_extensions_neg.cc: Change line number.
+
+2011-09-30  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/debug/vector (vector<>::erase(iterator, iterator)): Check
+	iterators equality using normal iterators.
+	* include/debug/deque (deque<>::erase(iterator, iterator)): Likewise.
+
+2011-09-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/50529
+	* include/bits/vector.tcc (vector<>::erase(iterator, iterator)):
+	Fix to do nothing if the range is empty.
+	* include/bits/stl_bvector.h: Likewise.
+	* include/bits/deque.tcc: Likewise.
+	* include/debug/vector: Adjust.
+	* include/debug/deque: Likewise.
+	* testsuite/23_containers/vector/modifiers/erase/50529.cc: New.
+	* testsuite/23_containers/deque/modifiers/erase/50529.cc: Likewise.
+	* testsuite/23_containers/deque/modifiers/erase/3.cc: Adjust.
+
+2011-09-27  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/49559
+	* include/bits/stl_algo.h (__move_merge_backward): Remove.
+	(__move_merge_adaptive, __move_merge_adaptive_backward): New.
+	(__merge_adaptive): Use the latter two.
+	(__rotate_adaptive): Avoid self move-assignment.
+	* include/bits/stl_algobase.h (move_backward): Fix comment.
+	* testsuite/25_algorithms/stable_sort/49559.cc: New.
+	* testsuite/25_algorithms/inplace_merge/49559.cc: Likewise.
+	* testsuite/25_algorithms/inplace_merge/moveable.cc: Extend.
+	* testsuite/25_algorithms/inplace_merge/moveable2.cc: Likewise.
+	* testsuite/util/testsuite_rvalref.h (rvalstruct::operator=
+	(rvalstruct&&)): Check for self move-assignment.
+
+2011-09-24  John Salmon  <john.salmon@deshaw.com>
+
+	PR libstdc++/50510
+	* include/bits/random.tcc (seed_seq::generate): Fix computation.
+
+2011-09-24  John Salmon  <john.salmon@deshaw.com>
+
+	PR libstdc++/50509
+	* include/bits/random.tcc (seed_seq::generate): Fix computation.
+
+2011-09-02  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/hashtable.h (_Hashtable<>::_Hashtable(_Hashtable&&)):
+	rearrange to consistently update __ht._M_rehash_policy before using
+	_M_next_bkt on it.
+
+2011-09-02  Paolo Carlini  <paolo.carlini@oracle.com>
+	    Marc Glisse  <marc.glisse@normalesup.org>
+
+	PR libstdc++/50268
+	* include/std/bitset (struct _Sanitize_val): Add.
+	(bitset<>::bitset(unsigned long long)): Fix.
+	* testsuite/23_containers/bitset/cons/50268.cc: New.
+
+2011-07-31  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/parallel/algo.h: Trivial uglification fixes.
+
+2011-07-31  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/49925
+	* include/bits/shared_ptr.h (make_shared): Qualify allocate_shared
+	with std::.
+	* include/bits/shared_ptr_base.h (__make_shared): Likewise.
+
+2011-07-27  Jeffrey Yasskin  <jyasskin@google.com>
+
+	* testsuite/20_util/weak_ptr/comparison/cmp_neg.cc: Updated.
+
+2011-07-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2011-06-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/49293
+	* testsuite/22_locale/time_get/get_weekday/char/38081-1.cc: Tweak
+	for glibc 2.14.
+	* testsuite/22_locale/time_get/get_weekday/char/38081-2.cc: Likewise.
+
 2011-06-27  Release Manager
 
 	* GCC 4.6.1 released.

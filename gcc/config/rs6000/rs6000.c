@@ -17437,7 +17437,7 @@ rs6000_emit_vector_cond_expr (rtx dest, rtx op_true, rtx op_false,
       op_false = tmp;
     }
 
-  cond2 = gen_rtx_fmt_ee (NE, cc_mode, mask, const0_rtx);
+  cond2 = gen_rtx_fmt_ee (NE, cc_mode, mask, CONST0_RTX (dest_mode));
   emit_insn (gen_rtx_SET (VOIDmode,
 			  dest,
 			  gen_rtx_IF_THEN_ELSE (dest_mode,
@@ -18498,7 +18498,7 @@ compute_save_world_info (rs6000_stack_t *info_ptr)
   info_ptr->world_save_p
     = (WORLD_SAVE_P (info_ptr)
        && DEFAULT_ABI == ABI_DARWIN
-       && ! (cfun->calls_setjmp && flag_exceptions)
+       && !cfun->has_nonlocal_label
        && info_ptr->first_fp_reg_save == FIRST_SAVED_FP_REGNO
        && info_ptr->first_gp_reg_save == FIRST_SAVED_GP_REGNO
        && info_ptr->first_altivec_reg_save == FIRST_SAVED_ALTIVEC_REGNO
@@ -19838,7 +19838,8 @@ output_probe_stack_range (rtx reg1, rtx reg2)
   output_asm_insn ("{cal %0,%1(%0)|addi %0,%0,%1}", xops);
 
   /* Probe at TEST_ADDR and branch.  */
-  output_asm_insn ("{st|stw} 0,0(%0)", xops);
+  xops[1] = gen_rtx_REG (Pmode, 0);
+  output_asm_insn ("{st|stw} %1,0(%0)", xops);
   fprintf (asm_out_file, "\tb ");
   assemble_name_raw (asm_out_file, loop_lab);
   fputc ('\n', asm_out_file);

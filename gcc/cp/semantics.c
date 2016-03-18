@@ -2895,7 +2895,10 @@ finish_id_expression (tree id_expression,
 	  tree containing_function = current_function_decl;
 	  tree lambda_stack = NULL_TREE;
 	  tree lambda_expr = NULL_TREE;
-	  tree initializer = decl;
+	  tree initializer = convert_from_reference (decl);
+
+	  /* Mark it as used now even if the use is ill-formed.  */
+	  mark_used (decl);
 
 	  /* Core issue 696: "[At the July 2009 meeting] the CWG expressed
 	     support for an approach in which a reference to a local
@@ -3203,7 +3206,7 @@ finish_id_expression (tree id_expression,
       if (scope)
 	{
 	  decl = (adjust_result_of_qualified_name_lookup
-		  (decl, scope, current_class_type));
+		  (decl, scope, current_nonlambda_class_type()));
 
 	  if (TREE_CODE (decl) == FUNCTION_DECL)
 	    mark_used (decl);
@@ -4835,6 +4838,9 @@ finish_decltype_type (tree expr, bool id_expression_or_member_access_p,
 
   expr = resolve_nondeduced_context (expr);
 
+  if (invalid_nonstatic_memfn_p (expr, complain))
+    return error_mark_node;
+
   /* To get the size of a static data member declared as an array of
      unknown bound, we need to instantiate it.  */
   if (TREE_CODE (expr) == VAR_DECL
@@ -6300,11 +6306,21 @@ cxx_eval_array_reference (const constexpr_call *call, tree t,
   elem_type = TREE_TYPE (TREE_TYPE (ary));
   if (TREE_CODE (ary) == CONSTRUCTOR)
     len = CONSTRUCTOR_NELTS (ary);
-  else
+  else if (TREE_CODE (ary) == STRING_CST)
     {
       elem_nchars = (TYPE_PRECISION (elem_type)
 		     / TYPE_PRECISION (char_type_node));
       len = (unsigned) TREE_STRING_LENGTH (ary) / elem_nchars;
+    }
+  else
+    {
+      /* We can't do anything with other tree codes, so use
+	 VERIFY_CONSTANT to complain and fail.  */
+      VERIFY_CONSTANT (ary);
+      /* This should be unreachable, but be more fault-tolerant on the
+	 release branch.  */
+      *non_constant_p = true;
+      return t;
     }
   if (compare_tree_int (index, len) >= 0)
     {
@@ -6375,7 +6391,8 @@ cxx_eval_component_reference (const constexpr_call *call, tree t,
       if (field == part)
         return value;
     }
-  if (TREE_CODE (TREE_TYPE (whole)) == UNION_TYPE)
+  if (TREE_CODE (TREE_TYPE (whole)) == UNION_TYPE
+      && CONSTRUCTOR_NELTS (whole) > 0)
     {
       /* FIXME Mike Miller wants this to be OK.  */
       if (!allow_non_constant)
@@ -6384,8 +6401,12 @@ cxx_eval_component_reference (const constexpr_call *call, tree t,
       *non_constant_p = true;
       return t;
     }
-  gcc_unreachable();
-  return error_mark_node;
+
+  /* If there's no explicit init for this field, it's value-initialized.  */
+  value = build_value_init (TREE_TYPE (t), tf_warning_or_error);
+  return cxx_eval_constant_expression (call, value,
+				       allow_non_constant, addr,
+				       non_constant_p);
 }
 
 /* Subroutine of cxx_eval_constant_expression.
@@ -6482,9 +6503,9 @@ cxx_eval_logical_expression (const constexpr_call *call, tree t,
 					   allow_non_constant, addr,
 					   non_constant_p);
   VERIFY_CONSTANT (lhs);
-  if (lhs == bailout_value)
+  if (tree_int_cst_equal (lhs, bailout_value))
     return lhs;
-  gcc_assert (lhs == continue_value);
+  gcc_assert (tree_int_cst_equal (lhs, continue_value));
   r = cxx_eval_constant_expression (call, TREE_OPERAND (t, 1),
 				    allow_non_constant, addr, non_constant_p);
   VERIFY_CONSTANT (r);
@@ -6589,6 +6610,7 @@ cxx_eval_vec_init_1 (const constexpr_call *call, tree atype, tree init,
   tree elttype = TREE_TYPE (atype);
   int max = tree_low_cst (array_type_nelts (atype), 0);
   VEC(constructor_elt,gc) *n = VEC_alloc (constructor_elt, gc, max + 1);
+  bool default_init = false;
   int i;
 
   /* For the default constructor, build up a call to the default
@@ -6607,6 +6629,7 @@ cxx_eval_vec_init_1 (const constexpr_call *call, tree atype, tree init,
       release_tree_vector (argvec);
       init = cxx_eval_constant_expression (call, init, allow_non_constant,
 					   addr, non_constant_p);
+      default_init = true;
     }
 
   if (*non_constant_p && !allow_non_constant)
@@ -6634,7 +6657,7 @@ cxx_eval_vec_init_1 (const constexpr_call *call, tree atype, tree init,
 	  eltinit = cxx_eval_constant_expression
 	    (call, eltinit, allow_non_constant, addr, non_constant_p);
 	}
-      else if (TREE_CODE (init) == CONSTRUCTOR)
+      else if (default_init)
 	{
 	  /* Initializing an element using the call to the default
 	     constructor we just built above.  */
@@ -6666,7 +6689,7 @@ cxx_eval_vec_init_1 (const constexpr_call *call, tree atype, tree init,
 
   if (!*non_constant_p)
     {
-      init = build_constructor (TREE_TYPE (atype), n);
+      init = build_constructor (atype, n);
       TREE_CONSTANT (init) = true;
       return init;
     }
@@ -6932,6 +6955,15 @@ cxx_eval_constant_expression (const constexpr_call *call, tree t,
       break;
 
     case TARGET_EXPR:
+      if (!literal_type_p (TREE_TYPE (t)))
+	{
+	  if (!allow_non_constant)
+	    error ("temporary of non-literal type %qT in a "
+		   "constant expression", TREE_TYPE (t));
+	  *non_constant_p = true;
+	  break;
+	}
+      /* else fall through.  */
     case INIT_EXPR:
       /* Pass false for 'addr' because these codes indicate
 	 initialization of a temporary.  */
@@ -7276,6 +7308,7 @@ maybe_constant_value (tree t)
 
   if (type_dependent_expression_p (t)
       || type_unknown_p (t)
+      || BRACE_ENCLOSED_INITIALIZER_P (t)
       || !potential_constant_expression (t)
       || value_dependent_expression_p (t))
     return t;
@@ -7434,6 +7467,7 @@ potential_constant_expression_1 (tree t, bool want_rval, tsubst_flags_t flags)
     case IDENTIFIER_NODE:
       /* We can see a FIELD_DECL in a pointer-to-member expression.  */
     case FIELD_DECL:
+    case USING_DECL:
       return true;
 
     case PARM_DECL:
@@ -7482,7 +7516,17 @@ potential_constant_expression_1 (tree t, bool want_rval, tsubst_flags_t flags)
 		  {
 		    tree x = get_nth_callarg (t, 0);
 		    if (is_this_parameter (x))
-		      /* OK.  */;
+		      {
+			if (DECL_CONSTRUCTOR_P (DECL_CONTEXT (x)))
+			  {
+			    if (flags & tf_error)
+			      sorry ("calling a member function of the "
+				     "object being constructed in a constant "
+				     "expression");
+			    return false;
+			  }
+			/* Otherwise OK.  */;
+		      }
 		    else if (!potential_constant_expression_1 (x, rval, flags))
 		      {
 			if (flags & tf_error)
@@ -7745,8 +7789,15 @@ potential_constant_expression_1 (tree t, bool want_rval, tsubst_flags_t flags)
       return potential_constant_expression_1 (TREE_OPERAND (t, 1),
 					      want_rval, flags);
 
-    case INIT_EXPR:
     case TARGET_EXPR:
+      if (!literal_type_p (TREE_TYPE (t)))
+	{
+	  if (flags & tf_error)
+	    error ("temporary of non-literal type %qT in a "
+		   "constant expression", TREE_TYPE (t));
+	  return false;
+	}
+    case INIT_EXPR:
       return potential_constant_expression_1 (TREE_OPERAND (t, 1),
 					      rval, flags);
 
@@ -8081,7 +8132,7 @@ lambda_return_type (tree expr)
       SET_TYPE_STRUCTURAL_EQUALITY (type);
     }
   else
-    type = type_decays_to (unlowered_expr_type (expr));
+    type = cv_unqualified (type_decays_to (unlowered_expr_type (expr)));
   return type;
 }
 
@@ -8242,6 +8293,9 @@ add_capture (tree lambda, tree id, tree initializer, bool by_reference_p,
       if (!real_lvalue_p (initializer))
 	error ("cannot capture %qE by reference", initializer);
     }
+  else
+    /* Capture by copy requires a complete type.  */
+    type = complete_type (type);
 
   /* Make member variable.  */
   member = build_lang_decl (FIELD_DECL, id, type);
@@ -8455,6 +8509,9 @@ maybe_add_lambda_conv_op (tree type)
   VEC (tree, gc) *argvec;
 
   if (LAMBDA_EXPR_CAPTURE_LIST (CLASSTYPE_LAMBDA_EXPR (type)) != NULL_TREE)
+    return;
+
+  if (processing_template_decl)
     return;
 
   stattype = build_function_type (TREE_TYPE (TREE_TYPE (callop)),

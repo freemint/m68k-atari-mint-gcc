@@ -2264,6 +2264,8 @@ typedef struct gfc_constructor
      gfc_component *component; /* Record the component being initialized.  */
   }
   n;
+  mpz_t repeat; /* Record the repeat number of initial values in data
+		  statement like "data a/5*10/".  */
 }
 gfc_constructor;
 
@@ -2690,6 +2692,8 @@ gfc_expr *gfc_get_int_expr (int, locus *, int);
 gfc_expr *gfc_get_logical_expr (int, locus *, bool);
 gfc_expr *gfc_get_iokind_expr (locus *, io_kind);
 
+void gfc_clear_shape (mpz_t *shape, int rank);
+void gfc_free_shape (mpz_t **shape, int rank);
 void gfc_free_expr (gfc_expr *);
 void gfc_replace_expr (gfc_expr *, gfc_expr *);
 mpz_t *gfc_copy_shape (mpz_t *, int);
@@ -2725,7 +2729,7 @@ void gfc_expr_replace_comp (gfc_expr *, gfc_component *);
 bool gfc_is_proc_ptr_comp (gfc_expr *, gfc_component **);
 
 bool gfc_is_coindexed (gfc_expr *);
-bool gfc_get_corank (gfc_expr *);
+int gfc_get_corank (gfc_expr *);
 bool gfc_has_ultimate_allocatable (gfc_expr *);
 bool gfc_has_ultimate_pointer (gfc_expr *);
 

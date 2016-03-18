@@ -1,3 +1,61 @@
+2011-10-26  Release Manager
+
+	* GCC 4.6.2 released.
+
+2011-09-19  Iain Sandoe  <iains@gcc.gnu.org>
+
+	Backport from mainline (restore powerpc-darwin Ada bootstrap).
+	* traceback.c (Darwin) USE_GCC_UNWINDER for Darwin versions >= 8.
+
+2011-09-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (maybe_pad_type): Do not try to change the form
+	of an addressable type.
+	* gcc-interface/trans.c (gnat_gimplify_expr) <VIEW_CONVERT_EXPR>: New.
+	Deal with those cases for which creating a temporary is mandatory.
+
+2011-09-08  Iain Sandoe  <iains@gcc.gnu.org>
+
+	Backport from mainline (restore powerpc-darwin Ada bootstrap).
+	* gcc-interface/Makefile.in (darwin): Provide powerpc64 system 
+	implementation.
+	* system-darwin-ppc64.ads: New file.
+
+2011-09-06  Iain Sandoe  <iains@gcc.gnu.org>
+
+	Backport from mainline.
+	* gcc-interface/Makefile.in (darwin, SO_OPTS): Provide architecture
+	size switches to the link phase for shared libs.
+
+2011-07-23  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2011-07-23  Arnaud Charlet  <charlet@adacore.com>
+
+	PR ada/49819
+	* gcc-interface/Makefile.in (powerpc-linux): Remove reference to
+	g-trasym-dwarf.adb.
+
+2011-07-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/48711
+	* g-socthi-mingw.adb (Fill): Fix formatting.
+
+2011-07-14  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR ada/46350
+	* s-taprop-hpux-dce.adb (Abort_Task): Remove unnecessary cast.
+
+2011-07-14  Florian Weimer  <fw@deneb.enyo.de>
+
+	PR ada/48711
+	* g-socthi-mingw.adb (Fill): Guard against invalid MSG_WAITALL.
+
+2011-07-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/Make-lang.in (gnat1): Prepend '+' to the command.
+	(gnatbind): Likewise.
+
 2011-06-27  Release Manager
 
 	* GCC 4.6.1 released.

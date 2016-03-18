@@ -1,4 +1,4 @@
-/* Copyright (C) 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010
+/* Copyright (C) 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
    Contributed by Andy Vaught
    Namelist input contributed by Paul Thomas
@@ -353,16 +353,7 @@ eat_separator (st_parameter_dt *dtp)
 		  err = eat_line (dtp);
 		  if (err)
 		    return err;
-		  if ((c = next_char (dtp)) == EOF)
-		    return LIBERROR_END;
-		  if (c == '!')
-		    {
-		      err = eat_line (dtp);
-		      if (err)
-			return err;
-		      if ((c = next_char (dtp)) == EOF)
-			return LIBERROR_END;
-		    }
+		  c = '\n';
 		}
 	    }
 	  while (c == '\n' || c == '\r' || c == ' ' || c == '\t');
@@ -659,22 +650,20 @@ read_logical (st_parameter_dt *dtp, int length)
     {
     case 't':
       v = 1;
-      if ((c = next_char (dtp)) == EOF)
-	goto bad_logical;
+      c = next_char (dtp);
       l_push_char (dtp, c);
 
-      if (!is_separator(c))
+      if (!is_separator(c) && c != EOF)
 	goto possible_name;
 
       unget_char (dtp, c);
       break;
     case 'f':
       v = 0;
-      if ((c = next_char (dtp)) == EOF)
-	goto bad_logical;
+      c = next_char (dtp);
       l_push_char (dtp, c);
 
-      if (!is_separator(c))
+      if (!is_separator(c) && c != EOF)
 	goto possible_name;
 
       unget_char (dtp, c);
@@ -839,6 +828,7 @@ read_integer (st_parameter_dt *dtp, int length)
 	  goto repeat;
 
 	CASE_SEPARATORS:	/* Not a repeat count.  */
+	case EOF:
 	  goto done;
 
 	default:
@@ -887,7 +877,7 @@ read_integer (st_parameter_dt *dtp, int length)
 	  push_char (dtp, c);
 	  break;
 
-	CASE_SEPARATORS:
+	CASE_SEPARATORS:	  
 	  goto done;
 
 	default:
@@ -1024,7 +1014,7 @@ read_character (st_parameter_dt *dtp, int length __attribute__ ((unused)))
   for (;;)
     {
       if ((c = next_char (dtp)) == EOF)
-	goto eof;
+	goto done_eof;
       switch (c)
 	{
 	case '"':
@@ -1070,8 +1060,8 @@ read_character (st_parameter_dt *dtp, int length __attribute__ ((unused)))
      invalid.  */
  done:
   c = next_char (dtp);
- eof:
-  if (is_separator (c) || c == '!')
+ done_eof:
+  if (is_separator (c) || c == '!' || c == EOF)
     {
       unget_char (dtp, c);
       eat_separator (dtp);
@@ -1081,15 +1071,15 @@ read_character (st_parameter_dt *dtp, int length __attribute__ ((unused)))
   else
     {
       free_saved (dtp);
-      if (c == EOF)
-	{
-	  hit_eof (dtp);
-	  return;
-	}
       sprintf (message, "Invalid string input in item %d",
 		  dtp->u.p.item_count);
       generate_error (&dtp->common, LIBERROR_READ_VALUE, message);
     }
+  return;
+
+ eof:
+  free_saved (dtp);
+  hit_eof (dtp);
 }
 
 
@@ -1595,6 +1585,7 @@ read_real (st_parameter_dt *dtp, void * dest, int length)
 	  break;
 
 	CASE_SEPARATORS:
+	case EOF:
 	  goto done;
 
 	default:
@@ -2188,7 +2179,6 @@ nml_parse_qualifier (st_parameter_dt *dtp, descriptor_dimension *ad,
 		      do not allow excess data to be processed.  */
 		  if (is_array_section == 1
 		      || !(compile_options.allow_std & GFC_STD_GNU)
-		      || !dtp->u.p.ionml->touched
 		      || dtp->u.p.ionml->type == BT_DERIVED)
 		    ls[dim].end = ls[dim].start;
 		  else
