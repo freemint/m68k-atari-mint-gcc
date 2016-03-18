@@ -1,3 +1,26 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
+2011-06-18  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (Identifier_to_gnu): Don't set TREE_THIS_NOTRAP
+	on a dereference built for a by-ref object if it has an address clause.
+
+2011-05-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/48844
+	* gcc-interface/gigi.h (get_variant_part): Declare.
+	* gcc-interface/decl.c (get_variant_part): Make global.
+	* gcc-interface/utils2.c (find_common_type): Do not return T1 if the
+	types have the same constant size, are record types and T1 has a
+	variant part while T2 doesn't.
+
+2011-04-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/Make-lang.in (gnatbind): Replace $(ALL_CFLAGS) with
+	$(CFLAGS) on the link line.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.

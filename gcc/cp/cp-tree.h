@@ -4958,6 +4958,7 @@ extern tree build_offset_ref			(tree, tree, bool);
 extern tree build_new				(VEC(tree,gc) **, tree, tree,
 						 VEC(tree,gc) **, int,
                                                  tsubst_flags_t);
+extern tree get_temp_regvar			(tree, tree);
 extern tree build_vec_init			(tree, tree, tree, bool, int,
                                                  tsubst_flags_t);
 extern tree build_delete			(tree, tree,
@@ -5002,10 +5003,10 @@ extern tree lazily_declare_fn			(special_function_kind,
 extern tree skip_artificial_parms_for		(const_tree, tree);
 extern int num_artificial_parms_for		(const_tree);
 extern tree make_alias_for			(tree, tree);
-extern tree get_copy_ctor			(tree);
+extern tree get_copy_ctor			(tree, tsubst_flags_t);
 extern tree get_copy_assign			(tree);
 extern tree get_default_ctor			(tree);
-extern tree get_dtor				(tree);
+extern tree get_dtor				(tree, tsubst_flags_t);
 extern tree locate_ctor				(tree);
 
 /* In optimize.c */
@@ -5344,7 +5345,7 @@ extern tree baselink_for_fns                    (tree);
 extern void finish_static_assert                (tree, tree, location_t,
                                                  bool);
 extern tree describable_type			(tree);
-extern tree finish_decltype_type                (tree, bool);
+extern tree finish_decltype_type                (tree, bool, tsubst_flags_t);
 extern tree finish_trait_expr			(enum cp_trait_kind, tree, tree);
 extern tree build_lambda_expr                   (void);
 extern tree build_lambda_object			(tree);
@@ -5409,6 +5410,7 @@ extern tree get_fns				(tree);
 extern tree get_first_fn			(tree);
 extern tree ovl_cons				(tree, tree);
 extern tree build_overload			(tree, tree);
+extern bool non_static_member_function_p        (tree);
 extern const char *cxx_printable_name		(tree, int);
 extern const char *cxx_printable_name_translate	(tree, int);
 extern tree build_exception_variant		(tree, tree);

@@ -399,7 +399,7 @@ decode_statement (void)
       break;
 
     case 'm':
-      match ("module% procedure% ", gfc_match_modproc, ST_MODULE_PROC);
+      match ("module% procedure", gfc_match_modproc, ST_MODULE_PROC);
       match ("module", gfc_match_module, ST_MODULE);
       break;
 
@@ -2108,13 +2108,15 @@ endType:
     {
       /* Look for allocatable components.  */
       if (c->attr.allocatable
-	  || (c->ts.type == BT_CLASS && CLASS_DATA (c)->attr.allocatable)
+	  || (c->ts.type == BT_CLASS && c->attr.class_ok
+	      && CLASS_DATA (c)->attr.allocatable)
 	  || (c->ts.type == BT_DERIVED && c->ts.u.derived->attr.alloc_comp))
 	sym->attr.alloc_comp = 1;
 
       /* Look for pointer components.  */
       if (c->attr.pointer
-	  || (c->ts.type == BT_CLASS && CLASS_DATA (c)->attr.class_pointer)
+	  || (c->ts.type == BT_CLASS && c->attr.class_ok
+	      && CLASS_DATA (c)->attr.class_pointer)
 	  || (c->ts.type == BT_DERIVED && c->ts.u.derived->attr.pointer_comp))
 	sym->attr.pointer_comp = 1;
 
@@ -4191,6 +4193,10 @@ resolve_all_program_units (gfc_namespace *gfc_global_ns_list)
   gfc_current_ns = gfc_global_ns_list;
   for (; gfc_current_ns; gfc_current_ns = gfc_current_ns->sibling)
     {
+      if (gfc_current_ns->proc_name
+	  && gfc_current_ns->proc_name->attr.flavor == FL_MODULE)
+	continue; /* Already resolved.  */
+
       if (gfc_current_ns->proc_name)
 	gfc_current_locus = gfc_current_ns->proc_name->declared_at;
       gfc_resolve (gfc_current_ns);
@@ -4231,8 +4237,28 @@ translate_all_program_units (gfc_namespace *gfc_global_ns_list)
   gfc_current_ns = gfc_global_ns_list;
   gfc_get_errors (NULL, &errors);
 
+  /* We first translate all modules to make sure that later parts
+     of the program can use the decl. Then we translate the nonmodules.  */
+
   for (; !errors && gfc_current_ns; gfc_current_ns = gfc_current_ns->sibling)
     {
+      if (!gfc_current_ns->proc_name
+	  || gfc_current_ns->proc_name->attr.flavor != FL_MODULE)
+	continue;
+
+      gfc_current_locus = gfc_current_ns->proc_name->declared_at;
+      gfc_derived_types = gfc_current_ns->derived_types;
+      gfc_generate_module_code (gfc_current_ns);
+      gfc_current_ns->translated = 1;
+    }
+
+  gfc_current_ns = gfc_global_ns_list;
+  for (; !errors && gfc_current_ns; gfc_current_ns = gfc_current_ns->sibling)
+    {
+      if (gfc_current_ns->proc_name
+	  && gfc_current_ns->proc_name->attr.flavor == FL_MODULE)
+	continue;
+
       gfc_current_locus = gfc_current_ns->proc_name->declared_at;
       gfc_derived_types = gfc_current_ns->derived_types;
       gfc_generate_code (gfc_current_ns);
@@ -4243,7 +4269,16 @@ translate_all_program_units (gfc_namespace *gfc_global_ns_list)
   gfc_current_ns = gfc_global_ns_list;
   for (;gfc_current_ns;)
     {
-      gfc_namespace *ns = gfc_current_ns->sibling;
+      gfc_namespace *ns;
+
+      if (gfc_current_ns->proc_name
+	  && gfc_current_ns->proc_name->attr.flavor == FL_MODULE)
+	{
+	  gfc_current_ns = gfc_current_ns->sibling;
+	  continue;
+	}
+
+      ns = gfc_current_ns->sibling;
       gfc_derived_types = gfc_current_ns->derived_types;
       gfc_done_2 ();
       gfc_current_ns = ns;
@@ -4375,16 +4410,18 @@ loop:
   if (s.state == COMP_MODULE)
     {
       gfc_dump_module (s.sym->name, errors_before == errors);
-      if (errors == 0)
-	gfc_generate_module_code (gfc_current_ns);
-      pop_state ();
       if (!gfc_option.flag_whole_file)
-	gfc_done_2 ();
+	{
+	  if (errors == 0)
+	    gfc_generate_module_code (gfc_current_ns);
+	  pop_state ();
+	  gfc_done_2 ();
+	}
       else
 	{
 	  gfc_current_ns->derived_types = gfc_derived_types;
 	  gfc_derived_types = NULL;
-	  gfc_current_ns = NULL;
+	  goto prog_units;
 	}
     }
   else
@@ -4429,10 +4466,12 @@ prog_units:
 	= gfc_option.dump_fortran_original ? gfc_global_ns_list : NULL;
 
   for (; gfc_current_ns; gfc_current_ns = gfc_current_ns->sibling)
-    {
-      gfc_dump_parse_tree (gfc_current_ns, stdout);
-      fputs ("------------------------------------------\n\n", stdout);
-    }
+    if (!gfc_current_ns->proc_name
+	|| gfc_current_ns->proc_name->attr.flavor != FL_MODULE)
+      {
+	gfc_dump_parse_tree (gfc_current_ns, stdout);
+	fputs ("------------------------------------------\n\n", stdout);
+      }
 
   /* Do the translation.  */
   translate_all_program_units (gfc_global_ns_list);

@@ -1,3 +1,32 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
+2011-04-30  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline:
+	PR libgfortran/48030
+	* io/read.c (read_x): Re-implement using fbuf_getc.
+
+2011-04-18  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/47571
+	* configure: Regenerated.
+	* config.h.in: Regenerated.
+	* acinclude.m4: Add alpha*-dec-osf* to gthread blacklist.
+	* configure.ac: Use separate symbol for clock_gettime in librt.
+	* intrinsics/system_clock.c: Use weakrefs only when needed and
+	supported.
+
+2011-03-28  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2011-03-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR bootstrap/48135
+	* configure.ac (gfortran_use_symver): Handle --disable-symvers.
+	* configure: Regenerate.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.

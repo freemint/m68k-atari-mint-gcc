@@ -816,6 +816,7 @@ remap_gimple_op_r (tree *tp, int *walk_subtrees, void *data)
       if (TREE_CODE (*tp) == MEM_REF)
 	{
 	  tree ptr = TREE_OPERAND (*tp, 0);
+	  tree type = remap_type (TREE_TYPE (*tp), id);
 	  tree old = *tp;
 	  tree tem;
 
@@ -826,7 +827,7 @@ remap_gimple_op_r (tree *tp, int *walk_subtrees, void *data)
 	  if ((tem = maybe_fold_offset_to_reference (EXPR_LOCATION (*tp),
 						     ptr,
 						     TREE_OPERAND (*tp, 1),
-						     TREE_TYPE (*tp)))
+						     type))
 	      && TREE_THIS_VOLATILE (tem) == TREE_THIS_VOLATILE (old))
 	    {
 	      tree *tem_basep = &tem;
@@ -848,7 +849,7 @@ remap_gimple_op_r (tree *tp, int *walk_subtrees, void *data)
 	    }
 	  else
 	    {
-	      *tp = fold_build2 (MEM_REF, TREE_TYPE (*tp),
+	      *tp = fold_build2 (MEM_REF, type,
 				 ptr, TREE_OPERAND (*tp, 1));
 	      TREE_THIS_VOLATILE (*tp) = TREE_THIS_VOLATILE (old);
 	      TREE_THIS_NOTRAP (*tp) = TREE_THIS_NOTRAP (old);
@@ -4116,6 +4117,14 @@ fold_marked_statements (int first, struct pointer_set_t *statements)
 		  if (fold_stmt (&gsi))
 		    {
 		      gimple new_stmt;
+		      /* If a builtin at the end of a bb folded into nothing,
+			 the following loop won't work.  */
+		      if (gsi_end_p (gsi))
+			{
+			  cgraph_update_edges_for_call_stmt (old_stmt,
+							     old_decl, NULL);
+			  break;
+			}
 		      if (gsi_end_p (i2))
 			i2 = gsi_start_bb (BASIC_BLOCK (first));
 		      else
@@ -4334,14 +4343,16 @@ copy_tree_r (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
 					 CONSTRUCTOR_ELTS (*tp));
       *tp = new_tree;
     }
+  else if (code == STATEMENT_LIST)
+    /* We used to just abort on STATEMENT_LIST, but we can run into them
+       with statement-expressions (c++/40975).  */
+    copy_statement_list (tp);
   else if (TREE_CODE_CLASS (code) == tcc_type)
     *walk_subtrees = 0;
   else if (TREE_CODE_CLASS (code) == tcc_declaration)
     *walk_subtrees = 0;
   else if (TREE_CODE_CLASS (code) == tcc_constant)
     *walk_subtrees = 0;
-  else
-    gcc_assert (code != STATEMENT_LIST);
   return NULL_TREE;
 }
 

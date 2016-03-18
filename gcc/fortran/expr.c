@@ -894,6 +894,9 @@ gfc_is_constant_expr (gfc_expr *e)
     case EXPR_FUNCTION:
     case EXPR_PPC:
     case EXPR_COMPCALL:
+      gcc_assert (e->symtree || e->value.function.esym
+		  || e->value.function.isym);
+
       /* Call to intrinsic with at least one argument.  */
       if (e->value.function.isym && e->value.function.actual)
 	{
@@ -902,13 +905,14 @@ gfc_is_constant_expr (gfc_expr *e)
 	      return 0;
 	}
 
-      /* Make sure we have a symbol.  */
-      gcc_assert (e->symtree);
-
-      sym = e->symtree->n.sym;
-    
       /* Specification functions are constant.  */
       /* F95, 7.1.6.2; F2003, 7.1.7  */
+      sym = NULL;
+      if (e->symtree)
+	sym = e->symtree->n.sym;
+      if (e->value.function.esym)
+	sym = e->value.function.esym;
+
       if (sym
 	  && sym->attr.function
 	  && sym->attr.pure
@@ -4367,15 +4371,26 @@ gfc_build_intrinsic_call (const char* name, locus where, unsigned numarg, ...)
 gfc_try
 gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
 {
-  gfc_symbol* sym;
+  gfc_symbol* sym = NULL;
   bool is_pointer;
   bool check_intentin;
   bool ptr_component;
   symbol_attribute attr;
   gfc_ref* ref;
 
+  if (e->expr_type == EXPR_VARIABLE)
+    {
+      gcc_assert (e->symtree);
+      sym = e->symtree->n.sym;
+    }
+  else if (e->expr_type == EXPR_FUNCTION)
+    {
+      gcc_assert (e->symtree);
+      sym = e->value.function.esym ? e->value.function.esym : e->symtree->n.sym;
+    }
+
   if (!pointer && e->expr_type == EXPR_FUNCTION
-      && e->symtree->n.sym->result->attr.pointer)
+      && sym->result->attr.pointer)
     {
       if (!(gfc_option.allow_std & GFC_STD_F2008))
 	{
@@ -4392,9 +4407,6 @@ gfc_check_vardef_context (gfc_expr* e, bool pointer, const char* context)
 		   " at %L", context, &e->where);
       return FAILURE;
     }
-
-  gcc_assert (e->symtree);
-  sym = e->symtree->n.sym;
 
   if (!pointer && sym->attr.flavor == FL_PARAMETER)
     {

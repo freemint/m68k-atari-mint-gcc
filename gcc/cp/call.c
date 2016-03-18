@@ -801,6 +801,53 @@ build_aggr_conv (tree type, tree ctor, int flags)
   return c;
 }
 
+/* Represent a conversion from CTOR, a braced-init-list, to TYPE, an
+   array type, if such a conversion is possible.  */
+
+static conversion *
+build_array_conv (tree type, tree ctor, int flags)
+{
+  conversion *c;
+  unsigned HOST_WIDE_INT len = CONSTRUCTOR_NELTS (ctor);
+  tree elttype = TREE_TYPE (type);
+  unsigned i;
+  tree val;
+  bool bad = false;
+  bool user = false;
+  enum conversion_rank rank = cr_exact;
+
+  if (TYPE_DOMAIN (type))
+    {
+      unsigned HOST_WIDE_INT alen = tree_low_cst (array_type_nelts_top (type), 1);
+      if (alen < len)
+	return NULL;
+    }
+
+  FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (ctor), i, val)
+    {
+      conversion *sub
+	= implicit_conversion (elttype, TREE_TYPE (val), val,
+			       false, flags);
+      if (sub == NULL)
+	return NULL;
+
+      if (sub->rank > rank)
+	rank = sub->rank;
+      if (sub->user_conv_p)
+	user = true;
+      if (sub->bad_p)
+	bad = true;
+    }
+
+  c = alloc_conversion (ck_aggr);
+  c->type = type;
+  c->rank = rank;
+  c->user_conv_p = user;
+  c->bad_p = bad;
+  c->u.next = NULL;
+  return c;
+}
+
 /* Build a representation of the identity conversion from EXPR to
    itself.  The TYPE should match the type of EXPR, if EXPR is non-NULL.  */
 
@@ -1429,7 +1476,9 @@ reference_binding (tree rto, tree rfrom, tree expr, bool c_cast_p, int flags)
 	  || (((CP_TYPE_CONST_NON_VOLATILE_P (to)
 		&& !(flags & LOOKUP_NO_TEMP_BIND))
 	       || TYPE_REF_IS_RVALUE (rto))
-	      && (CLASS_TYPE_P (from) || (expr && lvalue_p (expr))))))
+	      && (CLASS_TYPE_P (from)
+		  || TREE_CODE (from) == ARRAY_TYPE
+		  || (expr && lvalue_p (expr))))))
     {
       /* [dcl.init.ref]
 
@@ -1621,6 +1670,8 @@ implicit_conversion (tree to, tree from, tree expr, bool c_cast_p,
 	      return conv;
 	    }
 	}
+      else if (TREE_CODE (to) == ARRAY_TYPE)
+	return build_array_conv (to, expr, flags);
     }
 
   if (expr != NULL_TREE
@@ -5430,6 +5481,8 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	    if (!BRACE_ENCLOSED_INITIALIZER_P (val))
 	      check_narrowing (TREE_TYPE (sub), val);
 	    CONSTRUCTOR_APPEND_ELT (CONSTRUCTOR_ELTS (new_ctor), NULL_TREE, sub);
+	    if (!TREE_CONSTANT (sub))
+	      TREE_CONSTANT (new_ctor) = false;
 	  }
 	/* Build up the array.  */
 	elttype = cp_build_qualified_type
@@ -5671,7 +5724,15 @@ convert_arg_to_ellipsis (tree arg)
   else if (NULLPTR_TYPE_P (arg_type))
     arg = null_pointer_node;
   else if (INTEGRAL_OR_ENUMERATION_TYPE_P (arg_type))
-    arg = perform_integral_promotions (arg);
+    {
+      if (SCOPED_ENUM_P (arg_type) && !abi_version_at_least (6))
+	{
+	  warning (OPT_Wabi, "scoped enum %qT will not promote to an "
+		   "integral type in a future version of GCC", arg_type);
+	  arg = cp_convert (ENUM_UNDERLYING_TYPE (arg_type), arg);
+	}
+      arg = perform_integral_promotions (arg);
+    }
 
   arg = require_complete_type (arg);
   arg_type = TREE_TYPE (arg);
@@ -8006,7 +8067,8 @@ perform_implicit_conversion_flags (tree type, tree expr, tsubst_flags_t complain
 	  else if (invalid_nonstatic_memfn_p (expr, complain))
 	    /* We gave an error.  */;
 	  else
-	    error ("could not convert %qE to %qT", expr, type);
+	    error ("could not convert %qE from %qT to %qT", expr,
+		   TREE_TYPE (expr), type);
 	}
       expr = error_mark_node;
     }

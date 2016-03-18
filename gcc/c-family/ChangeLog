@@ -1,3 +1,39 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
+2011-05-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/49165
+	* c-common.c (c_common_truthvalue_conversion) <case COND_EXPR>: For
+	C++ don't call c_common_truthvalue_conversion on void type arms.
+
+2011-04-19  Richard Guenther  <rguenther@suse.de>
+
+	PR preprocessor/48248
+	* c-ppoutput.c (maybe_print_line): Avoid changing -P behavior.
+
+2011-04-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/48450
+	* c-common.c (c_common_truthvalue_conversion): Don't ignore
+	conversion from C++0x scoped enum.
+
+2011-03-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/48248
+	* c-ppoutput.c (print): Add src_file field.
+	(init_pp_output): Initialize it.
+	(maybe_print_line): Don't optimize by adding up to 8 newlines
+	if map->to_file and print.src_file are different file.
+	(print_line): Update print.src_file.
+
+2011-03-29  Jason Merrill  <jason@redhat.com>
+
+	* c.opt (fconstexpr-depth): New option.
+
+	* c.opt: Add -std=c++03.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.

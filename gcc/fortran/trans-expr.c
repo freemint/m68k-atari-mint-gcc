@@ -5444,9 +5444,12 @@ arrayfunc_assign_needs_temporary (gfc_expr * expr1, gfc_expr * expr2)
     return true;
 
   /* If we have reached here with an intrinsic function, we do not
-     need a temporary.  */
+     need a temporary except in the particular case that reallocation
+     on assignment is active and the lhs is allocatable and a target.  */
   if (expr2->value.function.isym)
-    return false;
+    return (gfc_option.flag_realloc_lhs
+	      && sym->attr.allocatable
+	      && sym->attr.target);
 
   /* If the LHS is a dummy, we need a temporary if it is not
      INTENT(OUT).  */
@@ -5528,23 +5531,38 @@ realloc_lhs_loop_for_fcn_call (gfc_se *se, locus *where, gfc_ss **ss)
 }
 
 
+/* For Assignment to a reallocatable lhs from intrinsic functions,
+   replace the se.expr (ie. the result) with a temporary descriptor.
+   Null the data field so that the library allocates space for the
+   result. Free the data of the original descriptor after the function,
+   in case it appears in an argument expression and transfer the
+   result to the original descriptor.  */
+
 static void
-realloc_lhs_bounds_for_intrinsic_call (gfc_se *se, int rank)
+fcncall_realloc_result (gfc_se *se, int rank)
 {
   tree desc;
+  tree res_desc;
   tree tmp;
   tree offset;
   int n;
 
-  /* Use the allocation done by the library.  */
+  /* Use the allocation done by the library.  Substitute the lhs
+     descriptor with a copy, whose data field is nulled.*/
   desc = build_fold_indirect_ref_loc (input_location, se->expr);
-  tmp = gfc_conv_descriptor_data_get (desc);
-  tmp = gfc_call_free (fold_convert (pvoid_type_node, tmp));
-  gfc_add_expr_to_block (&se->pre, tmp);
-  gfc_conv_descriptor_data_set (&se->pre, desc, null_pointer_node);
   /* Unallocated, the descriptor does not have a dtype.  */
   tmp = gfc_conv_descriptor_dtype (desc);
   gfc_add_modify (&se->pre, tmp, gfc_get_dtype (TREE_TYPE (desc)));
+  res_desc = gfc_evaluate_now (desc, &se->pre);
+  gfc_conv_descriptor_data_set (&se->pre, res_desc, null_pointer_node);
+  se->expr = gfc_build_addr_expr (TREE_TYPE (se->expr), res_desc);
+
+  /* Free the lhs after the function call and copy the result to
+     the lhs descriptor.  */
+  tmp = gfc_conv_descriptor_data_get (desc);
+  tmp = gfc_call_free (fold_convert (pvoid_type_node, tmp));
+  gfc_add_expr_to_block (&se->post, tmp);
+  gfc_add_modify (&se->post, desc, res_desc);
 
   offset = gfc_index_zero_node;
   tmp = gfc_index_one_node;
@@ -5578,7 +5596,6 @@ realloc_lhs_bounds_for_intrinsic_call (gfc_se *se, int rank)
     }
   gfc_conv_descriptor_offset_set (&se->post, desc, offset);
 }
-
 
 
 /* Try to translate array(:) = func (...), where func is a transformational
@@ -5645,7 +5662,7 @@ gfc_trans_arrayfunc_assign (gfc_expr * expr1, gfc_expr * expr2)
 	  ss->is_alloc_lhs = 1;
 	}
       else
-	realloc_lhs_bounds_for_intrinsic_call (&se, expr1->rank);
+	fcncall_realloc_result (&se, expr1->rank);
     }
 
   gfc_conv_function_expr (&se, expr2);
@@ -6050,8 +6067,8 @@ gfc_trans_assignment_1 (gfc_expr * expr1, gfc_expr * expr2, bool init_flag,
       /* Calculate the bounds of the scalarization.  */
       gfc_conv_ss_startstride (&loop);
       /* Enable loop reversal.  */
-      for (n = 0; n < loop.dimen; n++)
-	loop.reverse[n] = GFC_REVERSE_NOT_SET;
+      for (n = 0; n < GFC_MAX_DIMENSIONS; n++)
+	loop.reverse[n] = GFC_ENABLE_REVERSE;
       /* Resolve any data dependencies in the statement.  */
       gfc_conv_resolve_dependencies (&loop, lss, rss);
       /* Setup the scalarizing loops.  */
@@ -6130,8 +6147,8 @@ gfc_trans_assignment_1 (gfc_expr * expr1, gfc_expr * expr2, bool init_flag,
 
   tmp = gfc_trans_scalar_assign (&lse, &rse, expr1->ts,
 				 l_is_temp || init_flag,
-				 expr_is_variable (expr2) || scalar_to_array,
-				 dealloc);
+				 expr_is_variable (expr2) || scalar_to_array
+				 || expr2->expr_type == EXPR_ARRAY, dealloc);
   gfc_add_expr_to_block (&body, tmp);
 
   if (lss == gfc_ss_terminator)

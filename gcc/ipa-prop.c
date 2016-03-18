@@ -1522,10 +1522,13 @@ ipa_analyze_params_uses (struct cgraph_node *node,
 void
 ipa_analyze_node (struct cgraph_node *node)
 {
-  struct ipa_node_params *info = IPA_NODE_REF (node);
+  struct ipa_node_params *info;
   struct param_analysis_info *parms_info;
   int i, param_count;
 
+  ipa_check_create_node_params ();
+  ipa_check_create_edge_args ();
+  info = IPA_NODE_REF (node);
   push_cfun (DECL_STRUCT_FUNCTION (node->decl));
   current_function_decl = node->decl;
   ipa_initialize_node_params (node);
@@ -1727,7 +1730,7 @@ try_make_edge_direct_virtual_call (struct cgraph_edge *ie,
   type = ie->indirect_info->otr_type;
   binfo = get_binfo_at_offset (binfo, ie->indirect_info->anc_offset, type);
   if (binfo)
-    target = gimple_get_virt_mehtod_for_binfo (token, binfo, &delta, true);
+    target = gimple_get_virt_method_for_binfo (token, binfo, &delta, true);
   else
     return NULL;
 
@@ -2827,12 +2830,15 @@ void
 ipa_prop_write_jump_functions (cgraph_node_set set)
 {
   struct cgraph_node *node;
-  struct output_block *ob = create_output_block (LTO_section_jump_functions);
+  struct output_block *ob;
   unsigned int count = 0;
   cgraph_node_set_iterator csi;
 
-  ob->cgraph_node = NULL;
+  if (!ipa_node_params_vector)
+    return;
 
+  ob = create_output_block (LTO_section_jump_functions);
+  ob->cgraph_node = NULL;
   for (csi = csi_start (set); !csi_end_p (csi); csi_next (&csi))
     {
       node = csi_node (csi);

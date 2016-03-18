@@ -4292,16 +4292,47 @@ expand_assignment (tree to, tree from, bool nontemporal)
       /* Handle expand_expr of a complex value returning a CONCAT.  */
       else if (GET_CODE (to_rtx) == CONCAT)
 	{
-	  if (COMPLEX_MODE_P (TYPE_MODE (TREE_TYPE (from))))
+	  unsigned short mode_bitsize = GET_MODE_BITSIZE (GET_MODE (to_rtx));
+	  if (COMPLEX_MODE_P (TYPE_MODE (TREE_TYPE (from)))
+	      && bitpos == 0
+	      && bitsize == mode_bitsize)
+	    result = store_expr (from, to_rtx, false, nontemporal);
+	  else if (bitsize == mode_bitsize / 2
+		   && (bitpos == 0 || bitpos == mode_bitsize / 2))
+	    result = store_expr (from, XEXP (to_rtx, bitpos != 0), false,
+				 nontemporal);
+	  else if (bitpos + bitsize <= mode_bitsize / 2)
+	    result = store_field (XEXP (to_rtx, 0), bitsize, bitpos,
+				  mode1, from, TREE_TYPE (tem),
+				  get_alias_set (to), nontemporal);
+	  else if (bitpos >= mode_bitsize / 2)
+	    result = store_field (XEXP (to_rtx, 1), bitsize,
+				  bitpos - mode_bitsize / 2, mode1, from,
+				  TREE_TYPE (tem), get_alias_set (to),
+				  nontemporal);
+	  else if (bitpos == 0 && bitsize == mode_bitsize)
 	    {
-	      gcc_assert (bitpos == 0);
-	      result = store_expr (from, to_rtx, false, nontemporal);
+	      rtx from_rtx;
+	      result = expand_normal (from);
+	      from_rtx = simplify_gen_subreg (GET_MODE (to_rtx), result,
+					      TYPE_MODE (TREE_TYPE (from)), 0);
+	      emit_move_insn (XEXP (to_rtx, 0),
+			      read_complex_part (from_rtx, false));
+	      emit_move_insn (XEXP (to_rtx, 1),
+			      read_complex_part (from_rtx, true));
 	    }
 	  else
 	    {
-	      gcc_assert (bitpos == 0 || bitpos == GET_MODE_BITSIZE (mode1));
-	      result = store_expr (from, XEXP (to_rtx, bitpos != 0), false,
-				   nontemporal);
+	      rtx temp = assign_stack_temp (GET_MODE (to_rtx),
+					    GET_MODE_SIZE (GET_MODE (to_rtx)),
+					    0);
+	      write_complex_part (temp, XEXP (to_rtx, 0), false);
+	      write_complex_part (temp, XEXP (to_rtx, 1), true);
+	      result = store_field (temp, bitsize, bitpos, mode1, from,
+				    TREE_TYPE (tem), get_alias_set (to),
+				    nontemporal);
+	      emit_move_insn (XEXP (to_rtx, 0), read_complex_part (temp, false));
+	      emit_move_insn (XEXP (to_rtx, 1), read_complex_part (temp, true));
 	    }
 	}
       else
@@ -8103,7 +8134,10 @@ expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,
       op1 = gen_label_rtx ();
       jumpifnot_1 (code, treeop0, treeop1, op1, -1);
 
-      emit_move_insn (target, const1_rtx);
+      if (TYPE_PRECISION (type) == 1 && !TYPE_UNSIGNED (type))
+	emit_move_insn (target, constm1_rtx);
+      else
+	emit_move_insn (target, const1_rtx);
 
       emit_label (op1);
       return target;
@@ -10057,7 +10091,8 @@ do_store_flag (sepops ops, rtx target, enum machine_mode mode)
 
   if ((code == NE || code == EQ)
       && TREE_CODE (arg0) == BIT_AND_EXPR && integer_zerop (arg1)
-      && integer_pow2p (TREE_OPERAND (arg0, 1)))
+      && integer_pow2p (TREE_OPERAND (arg0, 1))
+      && (TYPE_PRECISION (ops->type) != 1 || TYPE_UNSIGNED (ops->type)))
     {
       tree type = lang_hooks.types.type_for_mode (mode, unsignedp);
       return expand_expr (fold_single_bit_test (loc,
@@ -10077,7 +10112,9 @@ do_store_flag (sepops ops, rtx target, enum machine_mode mode)
 
   /* Try a cstore if possible.  */
   return emit_store_flag_force (target, code, op0, op1,
-			        operand_mode, unsignedp, 1);
+				operand_mode, unsignedp,
+				(TYPE_PRECISION (ops->type) == 1
+				 && !TYPE_UNSIGNED (ops->type)) ? -1 : 1);
 }
 
 

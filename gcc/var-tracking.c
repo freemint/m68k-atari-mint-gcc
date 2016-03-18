@@ -739,6 +739,10 @@ use_narrower_mode_test (rtx *loc, void *data)
     case REG:
       if (cselib_lookup (*loc, GET_MODE (SUBREG_REG (subreg)), 0, VOIDmode))
 	return 1;
+      if (!validate_subreg (GET_MODE (subreg), GET_MODE (*loc),
+			    *loc, subreg_lowpart_offset (GET_MODE (subreg),
+							 GET_MODE (*loc))))
+	return 1;
       return -1;
     case PLUS:
     case MINUS:
@@ -4107,8 +4111,9 @@ find_mem_expr_in_1pdv (tree expr, rtx val, htab_t vars)
   VALUE_RECURSED_INTO (val) = true;
 
   for (node = var->var_part[0].loc_chain; node; node = node->next)
-    if (MEM_P (node->loc) && MEM_EXPR (node->loc) == expr
-	&& MEM_OFFSET (node->loc) == 0)
+    if (MEM_P (node->loc)
+	&& MEM_EXPR (node->loc) == expr
+	&& INT_MEM_OFFSET (node->loc) == 0)
       {
 	where = node;
 	break;
@@ -4171,11 +4176,10 @@ dataflow_set_preserve_mem_locs (void **slot, void *data)
 	{
 	  for (loc = var->var_part[0].loc_chain; loc; loc = loc->next)
 	    {
-	      /* We want to remove dying MEMs that doesn't refer to
-		 DECL.  */
+	      /* We want to remove dying MEMs that doesn't refer to DECL.  */
 	      if (GET_CODE (loc->loc) == MEM
 		  && (MEM_EXPR (loc->loc) != decl
-		      || MEM_OFFSET (loc->loc))
+		      || INT_MEM_OFFSET (loc->loc) != 0)
 		  && !mem_dies_at_call (loc->loc))
 		break;
 	      /* We want to move here MEMs that do refer to DECL.  */
@@ -4219,7 +4223,7 @@ dataflow_set_preserve_mem_locs (void **slot, void *data)
 
 	  if (GET_CODE (loc->loc) != MEM
 	      || (MEM_EXPR (loc->loc) == decl
-		  && MEM_OFFSET (loc->loc) == 0)
+		  && INT_MEM_OFFSET (loc->loc) == 0)
 	      || !mem_dies_at_call (loc->loc))
 	    {
 	      if (old_loc != loc->loc && emit_notes)
@@ -8611,7 +8615,7 @@ variable_tracking_main (void)
 static bool
 gate_handle_var_tracking (void)
 {
-  return (flag_var_tracking);
+  return (flag_var_tracking && !targetm.delay_vartrack);
 }
 
 

@@ -289,6 +289,12 @@ build_base_path (enum tree_code code,
   offset = BINFO_OFFSET (binfo);
   fixed_type_p = resolves_to_fixed_type_p (expr, &nonnull);
   target_type = code == PLUS_EXPR ? BINFO_TYPE (binfo) : BINFO_TYPE (d_binfo);
+  /* TARGET_TYPE has been extracted from BINFO, and, is therefore always
+     cv-unqualified.  Extract the cv-qualifiers from EXPR so that the
+     expression returned matches the input.  */
+  target_type = cp_build_qualified_type
+    (target_type, cp_type_quals (TREE_TYPE (TREE_TYPE (expr))));
+  ptr_target_type = build_pointer_type (target_type);
 
   /* Do we need to look in the vtable for the real offset?  */
   virtual_access = (v_binfo && fixed_type_p <= 0);
@@ -297,7 +303,7 @@ build_base_path (enum tree_code code,
      source type is incomplete and the pointer value doesn't matter.  */
   if (cp_unevaluated_operand != 0)
     {
-      expr = build_nop (build_pointer_type (target_type), expr);
+      expr = build_nop (ptr_target_type, expr);
       if (!want_pointer)
 	expr = build_indirect_ref (EXPR_LOCATION (expr), expr, RO_NULL);
       return expr;
@@ -312,18 +318,7 @@ build_base_path (enum tree_code code,
 	 field, because other parts of the compiler know that such
 	 expressions are always non-NULL.  */
       if (!virtual_access && integer_zerop (offset))
-	{
-	  tree class_type;
-	  /* TARGET_TYPE has been extracted from BINFO, and, is
-	     therefore always cv-unqualified.  Extract the
-	     cv-qualifiers from EXPR so that the expression returned
-	     matches the input.  */
-	  class_type = TREE_TYPE (TREE_TYPE (expr));
-	  target_type
-	    = cp_build_qualified_type (target_type,
-				       cp_type_quals (class_type));
-	  return build_nop (build_pointer_type (target_type), expr);
-	}
+	return build_nop (ptr_target_type, expr);
       null_test = error_mark_node;
     }
 
@@ -407,9 +402,6 @@ build_base_path (enum tree_code code,
 	offset = v_offset;
     }
 
-  target_type = cp_build_qualified_type
-    (target_type, cp_type_quals (TREE_TYPE (TREE_TYPE (expr))));
-  ptr_target_type = build_pointer_type (target_type);
   if (want_pointer)
     target_type = ptr_target_type;
 
@@ -4547,6 +4539,8 @@ type_requires_array_cookie (tree type)
 static void
 finalize_literal_type_property (tree t)
 {
+  tree fn;
+
   if (cxx_dialect < cxx0x
       || TYPE_HAS_NONTRIVIAL_DESTRUCTOR (t)
       /* FIXME These constraints seem unnecessary; remove from standard.
@@ -4557,18 +4551,17 @@ finalize_literal_type_property (tree t)
 	   && !TYPE_HAS_CONSTEXPR_CTOR (t))
     CLASSTYPE_LITERAL_P (t) = false;
 
-  if (!CLASSTYPE_LITERAL_P (t) && !CLASSTYPE_TEMPLATE_INSTANTIATION (t))
-    {
-      tree fn;
-      for (fn = TYPE_METHODS (t); fn; fn = DECL_CHAIN (fn))
-	if (DECL_DECLARED_CONSTEXPR_P (fn)
-	    && DECL_NONSTATIC_MEMBER_FUNCTION_P (fn)
-	    && !DECL_CONSTRUCTOR_P (fn))
-	  {
-	    error ("enclosing class of %q+D is not a literal type", fn);
-	    DECL_DECLARED_CONSTEXPR_P (fn) = false;
-	  }
-    }
+  if (!CLASSTYPE_LITERAL_P (t))
+    for (fn = TYPE_METHODS (t); fn; fn = DECL_CHAIN (fn))
+      if (DECL_DECLARED_CONSTEXPR_P (fn)
+	  && TREE_CODE (fn) != TEMPLATE_DECL
+	  && DECL_NONSTATIC_MEMBER_FUNCTION_P (fn)
+	  && !DECL_CONSTRUCTOR_P (fn))
+	{
+	  DECL_DECLARED_CONSTEXPR_P (fn) = false;
+	  if (!DECL_TEMPLATE_INFO (fn))
+	    error ("enclosing class of %q+#D is not a literal type", fn);
+	}
 }
 
 /* Check the validity of the bases and members declared in T.  Add any
@@ -5943,6 +5936,7 @@ fixed_type_or_null (tree instance, int *nonnull, int *cdtorp)
 	     itself.  */
 	  if (TREE_CODE (instance) == VAR_DECL
 	      && DECL_INITIAL (instance)
+	      && !type_dependent_expression_p_push (DECL_INITIAL (instance))
 	      && !htab_find (ht, instance))
 	    {
 	      tree type;
@@ -5983,7 +5977,17 @@ resolves_to_fixed_type_p (tree instance, int* nonnull)
 {
   tree t = TREE_TYPE (instance);
   int cdtorp = 0;
-  tree fixed = fixed_type_or_null (instance, nonnull, &cdtorp);
+  tree fixed;
+
+  if (processing_template_decl)
+    {
+      /* In a template we only care about the type of the result.  */
+      if (nonnull)
+	*nonnull = true;
+      return true;
+    }
+
+  fixed = fixed_type_or_null (instance, nonnull, &cdtorp);
   if (fixed == NULL_TREE)
     return 0;
   if (POINTER_TYPE_P (t))

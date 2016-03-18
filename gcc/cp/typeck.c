@@ -516,7 +516,8 @@ composite_pointer_type_r (tree t1, tree t2,
     {
       if (complain & tf_error)
 	composite_pointer_error (DK_PERMERROR, t1, t2, operation);
-
+      else
+	return error_mark_node;
       result_type = void_type_node;
     }
   result_type = cp_build_qualified_type (result_type,
@@ -527,9 +528,13 @@ composite_pointer_type_r (tree t1, tree t2,
   if (TYPE_PTR_TO_MEMBER_P (t1))
     {
       if (!same_type_p (TYPE_PTRMEM_CLASS_TYPE (t1),
-			TYPE_PTRMEM_CLASS_TYPE (t2))
-	  && (complain & tf_error))
-	composite_pointer_error (DK_PERMERROR, t1, t2, operation);
+			TYPE_PTRMEM_CLASS_TYPE (t2)))
+	{
+	  if (complain & tf_error)
+	    composite_pointer_error (DK_PERMERROR, t1, t2, operation);
+	  else
+	    return error_mark_node;
+	}
       result_type = build_ptrmem_type (TYPE_PTRMEM_CLASS_TYPE (t1),
 				       result_type);
     }
@@ -986,14 +991,14 @@ comp_except_specs (const_tree t1, const_tree t2, int exact)
   /* First handle noexcept.  */
   if (exact < ce_exact)
     {
-      /* noexcept(false) is compatible with any throwing dynamic-exc-spec
+      /* noexcept(false) is compatible with no exception-specification,
 	 and stricter than any spec.  */
       if (t1 == noexcept_false_spec)
-	return !nothrow_spec_p (t2) || exact == ce_derived;
-      /* Even a derived noexcept(false) is compatible with a throwing
-	 dynamic spec.  */
+	return t2 == NULL_TREE || exact == ce_derived;
+      /* Even a derived noexcept(false) is compatible with no
+	 exception-specification.  */
       if (t2 == noexcept_false_spec)
-	return !nothrow_spec_p (t1);
+	return t1 == NULL_TREE;
 
       /* Otherwise, if we aren't looking for an exact match, noexcept is
 	 equivalent to throw().  */
@@ -1941,6 +1946,9 @@ perform_integral_promotions (tree expr)
   if (!type || TREE_CODE (type) != ENUMERAL_TYPE)
     type = TREE_TYPE (expr);
   gcc_assert (INTEGRAL_OR_ENUMERATION_TYPE_P (type));
+  /* Scoped enums don't promote.  */
+  if (SCOPED_ENUM_P (type))
+    return expr;
   promoted_type = type_promotes_to (type);
   if (type != promoted_type)
     expr = cp_convert (promoted_type, expr);
@@ -4354,7 +4362,11 @@ cp_build_binary_op (location_t location,
 		  gcc_unreachable();
 		}
 	    }
-	  return build2 (COMPLEX_EXPR, result_type, real, imag);
+	  real = fold_if_not_in_template (real);
+	  imag = fold_if_not_in_template (imag);
+	  result = build2 (COMPLEX_EXPR, result_type, real, imag);
+	  result = fold_if_not_in_template (result);
+	  return result;
 	}
 
       /* For certain operations (which identify themselves by shorten != 0)
@@ -5469,6 +5481,8 @@ build_x_compound_expr_from_list (tree list, expr_list_kind exp,
 	  default:
 	    gcc_unreachable ();
 	  }
+      else
+	return error_mark_node;
 
       for (list = TREE_CHAIN (list); list; list = TREE_CHAIN (list))
 	expr = build_x_compound_expr (expr, TREE_VALUE (list), 
@@ -6209,14 +6223,29 @@ build_const_cast_1 (tree dst_type, tree expr, bool complain,
 
   /* [expr.const.cast]
 
-     An lvalue of type T1 can be explicitly converted to an lvalue of
-     type T2 using the cast const_cast<T2&> (where T1 and T2 are object
-     types) if a pointer to T1 can be explicitly converted to the type
-     pointer to T2 using a const_cast.  */
+     For two object types T1 and T2, if a pointer to T1 can be explicitly
+     converted to the type "pointer to T2" using a const_cast, then the
+     following conversions can also be made:
+
+     -- an lvalue of type T1 can be explicitly converted to an lvalue of
+     type T2 using the cast const_cast<T2&>;
+
+     -- a glvalue of type T1 can be explicitly converted to an xvalue of
+     type T2 using the cast const_cast<T2&&>; and
+
+     -- if T1 is a class type, a prvalue of type T1 can be explicitly
+     converted to an xvalue of type T2 using the cast const_cast<T2&&>.  */
+
   if (TREE_CODE (dst_type) == REFERENCE_TYPE)
     {
       reference_type = dst_type;
-      if (! real_lvalue_p (expr))
+      if (!TYPE_REF_IS_RVALUE (dst_type)
+	  ? real_lvalue_p (expr)
+	  : (CLASS_TYPE_P (TREE_TYPE (dst_type))
+	     ? lvalue_p (expr)
+	     : lvalue_or_rvalue_with_address_p (expr)))
+	/* OK.  */;
+      else
 	{
 	  if (complain)
 	    error ("invalid const_cast of an rvalue of type %qT to type %qT",
@@ -6701,7 +6730,7 @@ cp_build_modify_expr (tree lhs, enum tree_code modifycode, tree rhs,
 
       /* Allow array assignment in compiler-generated code.  */
       else if (!current_function_decl
-	       || !DECL_ARTIFICIAL (current_function_decl))
+	       || !DECL_DEFAULTED_FN (current_function_decl))
 	{
           /* This routine is used for both initialization and assignment.
              Make sure the diagnostic message differentiates the context.  */
@@ -7760,12 +7789,19 @@ check_return_expr (tree retval, bool *no_warning)
 
       /* Under C++0x [12.8/16 class.copy], a returned lvalue is sometimes
 	 treated as an rvalue for the purposes of overload resolution to
-	 favor move constructors over copy constructors.  */
-      if ((cxx_dialect != cxx98) 
-          && named_return_value_okay_p
-          /* The variable must not have the `volatile' qualifier.  */
-	  && !CP_TYPE_VOLATILE_P (TREE_TYPE (retval))
-	  /* The return type must be a class type.  */
+	 favor move constructors over copy constructors.
+
+         Note that these conditions are similar to, but not as strict as,
+	 the conditions for the named return value optimization.  */
+      if ((cxx_dialect != cxx98)
+          && (TREE_CODE (retval) == VAR_DECL
+	      || TREE_CODE (retval) == PARM_DECL)
+	  && DECL_CONTEXT (retval) == current_function_decl
+	  && !TREE_STATIC (retval)
+	  && same_type_p ((TYPE_MAIN_VARIANT (TREE_TYPE (retval))),
+			  (TYPE_MAIN_VARIANT
+			   (TREE_TYPE (TREE_TYPE (current_function_decl)))))
+	  /* This is only interesting for class type.  */
 	  && CLASS_TYPE_P (TREE_TYPE (TREE_TYPE (current_function_decl))))
 	flags = flags | LOOKUP_PREFER_RVALUE;
 

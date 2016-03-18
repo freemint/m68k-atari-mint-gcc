@@ -719,6 +719,10 @@ fconstant-string-class=
 ObjC ObjC++ Joined MissingArgError(no class name specified with %qs)
 -fconst-string-class=<name>	Use class <name> for constant strings
 
+fconstexpr-depth=
+C++ ObjC++ Joined RejectNegative UInteger Var(max_constexpr_depth) Init(512)
+-fconstexpr-depth=<number>	Specify maximum constexpr recursion depth
+
 fdeduce-init-list
 C++ ObjC++ Var(flag_deduce_init_list) Init(1)
 -fno-deduce-init-list	disable deduction of std::initializer_list for a template type parameter from a brace-enclosed initializer-list
@@ -1133,7 +1137,11 @@ Remap file names when including files
 
 std=c++98
 C++ ObjC++
-Conform to the ISO 1998 C++ standard
+Conform to the ISO 1998 C++ standard revised by the 2003 technical corrigendum
+
+std=c++03
+C++ ObjC++ Alias(std=c++98)
+Conform to the ISO 1998 C++ standard revised by the 2003 technical corrigendum
 
 std=c++0x
 C++ ObjC++

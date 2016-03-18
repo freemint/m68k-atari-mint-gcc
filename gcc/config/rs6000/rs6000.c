@@ -1212,6 +1212,7 @@ static enum machine_mode rs6000_eh_return_filter_mode (void);
 static bool rs6000_can_eliminate (const int, const int);
 static void rs6000_conditional_register_usage (void);
 static void rs6000_trampoline_init (rtx, tree, rtx);
+static bool rs6000_cannot_force_const_mem (rtx);
 
 /* Hash table stuff for keeping track of TOC entries.  */
 
@@ -1382,7 +1383,7 @@ static const struct default_options rs6000_option_optimization_table[] =
 #define TARGET_HAVE_TLS HAVE_AS_TLS
 
 #undef TARGET_CANNOT_FORCE_CONST_MEM
-#define TARGET_CANNOT_FORCE_CONST_MEM rs6000_tls_referenced_p
+#define TARGET_CANNOT_FORCE_CONST_MEM rs6000_cannot_force_const_mem
 
 #undef TARGET_DELEGITIMIZE_ADDRESS
 #define TARGET_DELEGITIMIZE_ADDRESS rs6000_delegitimize_address
@@ -4630,6 +4631,7 @@ rs6000_handle_option (size_t code, const char *arg, int value)
         target_flags_explicit |= MASK_SOFT_FLOAT;
         rs6000_single_float = rs6000_double_float = 0;
       }
+      break;
 
     case OPT_mrecip:
       rs6000_recip_name = (value) ? "default" : "none";
@@ -6401,12 +6403,13 @@ rs6000_delegitimize_address (rtx orig_x)
 		   || TARGET_MINIMAL_TOC
 		   || TARGET_CMODEL != CMODEL_SMALL))
 	      || (TARGET_CMODEL != CMODEL_SMALL
-		  && GET_CODE (XEXP (x, 0)) == PLUS
-		  && GET_CODE (XEXP (XEXP (x, 0), 0)) == REG
-		  && REGNO (XEXP (XEXP (x, 0), 0)) == TOC_REGISTER
-		  && GET_CODE (XEXP (XEXP (x, 0), 1)) == HIGH
+		  && GET_CODE (XEXP (x, 0)) == CONST
+		  && GET_CODE (XEXP (XEXP (x, 0), 0)) == PLUS
+		  && GET_CODE (XEXP (XEXP (XEXP (x, 0), 0), 0)) == REG
+		  && REGNO (XEXP (XEXP (XEXP (x, 0), 0), 0)) == TOC_REGISTER
+		  && GET_CODE (XEXP (XEXP (XEXP (x, 0), 0), 1)) == HIGH
 		  && rtx_equal_p (XEXP (x, 1),
-				  XEXP (XEXP (XEXP (x, 0), 1), 0)))))
+				  XEXP (XEXP (XEXP (XEXP (x, 0), 0), 1), 0)))))
 	{
 	  y = XVECEXP (y, 0, 0);
 	  if (!MEM_P (orig_x))
@@ -6544,10 +6547,11 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
 
       if (model == TLS_MODEL_GLOBAL_DYNAMIC)
 	{
-	  r3 = gen_rtx_REG (Pmode, 3);
 	  tga = rs6000_tls_get_addr ();
-	  emit_library_call_value (tga, dest, LCT_CONST, Pmode, 1, r3, Pmode);
+	  emit_library_call_value (tga, dest, LCT_CONST, Pmode,
+				   1, const0_rtx, Pmode);
 
+	  r3 = gen_rtx_REG (Pmode, 3);
 	  if (DEFAULT_ABI == ABI_AIX && TARGET_64BIT)
 	    insn = gen_tls_gd_aix64 (r3, got, addr, tga, const0_rtx);
 	  else if (DEFAULT_ABI == ABI_AIX && !TARGET_64BIT)
@@ -6564,11 +6568,12 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
 	}
       else if (model == TLS_MODEL_LOCAL_DYNAMIC)
 	{
-	  r3 = gen_rtx_REG (Pmode, 3);
 	  tga = rs6000_tls_get_addr ();
 	  tmp1 = gen_reg_rtx (Pmode);
-	  emit_library_call_value (tga, tmp1, LCT_CONST, Pmode, 1, r3, Pmode);
+	  emit_library_call_value (tga, tmp1, LCT_CONST, Pmode,
+				   1, const0_rtx, Pmode);
 
+	  r3 = gen_rtx_REG (Pmode, 3);
 	  if (DEFAULT_ABI == ABI_AIX && TARGET_64BIT)
 	    insn = gen_tls_ld_aix64 (r3, got, tga, const0_rtx);
 	  else if (DEFAULT_ABI == ABI_AIX && !TARGET_64BIT)
@@ -6645,6 +6650,19 @@ rs6000_tls_referenced_p (rtx x)
     return false;
 
   return for_each_rtx (&x, &rs6000_tls_symbol_ref_1, 0);
+}
+
+/* Implement TARGET_CANNOT_FORCE_CONST_MEM.  */
+
+static bool
+rs6000_cannot_force_const_mem (rtx x)
+{
+  if (GET_CODE (x) == CONST
+      && GET_CODE (XEXP (x, 0)) == PLUS
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == HIGH)
+    return true;
+
+  return rs6000_tls_referenced_p (x);
 }
 
 /* Return 1 if *X is a thread-local symbol.  This is the same as
@@ -6725,11 +6743,12 @@ rs6000_legitimize_reload_address (rtx x, enum machine_mode mode,
       && GET_CODE (XEXP (x, 0)) == PLUS
       && GET_CODE (XEXP (XEXP (x, 0), 0)) == REG
       && REGNO (XEXP (XEXP (x, 0), 0)) == TOC_REGISTER
-      && GET_CODE (XEXP (XEXP (x, 0), 1)) == HIGH
+      && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST
+      && GET_CODE (XEXP (XEXP (XEXP (x, 0), 1), 0)) == HIGH
       && GET_CODE (XEXP (x, 1)) == CONST
       && GET_CODE (XEXP (XEXP (x, 1), 0)) == UNSPEC
       && XINT (XEXP (XEXP (x, 1), 0), 1) == UNSPEC_TOCREL
-      && rtx_equal_p (XEXP (XEXP (XEXP (x, 0), 1), 0), XEXP (x, 1)))
+      && rtx_equal_p (XEXP (XEXP (XEXP (XEXP (x, 0), 1), 0), 0), XEXP (x, 1)))
     {
       push_reload (XEXP (x, 0), NULL_RTX, &XEXP (x, 0), NULL,
 		   BASE_REG_CLASS, Pmode, VOIDmode, 0, 0,
@@ -7775,6 +7794,11 @@ rs6000_emit_move (rtx dest, rtx source, enum machine_mode mode)
 	}
       else if (mode == Pmode
 	       && CONSTANT_P (operands[1])
+	       && GET_CODE (operands[1]) != HIGH
+	       && !(TARGET_CMODEL != CMODEL_SMALL
+		    && GET_CODE (operands[1]) == CONST
+		    && GET_CODE (XEXP (operands[1], 0)) == PLUS
+		    && GET_CODE (XEXP (XEXP (operands[1], 0), 1)) == HIGH)
 	       && ((GET_CODE (operands[1]) != CONST_INT
 		    && ! easy_fp_constant (operands[1], mode))
 		   || (GET_CODE (operands[1]) == CONST_INT
@@ -7782,7 +7806,6 @@ rs6000_emit_move (rtx dest, rtx source, enum machine_mode mode)
 			   > (TARGET_CMODEL != CMODEL_SMALL ? 3 : 2)))
 		   || (GET_CODE (operands[0]) == REG
 		       && FP_REGNO_P (REGNO (operands[0]))))
-	       && GET_CODE (operands[1]) != HIGH
 	       && ! legitimate_constant_pool_address_p (operands[1], mode,
 							false)
 	       && ! toc_relative_expr_p (operands[1])
@@ -7888,7 +7911,7 @@ rs6000_emit_move (rtx dest, rtx source, enum machine_mode mode)
 
 /* Nonzero if we can use an AltiVec register to pass this arg.  */
 #define USE_ALTIVEC_FOR_ARG_P(CUM,MODE,TYPE,NAMED)		\
-  ((ALTIVEC_VECTOR_MODE (MODE) || VSX_VECTOR_MODE (MODE))	\
+  (ALTIVEC_OR_VSX_VECTOR_MODE (MODE)				\
    && (CUM)->vregno <= ALTIVEC_ARG_MAX_REG			\
    && TARGET_ALTIVEC_ABI					\
    && (NAMED))
@@ -8088,8 +8111,7 @@ init_cumulative_args (CUMULATIVE_ARGS *cum, tree fntype,
 	    }
 	  if (SCALAR_FLOAT_MODE_P (return_mode))
 	    rs6000_passes_float = true;
-	  else if (ALTIVEC_VECTOR_MODE (return_mode)
-		   || VSX_VECTOR_MODE (return_mode)
+	  else if (ALTIVEC_OR_VSX_VECTOR_MODE (return_mode)
 		   || SPE_VECTOR_MODE (return_mode))
 	    rs6000_passes_vector = true;
 	}
@@ -8187,7 +8209,7 @@ function_arg_padding (enum machine_mode mode, const_tree type)
    existing library interfaces.
 
    Doubleword align SPE vectors.
-   Quadword align Altivec vectors.
+   Quadword align Altivec/VSX vectors.
    Quadword align large synthetic vector types.   */
 
 static unsigned int
@@ -8204,7 +8226,7 @@ rs6000_function_arg_boundary (enum machine_mode mode, const_tree type)
 	       && int_size_in_bytes (type) >= 8
 	       && int_size_in_bytes (type) < 16))
     return 64;
-  else if ((ALTIVEC_VECTOR_MODE (mode) || VSX_VECTOR_MODE (mode))
+  else if (ALTIVEC_OR_VSX_VECTOR_MODE (mode)
 	   || (type && TREE_CODE (type) == VECTOR_TYPE
 	       && int_size_in_bytes (type) >= 16))
     return 128;
@@ -8424,7 +8446,7 @@ rs6000_function_arg_advance_1 (CUMULATIVE_ARGS *cum, enum machine_mode mode,
     {
       if (SCALAR_FLOAT_MODE_P (mode))
 	rs6000_passes_float = true;
-      else if (named && (ALTIVEC_VECTOR_MODE (mode) || VSX_VECTOR_MODE (mode)))
+      else if (named && ALTIVEC_OR_VSX_VECTOR_MODE (mode))
 	rs6000_passes_vector = true;
       else if (SPE_VECTOR_MODE (mode)
 	       && !cum->stdarg
@@ -8434,8 +8456,7 @@ rs6000_function_arg_advance_1 (CUMULATIVE_ARGS *cum, enum machine_mode mode,
 #endif
 
   if (TARGET_ALTIVEC_ABI
-      && (ALTIVEC_VECTOR_MODE (mode)
-	  || VSX_VECTOR_MODE (mode)
+      && (ALTIVEC_OR_VSX_VECTOR_MODE (mode)
 	  || (type && TREE_CODE (type) == VECTOR_TYPE
 	      && int_size_in_bytes (type) == 16)))
     {
@@ -9053,8 +9074,7 @@ rs6000_function_arg (CUMULATIVE_ARGS *cum, enum machine_mode mode,
     else
       return gen_rtx_REG (mode, cum->vregno);
   else if (TARGET_ALTIVEC_ABI
-	   && (ALTIVEC_VECTOR_MODE (mode)
-	       || VSX_VECTOR_MODE (mode)
+	   && (ALTIVEC_OR_VSX_VECTOR_MODE (mode)
 	       || (type && TREE_CODE (type) == VECTOR_TYPE
 		   && int_size_in_bytes (type) == 16)))
     {
@@ -19576,7 +19596,9 @@ create_TOC_reference (rtx symbol, rtx largetoc_reg)
   tocreg = gen_rtx_REG (Pmode, TOC_REGISTER);
   if (TARGET_CMODEL != CMODEL_SMALL)
     {
-      rtx hi = gen_rtx_PLUS (Pmode, tocreg, gen_rtx_HIGH (Pmode, tocrel));
+      rtx hi = gen_rtx_CONST (Pmode,
+			      gen_rtx_PLUS (Pmode, tocreg, 
+					    gen_rtx_HIGH (Pmode, tocrel)));
       if (largetoc_reg != NULL)
 	{
 	  emit_move_insn (largetoc_reg, hi);
@@ -19980,7 +20002,7 @@ emit_frame_save (rtx frame_reg, rtx frame_ptr, enum machine_mode mode,
 
   /* Some cases that need register indexed addressing.  */
   if ((TARGET_ALTIVEC_ABI && ALTIVEC_VECTOR_MODE (mode))
-      || (TARGET_VSX && VSX_VECTOR_MODE (mode))
+      || (TARGET_VSX && ALTIVEC_OR_VSX_VECTOR_MODE (mode))
       || (TARGET_E500_DOUBLE && mode == DFmode)
       || (TARGET_SPE_ABI
 	  && SPE_VECTOR_MODE (mode)
@@ -26670,9 +26692,10 @@ rs6000_register_move_cost (enum machine_mode mode,
       else if (from == CR_REGS)
 	ret = 4;
 
-      /* Power6 has slower LR/CTR moves so make them more expensive than
-	 memory in order to bias spills to memory .*/
-      else if (rs6000_cpu == PROCESSOR_POWER6
+      /* For those processors that have slow LR/CTR moves, make them more
+	 expensive than memory in order to bias spills to memory .*/
+      else if ((rs6000_cpu == PROCESSOR_POWER6
+		|| rs6000_cpu == PROCESSOR_POWER7)
 	       && reg_classes_intersect_p (from, LINK_OR_CTR_REGS))
         ret = 6 * hard_regno_nregs[0][mode];
 
@@ -27263,13 +27286,12 @@ rs6000_function_value (const_tree valtype,
   else if (TREE_CODE (valtype) == COMPLEX_TYPE
 	   && targetm.calls.split_complex_arg)
     return rs6000_complex_function_value (mode);
+  /* VSX is a superset of Altivec and adds V2DImode/V2DFmode.  Since the same
+     return register is used in both cases, and we won't see V2DImode/V2DFmode
+     for pure altivec, combine the two cases.  */
   else if (TREE_CODE (valtype) == VECTOR_TYPE
 	   && TARGET_ALTIVEC && TARGET_ALTIVEC_ABI
-	   && ALTIVEC_VECTOR_MODE (mode))
-    regno = ALTIVEC_ARG_RETURN;
-  else if (TREE_CODE (valtype) == VECTOR_TYPE
-	   && TARGET_VSX && TARGET_ALTIVEC_ABI
-	   && VSX_VECTOR_MODE (mode))
+	   && ALTIVEC_OR_VSX_VECTOR_MODE (mode))
     regno = ALTIVEC_ARG_RETURN;
   else if (TARGET_E500_DOUBLE && TARGET_HARD_FLOAT
 	   && (mode == DFmode || mode == DCmode
@@ -27309,11 +27331,11 @@ rs6000_libcall_value (enum machine_mode mode)
 	   && TARGET_HARD_FLOAT && TARGET_FPRS
            && ((TARGET_SINGLE_FLOAT && mode == SFmode) || TARGET_DOUBLE_FLOAT))
     regno = FP_ARG_RETURN;
-  else if (ALTIVEC_VECTOR_MODE (mode)
+  /* VSX is a superset of Altivec and adds V2DImode/V2DFmode.  Since the same
+     return register is used in both cases, and we won't see V2DImode/V2DFmode
+     for pure altivec, combine the two cases.  */
+  else if (ALTIVEC_OR_VSX_VECTOR_MODE (mode)
 	   && TARGET_ALTIVEC && TARGET_ALTIVEC_ABI)
-    regno = ALTIVEC_ARG_RETURN;
-  else if (VSX_VECTOR_MODE (mode)
-	   && TARGET_VSX && TARGET_ALTIVEC_ABI)
     regno = ALTIVEC_ARG_RETURN;
   else if (COMPLEX_MODE_P (mode) && targetm.calls.split_complex_arg)
     return rs6000_complex_function_value (mode);

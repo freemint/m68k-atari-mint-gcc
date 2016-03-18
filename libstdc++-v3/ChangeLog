@@ -1,3 +1,247 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
+2011-05-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* config/abi/pre/gnu.ver: Correct last change, export instead
+	at the existing @3.4.16.
+	* configure.ac: Revert last change.
+	* testsuite/util/testsuite_abi.cc: Likewise.
+	* configure: Regenerate.
+
+2011-05-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* config/abi/pre/gnu.ver: Export recently added  basic_streambuf
+	and basic_stringbuf symbols @3.4.17.
+	* configure.ac: Update.
+	* testsuite/util/testsuite_abi.cc: Likewise.
+	* configure: Regenerate.
+
+2011-05-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/49141
+	* testsuite/26_numerics/complex/cons/48760.cc: Use dg-require-c-std.
+	* testsuite/26_numerics/headers/cmath/19322.cc: Likewise.
+
+2011-05-22  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* testsuite/20_util/bind/cv_quals_2.cc: New.
+
+2011-05-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/49058
+	* include/std/functional (_Bind<_Functor(_Bound_args...)>::
+	operator()(_Args&&...)): Don't cv qualify _Functor directly
+	in the default template argument, SFINAE doesn't apply when
+	the functor has no arguments.
+	* testsuite/20_util/bind/49058_1.cc: New.
+	* testsuite/20_util/bind/49058_2.cc: Likewise.
+
+2011-05-06  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/manual/status_cxx200x.xml: Update to reflect current status
+	and FDIS content.
+	* doc/xml/manual/documentation_hacking.xml: Fix typo.
+	* doc/html/*: Regenerate.
+
+2011-05-03  Ollie Wild  <aaw@google.com>
+
+	* include/ext/sso_string_base.h (__sso_string_base<>::_M_construct):
+	Fix unqualified lookup.
+	(__sso_string_base<>::_M_construct): Likewise.
+	(__sso_string_base<>::_M_construct): Likewise.
+	(__sso_string_base<>::_M_assign): Likewise.
+	(__sso_string_base<>::_M_reserve): Likewise.
+	(__sso_string_base<>::_M_mutate): Likewise.
+	(__sso_string_base<>::_M_erase): Likewise.
+	* include/ext/vstring.h (__versa_string<>::replace): Likewise.
+	(__versa_string<>::compare): Likewise.
+	* include/ext/vstring.tcc (__versa_string<>::compare): Likewise.
+	(__versa_string<>::compare): Likewise.
+	(__versa_string<>::compare): Likewise.
+	(__versa_string<>::compare): Likewise.
+	(__versa_string<>::compare): Likewise.
+
+2011-05-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/48750
+	* include/parallel/multiway_merge.h: Run _ValueType destructors.
+	* include/parallel/multiway_mergesort.h: Likewise.
+	* include/parallel/quicksort.h: Likewise.
+	* include/parallel/random_shuffle.h: Likewise.
+	* include/parallel/partial_sum.h: Likewise.
+	* include/parallel/losertree.h: Run destructors; minor tweaks.
+	* include/parallel/par_loop.h: Run destructors, fix memory
+	allocations and deallocations.
+	* testsuite/26_numerics/accumulate/48750.cc: New.
+
+	* testsuite/ext/profile/mutex_extensions_neg.cc: Do not run in
+	parallel-mode to avoid spurious multiple errors.
+
+2011-04-30  Doug Kwan  <dougkwan@google.com>
+
+	* include/Makefile.am (install-freestanding-headers): Also install
+	cxxabi_tweaks.h.
+	* include/Makefile.in: Regenerate.
+
+2011-04-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/48760
+	* include/std/complex (complex<float>::complex(float, float),
+	complex<double>::complex(double, double),
+	complex<long double>::complex(long double, long double)): Initialize
+	in the body in C++03 mode (no fix in C++0x mode).
+	* testsuite/26_numerics/complex/cons/48760.cc: New.
+
+2011-04-23  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/48521
+	* include/std/type_traits (result_of): Handle pointer to member.
+	* include/std/functional (__invoke): Likewise.
+	(_Function_to_function_pointer): Remove.
+	(_Reference_wrapper_base): Provide nested types independent of
+	unary_function and binary_function.
+	(reference_wrapper::operator()): DR 2017.
+	(ref(const A&&), cref(const A&&): Define as deleted.
+	* include/std/future (async): Simplify SFINAE and use result_of to
+	support pointer to member.
+	* testsuite/20_util/reference_wrapper/invoke.cc: Test pointer to
+	member.
+	* testsuite/20_util/reference_wrapper/24803.cc: Likewise.
+	* testsuite/20_util/reference_wrapper/typedefs.cc: Test for types
+	instead of derivation from unary_function and binary_function.
+	* testsuite/20_util/reference_wrapper/invoke-2.cc: New.
+	* testsuite/20_util/reference_wrapper/ref_neg.c: New.
+	* testsuite/20_util/reference_wrapper/typedefs-3.c: New.
+
+2011-04-19  Hans-Peter Nilsson  <hp@axis.com>
+
+	PR testsuite/48675
+	* testsuite/20_util/hash/chi2_quality.cc (test_document_words): Stub
+	this part if SAMPLES < 100000.
+
+2011-04-17  Daniel Krugler  <daniel.kruegler@googlemail.com>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/48635 (again)
+	* include/bits/unique_ptr.h (unique_ptr<>::unique_ptr(unique_ptr<>&&),
+	unique_ptr<_Tp[]>::unique_ptr(unique_ptr<>&&),
+	unique_ptr<>::operator=(unique_ptr<>&&),
+	unique_ptr<_Tp[]>::operator=(unique_ptr<>&&)): Use forward<_Ep>, not
+	forward<_Dp>, to forward the deleter.
+	* testsuite/20_util/unique_ptr/assign/48635_neg.cc: New.
+
+2011-04-15  Daniel Krugler  <daniel.kruegler@googlemail.com>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/48631
+	* include/bits/unique_ptr.h (default_delete<_Tp[]>): Add deleted
+	function call operator.
+	* testsuite/20_util/default_delete/48631_neg.cc: New.
+	* testsuite/20_util/weak_ptr/comparison/cmp_neg.cc: Adjust dg-error
+	line numbers.
+
+2011-04-15  Daniel Krugler  <daniel.kruegler@googlemail.com>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/48635
+	* include/bits/unique_ptr.h (unique_ptr<>::operator=(unique_ptr&&),
+	unique_ptr<>::operator=(unique_ptr<>&&),
+	unique_ptr<_Tp[],>::operator=(unique_ptr&&),
+	unique_ptr<_Tp[],>::operator=(unique_ptr<>&&)): Forward the deleter
+	instead of moving it.
+	* testsuite/20_util/unique_ptr/assign/48635.cc: New.
+
+2011-04-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/std/istream: Fix comments in the light of DR60 + N3168.
+
+2011-04-15  Takaya Saito  <gintensubaru@gmail.com>
+
+	PR libstdc++/48476
+	* include/std/tuple (_Tuple_impl<>::_Tuple_impl(_Tuple_impl<>&&),
+	_Tuple_impl<>::operator=(_Tuple_impl&&), _Tuple_impl<>::operator=
+	(_Tuple_impl<>&&), tuple_cat): Use std::forward where appropriate.
+	* testsuite/20_util/tuple/cons/48476.cc: New.
+	* testsuite/20_util/tuple/48476.cc: Likewise.
+	* testsuite/20_util/tuple/creation_functions/48476.cc: Likewise.
+
+2011-04-12  Allan McRae  <allan@archlinux.org>
+
+	PR libstdc++/48566
+	* testsuite/tr1/6_containers/unordered_map/requirements/
+	iterator_null_neg.cc: Include <cstddef>.
+	* testsuite/tr1/6_containers/unordered_set/requirements/
+	iterator_null_neg.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/seekoff/wchar_t/4.cc: Include
+	<cstring>.
+	* testsuite/util/testsuite_common_types.h: Include <limits>.
+	* testsuite/29_atomics/atomic_integral/cons/assign_neg.cc:
+	Adjust dg-error line numbers.
+	* testsuite/29_atomics/atomic_integral/cons/copy_neg.cc: Likewise.
+	* testsuite/29_atomics/atomic_integral/operators/increment_neg.cc:
+	Likewise.
+	* testsuite/29_atomics/atomic_integral/operators/bitwise_neg.cc:
+	Likewise.
+	* testsuite/29_atomics/atomic_integral/operators/decrement_neg.cc:
+	Likewise.
+	* testsuite/29_atomics/atomic/cons/assign_neg.cc: Likewise.
+	* testsuite/29_atomics/atomic/cons/copy_neg.cc: Likewise.
+
+2011-04-10  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* testsuite/20_util/function/48451.cc: Rename to...
+	* testsuite/20_util/function/48541.cc: This.
+
+2011-04-10  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/48541
+	* include/std/functional (_Base_manager::_M_get_pointer): Use
+	addressof.
+	* testsuite/20_util/function/48451.cc: New.
+
+2011-04-10  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/48465
+	* configure.ac (libtool_VERSION): Bump library version to 6:16:0.
+	* configure: Regenerate.
+	* config/abi/pre/gnu.ver (GLIBCXX_3.4.16): Export missing symbols.
+	* testsuite/util/testsuite_abi.cc: Add GLIBCXX_3.4.16.
+
+2011-04-06  Jeffrey Yasskin  <jyasskin@google.com>
+
+	* include/ext/algorithm (is_sorted): In C++0x mode import from
+	namespace std.
+	* include/ext/numeric (iota): In C++0x mode import from
+	namespace std.
+	* testsuite/ext/is_sorted/cxx0x.cc: New.
+	* testsuite/ext/iota/cxx0x.cc: New.
+
+2011-04-02  Jonathan Wakely  <redi@gcc.gnu.org>
+
+	PR libstdc++/48398
+	* include/bits/unique_ptr.h (__tuple_type): Store pointer type.
+	* testsuite/20_util/unique_ptr/modifiers/48398.cc: New.
+	* testsuite/20_util/unique_ptr/requirements/pointer_type.cc: Remove
+	unused parameter name.
+
+2011-03-31  Jeffrey Yasskin  <jyasskin@google.com>
+
+	* libsupc++/exception_ptr.h: Forward-declare std::type_info.
+	* libsupc++/nested_exception.h (__throw_with_nested): Remove a
+	redundant default argument from std::__throw_with_nested.
+
+2011-03-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/random.h (negative_binomial_distribution<>::
+	negative_binomial_distribution(_IntType, double),
+	negative_binomial_distribution<>::
+	negative_binomial_distribution(const param_type&)): Fix thinko
+	p / (1 - p) for (1 - p) / p.
+	* include/bits/random.tcc (negative_binomial_distribution<>::
+	operator()): Fix.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.

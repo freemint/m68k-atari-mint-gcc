@@ -1,5 +1,5 @@
 /* Statement simplification on GIMPLE.
-   Copyright (C) 2010 Free Software Foundation, Inc.
+   Copyright (C) 2010, 2011 Free Software Foundation, Inc.
    Split out from tree-ssa-ccp.c.
 
 This file is part of GCC.
@@ -1374,7 +1374,7 @@ gimple_fold_builtin (gimple stmt)
    is a thunk (other than a this adjustment which is dealt with by DELTA). */
 
 tree
-gimple_get_virt_mehtod_for_binfo (HOST_WIDE_INT token, tree known_binfo,
+gimple_get_virt_method_for_binfo (HOST_WIDE_INT token, tree known_binfo,
 				  tree *delta, bool refuse_thunks)
 {
   HOST_WIDE_INT i;
@@ -1392,6 +1392,10 @@ gimple_get_virt_mehtod_for_binfo (HOST_WIDE_INT token, tree known_binfo,
 	    ? TARGET_VTABLE_USES_DESCRIPTORS : 1);
       v = TREE_CHAIN (v);
     }
+
+  /* If BV_VCALL_INDEX is non-NULL, give up.  */
+  if (TREE_TYPE (v))
+    return NULL_TREE;
 
   fndecl = TREE_VALUE (v);
   node = cgraph_get_node_or_alias (fndecl);
@@ -1480,6 +1484,11 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace)
   bool changed = false;
   gimple stmt = gsi_stmt (*gsi);
   unsigned i;
+  gimple_stmt_iterator gsinext = *gsi;
+  gimple next_stmt;
+
+  gsi_next (&gsinext);
+  next_stmt = gsi_end_p (gsinext) ? NULL : gsi_stmt (gsinext);
 
   /* Fold the main computation performed by the statement.  */
   switch (gimple_code (stmt))
@@ -1568,10 +1577,19 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace)
     default:;
     }
 
+  /* If stmt folds into nothing and it was the last stmt in a bb,
+     don't call gsi_stmt.  */
+  if (gsi_end_p (*gsi))
+    {
+      gcc_assert (next_stmt == NULL);
+      return changed;
+    }
+
   stmt = gsi_stmt (*gsi);
 
-  /* Fold *& on the lhs.  */
-  if (gimple_has_lhs (stmt))
+  /* Fold *& on the lhs.  Don't do this if stmt folded into nothing,
+     as we'd changing the next stmt.  */
+  if (gimple_has_lhs (stmt) && stmt != next_stmt)
     {
       tree lhs = gimple_get_lhs (stmt);
       if (lhs && REFERENCE_CLASS_P (lhs))
@@ -2179,10 +2197,22 @@ and_comparisons_1 (enum tree_code code1, tree op1a, tree op1b,
 							code2, op2a, op2b))
 			return NULL_TREE;
 		    }
-		  else if (TREE_CODE (arg) == SSA_NAME)
+		  else if (TREE_CODE (arg) == SSA_NAME
+			   && !SSA_NAME_IS_DEFAULT_DEF (arg))
 		    {
-		      tree temp = and_var_with_comparison (arg, invert,
-							   code2, op2a, op2b);
+		      tree temp;
+		      gimple def_stmt = SSA_NAME_DEF_STMT (arg);
+		      /* In simple cases we can look through PHI nodes,
+			 but we have to be careful with loops.
+			 See PR49073.  */
+		      if (! dom_info_available_p (CDI_DOMINATORS)
+			  || gimple_bb (def_stmt) == gimple_bb (stmt)
+			  || dominated_by_p (CDI_DOMINATORS,
+					     gimple_bb (def_stmt),
+					     gimple_bb (stmt)))
+			return NULL_TREE;
+		      temp = and_var_with_comparison (arg, invert, code2,
+						      op2a, op2b);
 		      if (!temp)
 			return NULL_TREE;
 		      else if (!result)
@@ -2629,10 +2659,22 @@ or_comparisons_1 (enum tree_code code1, tree op1a, tree op1b,
 							code2, op2a, op2b))
 			return NULL_TREE;
 		    }
-		  else if (TREE_CODE (arg) == SSA_NAME)
+		  else if (TREE_CODE (arg) == SSA_NAME
+			   && !SSA_NAME_IS_DEFAULT_DEF (arg))
 		    {
-		      tree temp = or_var_with_comparison (arg, invert,
-							  code2, op2a, op2b);
+		      tree temp;
+		      gimple def_stmt = SSA_NAME_DEF_STMT (arg);
+		      /* In simple cases we can look through PHI nodes,
+			 but we have to be careful with loops.
+			 See PR49073.  */
+		      if (! dom_info_available_p (CDI_DOMINATORS)
+			  || gimple_bb (def_stmt) == gimple_bb (stmt)
+			  || dominated_by_p (CDI_DOMINATORS,
+					     gimple_bb (def_stmt),
+					     gimple_bb (stmt)))
+			return NULL_TREE;
+		      temp = or_var_with_comparison (arg, invert, code2,
+						     op2a, op2b);
 		      if (!temp)
 			return NULL_TREE;
 		      else if (!result)

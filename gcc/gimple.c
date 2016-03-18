@@ -1405,7 +1405,8 @@ walk_gimple_op (gimple stmt, walk_tree_fn callback_op,
       for (i = 0; i < gimple_call_num_args (stmt); i++)
 	{
 	  if (wi)
-	    wi->val_only = is_gimple_reg_type (gimple_call_arg (stmt, i));
+	    wi->val_only
+	      = is_gimple_reg_type (TREE_TYPE (gimple_call_arg (stmt, i)));
 	  ret = walk_tree (gimple_call_arg_ptr (stmt, i), callback_op, wi,
 			   pset);
 	  if (ret)
@@ -1417,7 +1418,8 @@ walk_gimple_op (gimple stmt, walk_tree_fn callback_op,
 	  if (wi)
 	    {
 	      wi->is_lhs = true;
-	      wi->val_only = is_gimple_reg_type (gimple_call_lhs (stmt));
+	      wi->val_only
+		= is_gimple_reg_type (TREE_TYPE (gimple_call_lhs (stmt)));
 	    }
 
 	  ret = walk_tree (gimple_call_lhs_ptr (stmt), callback_op, wi, pset);
@@ -2284,6 +2286,10 @@ gimple_has_side_effects (const_gimple s)
   if (gimple_has_volatile_ops (s))
     return true;
 
+  if (gimple_code (s) == GIMPLE_ASM
+      && gimple_asm_volatile_p (s))
+    return true;
+
   if (is_gimple_call (s))
     {
       unsigned nargs = gimple_call_num_args (s);
@@ -2297,7 +2303,7 @@ gimple_has_side_effects (const_gimple s)
       if (gimple_call_lhs (s)
           && TREE_SIDE_EFFECTS (gimple_call_lhs (s)))
 	{
-	  gcc_assert (gimple_has_volatile_ops (s));
+	  gcc_checking_assert (gimple_has_volatile_ops (s));
 	  return true;
 	}
 
@@ -2307,7 +2313,7 @@ gimple_has_side_effects (const_gimple s)
       for (i = 0; i < nargs; i++)
         if (TREE_SIDE_EFFECTS (gimple_call_arg (s, i)))
 	  {
-	    gcc_assert (gimple_has_volatile_ops (s));
+	    gcc_checking_assert (gimple_has_volatile_ops (s));
 	    return true;
 	  }
 
@@ -2316,11 +2322,14 @@ gimple_has_side_effects (const_gimple s)
   else
     {
       for (i = 0; i < gimple_num_ops (s); i++)
-	if (TREE_SIDE_EFFECTS (gimple_op (s, i)))
-	  {
-	    gcc_assert (gimple_has_volatile_ops (s));
-	    return true;
-	  }
+	{
+	  tree op = gimple_op (s, i);
+	  if (op && TREE_SIDE_EFFECTS (op))
+	    {
+	      gcc_checking_assert (gimple_has_volatile_ops (s));
+	      return true;
+	    }
+	}
     }
 
   return false;
@@ -3741,6 +3750,9 @@ gimple_types_compatible_p_1 (tree t1, tree t2, enum gtc_mode mode,
 	      c2 = DECL_INITIAL (c2);
 
 	    if (tree_int_cst_equal (c1, c2) != 1)
+	      goto different_types;
+
+	    if (mode == GTC_MERGE && TREE_PURPOSE (v1) != TREE_PURPOSE (v2))
 	      goto different_types;
 	  }
 

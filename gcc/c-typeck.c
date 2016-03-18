@@ -5773,11 +5773,13 @@ store_init_value (location_t init_loc, tree decl, tree init, tree origtype)
 	      /* For int foo[] = (int [3]){1}; we need to set array size
 		 now since later on array initializer will be just the
 		 brace enclosed list of the compound literal.  */
+	      tree etype = strip_array_types (TREE_TYPE (decl));
 	      type = build_distinct_type_copy (TYPE_MAIN_VARIANT (type));
-	      TREE_TYPE (decl) = type;
 	      TYPE_DOMAIN (type) = TYPE_DOMAIN (TREE_TYPE (cldecl));
 	      layout_type (type);
 	      layout_decl (cldecl, 0);
+	      TREE_TYPE (decl)
+		= c_build_qualified_type (type, TYPE_QUALS (etype));
 	    }
 	}
     }
@@ -10176,7 +10178,7 @@ build_binary_op (location_t location, enum tree_code code,
 		warn_for_sign_compare (location, orig_op0_folded,
 				       orig_op1_folded, op0, op1,
 				       result_type, resultcode);
-	      if (!in_late_binary_op)
+	      if (!in_late_binary_op && !int_operands)
 		{
 		  if (!op0_maybe_const || TREE_CODE (op0) != INTEGER_CST)
 		    op0 = c_wrap_maybe_const (op0, !op0_maybe_const);

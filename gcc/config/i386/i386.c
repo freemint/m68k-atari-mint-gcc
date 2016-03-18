@@ -4164,8 +4164,9 @@ ix86_option_override_internal (bool main_args_p)
     }
 
   /* For sane SSE instruction set generation we need fcomi instruction.
-     It is safe to enable all CMOVE instructions.  */
-  if (TARGET_SSE)
+     It is safe to enable all CMOVE instructions.  Also, RDRAND intrinsic
+     expands to a sequence that includes conditional move. */
+  if (TARGET_SSE || TARGET_RDRND)
     TARGET_CMOVE = 1;
 
   /* Figure out what ASM_GENERATE_INTERNAL_LABEL builds as a prefix.  */
@@ -9981,7 +9982,7 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
      probe that many bytes past the specified size to maintain a protection
      area at the botton of the stack.  */
   const int dope = 4 * UNITS_PER_WORD;
-  rtx size_rtx = GEN_INT (size);
+  rtx size_rtx = GEN_INT (size), last;
 
   /* See if we have a constant small number of probes to generate.  If so,
      that's the easy case.  The run-time loop is made up of 11 insns in the
@@ -10021,9 +10022,9 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
       emit_stack_probe (stack_pointer_rtx);
 
       /* Adjust back to account for the additional first interval.  */
-      emit_insn (gen_rtx_SET (VOIDmode, stack_pointer_rtx,
-			      plus_constant (stack_pointer_rtx,
-					     PROBE_INTERVAL + dope)));
+      last = emit_insn (gen_rtx_SET (VOIDmode, stack_pointer_rtx,
+				     plus_constant (stack_pointer_rtx,
+						    PROBE_INTERVAL + dope)));
     }
 
   /* Otherwise, do the same as above, but in a loop.  Note that we must be
@@ -10084,15 +10085,33 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
 	}
 
       /* Adjust back to account for the additional first interval.  */
-      emit_insn (gen_rtx_SET (VOIDmode, stack_pointer_rtx,
-			      plus_constant (stack_pointer_rtx,
-					     PROBE_INTERVAL + dope)));
+      last = emit_insn (gen_rtx_SET (VOIDmode, stack_pointer_rtx,
+				     plus_constant (stack_pointer_rtx,
+						    PROBE_INTERVAL + dope)));
 
       release_scratch_register_on_entry (&sr);
     }
 
   gcc_assert (cfun->machine->fs.cfa_reg != stack_pointer_rtx);
-  cfun->machine->fs.sp_offset += size;
+
+  /* Even if the stack pointer isn't the CFA register, we need to correctly
+     describe the adjustments made to it, in particular differentiate the
+     frame-related ones from the frame-unrelated ones.  */
+  if (size > 0)
+    {
+      rtx expr = gen_rtx_SEQUENCE (VOIDmode, rtvec_alloc (2));
+      XVECEXP (expr, 0, 0)
+	= gen_rtx_SET (VOIDmode, stack_pointer_rtx,
+		       plus_constant (stack_pointer_rtx, -size));
+      XVECEXP (expr, 0, 1)
+	= gen_rtx_SET (VOIDmode, stack_pointer_rtx,
+		       plus_constant (stack_pointer_rtx,
+				      PROBE_INTERVAL + dope + size));
+      add_reg_note (last, REG_FRAME_RELATED_EXPR, expr);
+      RTX_FRAME_RELATED_P (last) = 1;
+
+      cfun->machine->fs.sp_offset += size;
+    }
 
   /* Make sure nothing is scheduled before we are done.  */
   emit_insn (gen_blockage ());
@@ -10548,8 +10567,8 @@ ix86_expand_prologue (void)
     }
 
   /* The stack has already been decremented by the instruction calling us
-     so we need to probe unconditionally to preserve the protection area.  */
-  if (flag_stack_check == STATIC_BUILTIN_STACK_CHECK)
+     so probe if the size is non-negative to preserve the protection area.  */
+  if (allocate >= 0 && flag_stack_check == STATIC_BUILTIN_STACK_CHECK)
     {
       /* We expect the registers to be saved when probes are used.  */
       gcc_assert (int_registers_saved);
@@ -14389,17 +14408,21 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	fprintf (file, "0x%08x", (unsigned int) l);
     }
 
-  /* These float cases don't actually occur as immediate operands.  */
   else if (GET_CODE (x) == CONST_DOUBLE && GET_MODE (x) == DFmode)
     {
-      char dstr[30];
+      REAL_VALUE_TYPE r;
+      long l[2];
 
-      real_to_decimal (dstr, CONST_DOUBLE_REAL_VALUE (x), sizeof (dstr), 0, 1);
-      fputs (dstr, file);
+      REAL_VALUE_FROM_CONST_DOUBLE (r, x);
+      REAL_VALUE_TO_TARGET_DOUBLE (r, l);
+
+      if (ASSEMBLER_DIALECT == ASM_ATT)
+	putc ('$', file);
+      fprintf (file, "0x%lx%08lx", l[1] & 0xffffffff, l[0] & 0xffffffff);
     }
 
-  else if (GET_CODE (x) == CONST_DOUBLE
-	   && GET_MODE (x) == XFmode)
+  /* These float cases don't actually occur as immediate operands.  */
+  else if (GET_CODE (x) == CONST_DOUBLE && GET_MODE (x) == XFmode)
     {
       char dstr[30];
 
@@ -17172,11 +17195,15 @@ ix86_match_ccmode (rtx insn, enum machine_mode req_mode)
       if (req_mode == CCZmode)
 	return false;
       /* FALLTHRU */
+    case CCZmode:
+      break;
+
     case CCAmode:
     case CCCmode:
     case CCOmode:
     case CCSmode:
-    case CCZmode:
+      if (set_mode != req_mode)
+	return false;
       break;
 
     default:
@@ -26004,16 +26031,61 @@ ix86_expand_multi_arg_builtin (enum insn_code icode, tree exp, rtx target,
       int adjust = (comparison_p) ? 1 : 0;
       enum machine_mode mode = insn_data[icode].operand[i+adjust+1].mode;
 
-      if (last_arg_constant && i == nargs-1)
+      if (last_arg_constant && i == nargs - 1)
 	{
-	  if (!CONST_INT_P (op))
+	  if (!insn_data[icode].operand[i + 1].predicate (op, mode))
 	    {
-	      error ("last argument must be an immediate");
-	      return gen_reg_rtx (tmode);
+	      enum insn_code new_icode = icode;
+	      switch (icode)
+		{
+		case CODE_FOR_xop_vpermil2v2df3:
+		case CODE_FOR_xop_vpermil2v4sf3:
+		case CODE_FOR_xop_vpermil2v4df3:
+		case CODE_FOR_xop_vpermil2v8sf3:
+		  error ("the last argument must be a 2-bit immediate");
+		  return gen_reg_rtx (tmode);
+		case CODE_FOR_xop_rotlv2di3:
+		  new_icode = CODE_FOR_rotlv2di3;
+		  goto xop_rotl;
+		case CODE_FOR_xop_rotlv4si3:
+		  new_icode = CODE_FOR_rotlv4si3;
+		  goto xop_rotl;
+		case CODE_FOR_xop_rotlv8hi3:
+		  new_icode = CODE_FOR_rotlv8hi3;
+		  goto xop_rotl;
+		case CODE_FOR_xop_rotlv16qi3:
+		  new_icode = CODE_FOR_rotlv16qi3;
+		xop_rotl:
+		  if (CONST_INT_P (op))
+		    {
+		      int mask = GET_MODE_BITSIZE (GET_MODE_INNER (tmode)) - 1;
+		      op = GEN_INT (INTVAL (op) & mask);
+		      gcc_checking_assert
+			(insn_data[icode].operand[i + 1].predicate (op, mode));
+		    }
+		  else
+		    {
+		      gcc_checking_assert
+			(nargs == 2
+			 && insn_data[new_icode].operand[0].mode == tmode
+			 && insn_data[new_icode].operand[1].mode == tmode
+			 && insn_data[new_icode].operand[2].mode == mode
+			 && insn_data[new_icode].operand[0].predicate
+			    == insn_data[icode].operand[0].predicate
+			 && insn_data[new_icode].operand[1].predicate
+			    == insn_data[icode].operand[1].predicate);
+		      icode = new_icode;
+		      goto non_constant;
+		    }
+		  break;
+		default:
+		  gcc_unreachable ();
+		}
 	    }
 	}
       else
 	{
+	non_constant:
 	  if (VECTOR_MODE_P (mode))
 	    op = safe_vector_operand (op, mode);
 
@@ -26305,7 +26377,7 @@ ix86_expand_sse_pcmpestr (const struct builtin_description *d,
 
   if (!insn_data[d->icode].operand[6].predicate (op4, modeimm))
     {
-      error ("the fifth argument must be a 8-bit immediate");
+      error ("the fifth argument must be an 8-bit immediate");
       return const0_rtx;
     }
 
@@ -26400,7 +26472,7 @@ ix86_expand_sse_pcmpistr (const struct builtin_description *d,
 
   if (!insn_data[d->icode].operand[4].predicate (op2, modeimm))
     {
-      error ("the third argument must be a 8-bit immediate");
+      error ("the third argument must be an 8-bit immediate");
       return const0_rtx;
     }
 
@@ -27424,6 +27496,12 @@ rdrand_step:
       op0 = gen_reg_rtx (mode0);
       emit_insn (GEN_FCN (icode) (op0));
 
+      arg0 = CALL_EXPR_ARG (exp, 0);
+      op1 = expand_normal (arg0);
+      if (!address_operand (op1, VOIDmode))
+	op1 = copy_addr_to_reg (op1);
+      emit_move_insn (gen_rtx_MEM (mode0, op1), op0);
+
       op1 = gen_reg_rtx (SImode);
       emit_move_insn (op1, CONST1_RTX (SImode));
 
@@ -27438,17 +27516,13 @@ rdrand_step:
       else
 	op2 = gen_rtx_SUBREG (SImode, op0, 0);
 
+      if (target == 0)
+	target = gen_reg_rtx (SImode);
+
       pat = gen_rtx_GEU (VOIDmode, gen_rtx_REG (CCCmode, FLAGS_REG),
 			 const0_rtx);
-      emit_insn (gen_rtx_SET (VOIDmode, op1,
+      emit_insn (gen_rtx_SET (VOIDmode, target,
 			      gen_rtx_IF_THEN_ELSE (SImode, pat, op2, op1)));
-      emit_move_insn (target, op1);
-
-      arg0 = CALL_EXPR_ARG (exp, 0);
-      op1 = expand_normal (arg0);
-      if (!address_operand (op1, VOIDmode))
-	op1 = copy_addr_to_reg (op1);
-      emit_move_insn (gen_rtx_MEM (mode0, op1), op0);
       return target;
 
     default:
@@ -28226,7 +28300,7 @@ ix86_preferred_reload_class (rtx x, reg_class_t regclass)
 	 zero above.  We only want to wind up preferring 80387 registers if
 	 we plan on doing computation with them.  */
       if (TARGET_80387
-	  && standard_80387_constant_p (x))
+	  && standard_80387_constant_p (x) > 0)
 	{
 	  /* Limit class to non-sse.  */
 	  if (regclass == FLOAT_SSE_REGS)
@@ -31191,9 +31265,18 @@ ix86_expand_vector_set (bool mmx_ok, rtx target, rtx val, int elt)
       break;
 
     case V2DImode:
-      use_vec_merge = TARGET_SSE4_1;
+      use_vec_merge = TARGET_SSE4_1 && TARGET_64BIT;
       if (use_vec_merge)
 	break;
+
+      tmp = gen_reg_rtx (GET_MODE_INNER (mode));
+      ix86_expand_vector_extract (false, tmp, target, 1 - elt);
+      if (elt == 0)
+	tmp = gen_rtx_VEC_CONCAT (mode, tmp, val);
+      else
+	tmp = gen_rtx_VEC_CONCAT (mode, val, tmp);
+      emit_insn (gen_rtx_SET (VOIDmode, target, tmp));
+      return;
 
     case V2DFmode:
       {

@@ -1,3 +1,170 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
+2011-06-21  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/49112
+	* class.c (gfc_find_derived_vtab): Make vtab and default initialization
+	symbols SAVE_IMPLICIT.
+
+2011-06-19  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/47601
+	* module.c (mio_component_ref): Handle components of extended types.
+	* symbol.c (gfc_find_component): Return if sym is NULL.
+
+	PR fortran/48699
+	* check.c (gfc_check_move_alloc): If 'TO' argument is polymorphic,
+	make sure the vtab is present.
+
+	PR fortran/49074
+	* interface.c (gfc_extend_assign): Propagate the locus from the
+	assignment to the type-bound procedure call.
+
+	PR fortran/49417
+	* module.c (mio_component): Make sure the 'class_ok' attribute is set
+	for use-associated CLASS components.
+	* parse.c (parse_derived): Check for 'class_ok' attribute.
+	* resolve.c (resolve_fl_derived): Ditto.
+
+2011-06-17  Tobias Burnus
+
+	PR fortran/49324
+	* trans-expr.c (gfc_trans_assignment_1): Tell
+	gfc_trans_scalar_assign to also deep-copy RHS nonvariables
+	with allocatable components.
+	* trans-array.c (gfc_conv_expr_descriptor): Ditto.
+
+2011-06-06  Asher Langton  <langton2@llnl.gov>
+
+	PR fortran/49268
+	* trans-decl.c (gfc_trans_deferred_vars): Treat assumed-size Cray
+	pointees as AS_EXPLICIT.
+
+2011-06-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/49265
+	* decl.c (gfc_match_modproc):  Allow for a double colon in a module
+	procedure statement.
+	* parse.c ( decode_statement): Deal with whitespace around :: in
+	gfc_match_modproc.
+
+2011-05-31  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/45786
+	* interface.c (gfc_equivalent_op):  New function.
+	(gfc_check_interface):  Use gfc_equivalent_op instead
+	of switch statement.
+	* decl.c (access_attr_decl):  Also set access to an
+	equivalent operator.
+
+2011-05-26  Paul Thomas  <pault@gcc.gnu.org>
+	    Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/48955
+	* trans-expr.c (gfc_trans_assignment_1): GFC_REVERSE_NOT_SET
+	changed to GFC_ENABLE_REVERSE.
+	* trans-array.c (gfc_init_loopinfo): GFC_CANNOT_REVERSE changed
+	to GFC_INHIBIT_REVERSE.
+	* gfortran.h : Enum gfc_reverse is now GFC_ENABLE_REVERSE,
+	GFC_FORWARD_SET, GFC_REVERSE_SET and GFC_INHIBIT_REVERSE.
+	* dependency.c (gfc_dep_resolver): Change names for elements of
+	gfc_reverse as necessary. Change the logic so that forward
+	dependences are remembered as well as backward ones. When both
+	have appeared, force a temporary.
+
+2011-05-11  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48889
+	* expr.c (gfc_is_constant_expr): Use e->value.function.esym
+	instead of e->symtree->n.sym, if available.
+
+2011-05-04  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/48720
+	* gfortran.texi: Document the 'Q' exponent-letter extension.
+	* invoke.texi: Document -Wreal-q-constant.
+	* lang.opt: Add -Wreal-q-constant option.
+	* gfortran.h: Add warn_real_q_constant to option struct.
+	* primary.c (match_real_constant):  Use it.  Accept 'Q' as
+	exponent-letter for REAL(16) real-literal-constant with a
+	fallback to REAL(10) or error if REAL(10) is not available.
+	* options.c (gfc_init_options, set_Wall) Set it.
+	(gfc_handle_option): Handle new option.
+
+2011-04-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/48462
+	PR fortran/48746
+	* trans-expr.c ( arrayfunc_assign_needs_temporary): Need a temp
+	if automatic reallocation on assignement is active, the lhs is a
+	target and the rhs an intrinsic function.
+	(realloc_lhs_bounds_for_intrinsic_call): Rename as next.
+	(fcncall_realloc_result): Renamed version of above function.
+	Free the original descriptor data after the function call.Set the bounds and the
+	offset so that the lbounds are one.
+	(gfc_trans_arrayfunc_assign): Call renamed function.
+
+2011-04-29  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48810
+	* resolve.c (resolve_typebound_generic_call): Don't check access
+	flags of the specific function.
+
+	PR fortran/48800
+	* resolve.c (resolve_formal_arglist): Don't change AS_DEFERRED
+	to AS_ASSUMED_SHAPE for function results.
+	(resolve_fl_var_and_proc): Print also for function results with
+	AS_DEFERRED an error, if they are not a pointer or allocatable.
+	(resolve_types): Make sure arguments of procedures in interface
+	blocks are resolved.
+
+2011-04-28  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48112
+	* resolve.c (resolve_fl_var_and_proc): Print diagnostic of
+	function results only once.
+	(resolve_symbol): Always resolve function results.
+
+	PR fortran/48279
+	* expr.c (gfc_check_vardef_context): Fix handling of generic
+	EXPR_FUNCTION.
+	* interface.c (check_interface0): Reject internal functions
+	in generic interfaces, unless -std=gnu.
+
+2011-04-28  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48788
+	* resolve.c (resolve_global_procedure): Error recovery -
+	avoid segfault for (non)character-returning functions.
+
+2011-04-26  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48588
+	* parse.c (resolve_all_program_units): Skip modules.
+	(translate_all_program_units): Handle modules.
+	(gfc_parse_file): Defer code generation for modules.
+	* module.c (fix_mio_expr): Commit created symbol.
+
+2011-04-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/48360
+	PR fortran/48456
+	* trans-array.c (get_std_lbound): For derived type variables
+	return array valued component lbound.
+
+2011-04-05  Duncan Sands  <baldrick@free.fr>
+
+	* f95-lang.c (build_builtin_fntypes): Swap frexp parameter types.
+
+2011-04-04  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/48291
+	* class.c (get_unique_hashed_string): Adjust maximum allowable length
+	for unique type string.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.

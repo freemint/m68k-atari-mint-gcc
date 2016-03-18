@@ -286,6 +286,9 @@ build_target_expr (tree decl, tree value)
 #ifdef ENABLE_CHECKING
   gcc_assert (VOID_TYPE_P (TREE_TYPE (value))
 	      || TREE_TYPE (decl) == TREE_TYPE (value)
+	      /* On ARM ctors return 'this'.  */
+	      || (TREE_CODE (TREE_TYPE (value)) == POINTER_TYPE
+		  && TREE_CODE (value) == CALL_EXPR)
 	      || useless_type_conversion_p (TREE_TYPE (decl),
 					    TREE_TYPE (value)));
 #endif
@@ -1465,6 +1468,34 @@ build_overload (tree decl, tree chain)
   return ovl_cons (decl, chain);
 }
 
+/* Return TRUE if FN is a non-static member function, FALSE otherwise.
+   This function looks into BASELINK and OVERLOAD nodes.  */
+
+bool
+non_static_member_function_p (tree fn)
+{
+  if (fn == NULL_TREE)
+    return false;
+
+  if (BASELINK_P (fn))
+    {
+      tree type = TREE_TYPE (fn);
+
+      if (type && TREE_CODE (type) == METHOD_TYPE)
+	return true;
+      else if (type && TREE_CODE (type) == FUNCTION_TYPE)
+	return false;
+      /* This is an overload.  Lets look into its current value.  */
+      fn = get_fns (BASELINK_FUNCTIONS (fn));
+    }
+
+  if (TREE_CODE (fn) == OVERLOAD)
+    fn = OVL_CURRENT (fn);
+
+  return (DECL_P (fn)
+	  && DECL_NONSTATIC_MEMBER_FUNCTION_P (fn));
+}
+
 
 #define PRINT_RING_SIZE 4
 
@@ -2421,7 +2452,7 @@ maybe_dummy_object (tree type, tree* binfop)
   else if (current != current_class_type
 	   && context == nonlambda_method_basetype ())
     /* In a lambda, need to go through 'this' capture.  */
-    decl = (cp_build_indirect_ref
+    decl = (build_x_indirect_ref
 	    ((lambda_expr_this_capture
 	      (CLASSTYPE_LAMBDA_EXPR (current_class_type))),
 	     RO_NULL, tf_warning_or_error));
@@ -3096,7 +3127,8 @@ stabilize_expr (tree exp, tree* initp)
 
   if (!TREE_SIDE_EFFECTS (exp))
     init_expr = NULL_TREE;
-  else if (!TYPE_NEEDS_CONSTRUCTING (TREE_TYPE (exp))
+  else if ((!TYPE_NEEDS_CONSTRUCTING (TREE_TYPE (exp))
+	    && !TYPE_HAS_NONTRIVIAL_DESTRUCTOR (TREE_TYPE (exp)))
 	   || !lvalue_or_rvalue_with_address_p (exp))
     {
       init_expr = get_target_expr (exp);

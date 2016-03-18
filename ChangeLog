@@ -1,3 +1,7 @@
+2011-06-27  Release Manager
+
+	* GCC 4.6.1 released.
+
 2011-03-25  Release Manager
 
 	* GCC 4.6.0 released.
@@ -20,9 +24,10 @@
 	under 256.
 	* configure: Regenerate.
 
-2011-03-11  Chen Liqin <liqin.gcc@gmail.com>
+2011-03-11  Chen Liqin  <liqin.gcc@gmail.com>
 
-	* MAINTAINERS: Update myself as score backend maintainer, update my e-mail address.
+	* MAINTAINERS: Update myself as score backend maintainer,
+	update my e-mail address.
 
 2011-03-09  Xuepeng Guo  <terry.guo@arm.com>
 

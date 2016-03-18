@@ -1264,6 +1264,25 @@ cp_reconstruct_complex_type (tree type, tree bottom)
   return cp_build_qualified_type (outer, cp_type_quals (type));
 }
 
+/* Replaces any constexpr expression that may be into the attributes
+   arguments with their reduced value.  */
+
+static void
+cp_check_const_attributes (tree attributes)
+{
+  tree attr;
+  for (attr = attributes; attr; attr = TREE_CHAIN (attr))
+    {
+      tree arg;
+      for (arg = TREE_VALUE (attr); arg; arg = TREE_CHAIN (arg))
+	{
+	  tree expr = TREE_VALUE (arg);
+	  if (EXPR_P (expr))
+	    TREE_VALUE (arg) = maybe_constant_value (expr);
+	}
+    }
+}
+
 /* Like decl_attributes, but handle C++ complexity.  */
 
 void
@@ -1283,6 +1302,8 @@ cplus_decl_attributes (tree *decl, tree attributes, int flags)
       if (attributes == NULL_TREE)
 	return;
     }
+
+  cp_check_const_attributes (attributes);
 
   if (TREE_CODE (*decl) == TEMPLATE_DECL)
     decl = &DECL_TEMPLATE_RESULT (*decl);
@@ -4059,9 +4080,12 @@ build_offset_ref_call_from_tree (tree fn, VEC(tree,gc) **args)
 	 because we depend on the form of FN.  */
       make_args_non_dependent (*args);
       object = build_non_dependent_expr (object);
-      if (TREE_CODE (fn) == DOTSTAR_EXPR)
-	object = cp_build_addr_expr (object, tf_warning_or_error);
-      VEC_safe_insert (tree, gc, *args, 0, object);
+      if (TREE_CODE (TREE_TYPE (fn)) == METHOD_TYPE)
+	{
+	  if (TREE_CODE (fn) == DOTSTAR_EXPR)
+	    object = cp_build_addr_expr (object, tf_warning_or_error);
+	  VEC_safe_insert (tree, gc, *args, 0, object);
+	}
       /* Now that the arguments are done, transform FN.  */
       fn = build_non_dependent_expr (fn);
     }
@@ -4080,7 +4104,10 @@ build_offset_ref_call_from_tree (tree fn, VEC(tree,gc) **args)
       VEC_safe_insert (tree, gc, *args, 0, object_addr);
     }
 
-  expr = cp_build_function_call_vec (fn, args, tf_warning_or_error);
+  if (CLASS_TYPE_P (TREE_TYPE (fn)))
+    expr = build_op_call (fn, args, tf_warning_or_error);
+  else
+    expr = cp_build_function_call_vec (fn, args, tf_warning_or_error);
   if (processing_template_decl && expr != error_mark_node)
     expr = build_min_non_dep_call_vec (expr, orig_fn, orig_args);
 
@@ -4258,6 +4285,9 @@ mark_used (tree decl)
   if (TREE_CODE (decl) == FUNCTION_DECL
       && DECL_NONSTATIC_MEMBER_FUNCTION_P (decl)
       && DECL_DEFAULTED_FN (decl)
+      /* A function defaulted outside the class is synthesized either by
+	 cp_finish_decl or instantiate_decl.  */
+      && !DECL_DEFAULTED_OUTSIDE_CLASS_P (decl)
       && ! DECL_INITIAL (decl))
     {
       /* Remember the current location for a function we will end up

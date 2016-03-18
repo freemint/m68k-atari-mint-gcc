@@ -727,7 +727,13 @@ ocp_convert (tree type, tree expr, int convtype, int flags)
 	  return error_mark_node;
 	}
       if (code == BOOLEAN_TYPE)
-	return cp_truthvalue_conversion (e);
+	{
+	  /* We can't implicitly convert a scoped enum to bool, so convert
+	     to the underlying type first.  */
+	  if (SCOPED_ENUM_P (intype) && (convtype & CONV_STATIC))
+	    e = build_nop (ENUM_UNDERLYING_TYPE (intype), e);
+	  return cp_truthvalue_conversion (e);
+	}
 
       converted = fold_if_not_in_template (convert_to_integer (type, e));
 
@@ -1615,6 +1621,9 @@ type_promotes_to (tree type)
       int precision = MAX (TYPE_PRECISION (type),
 			   TYPE_PRECISION (integer_type_node));
       tree totype = c_common_type_for_size (precision, 0);
+      if (SCOPED_ENUM_P (type))
+	warning (OPT_Wabi, "scoped enum %qT will not promote to an integral "
+		 "type in a future version of GCC", type);
       if (TREE_CODE (type) == ENUMERAL_TYPE)
 	type = ENUM_UNDERLYING_TYPE (type);
       if (TYPE_UNSIGNED (type)

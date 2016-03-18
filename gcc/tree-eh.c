@@ -849,6 +849,8 @@ note_eh_region_may_contain_throw (eh_region region)
 {
   while (bitmap_set_bit (eh_region_may_contain_throw_map, region->index))
     {
+      if (region->type == ERT_MUST_NOT_THROW)
+	break;
       region = region->outer;
       if (region == NULL)
 	break;
@@ -3318,6 +3320,19 @@ remove_unreachable_handlers (void)
 	      region = get_eh_region_from_lp_number (lp_nr);
 	      SET_BIT (r_reachable, region->index);
 	      SET_BIT (lp_reachable, lp_nr);
+	    }
+
+	  /* Avoid removing regions referenced from RESX/EH_DISPATCH.  */
+	  switch (gimple_code (stmt))
+	    {
+	    case GIMPLE_RESX:
+	      SET_BIT (r_reachable, gimple_resx_region (stmt));
+	      break;
+	    case GIMPLE_EH_DISPATCH:
+	      SET_BIT (r_reachable, gimple_eh_dispatch_region (stmt));
+	      break;
+	    default:
+	      break;
 	    }
 	}
     }

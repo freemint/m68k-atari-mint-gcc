@@ -1,5 +1,5 @@
 /* Miscellaneous SSA utility functions.
-   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010
+   Copyright (C) 2001, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
 
 This file is part of GCC.
@@ -352,6 +352,10 @@ insert_debug_temp_for_var_def (gimple_stmt_iterator *gsi, tree var)
       value = degenerate_phi_result (def_stmt);
       if (value && walk_tree (&value, find_released_ssa_name, NULL, NULL))
 	value = NULL;
+      /* error_mark_node is what fixup_noreturn_call changes PHI arguments
+	 to.  */
+      else if (value == error_mark_node)
+	value = NULL;
     }
   else if (is_gimple_assign (def_stmt))
     {
@@ -455,13 +459,19 @@ insert_debug_temp_for_var_def (gimple_stmt_iterator *gsi, tree var)
 	continue;
 
       if (value)
-	FOR_EACH_IMM_USE_ON_STMT (use_p, imm_iter)
-	  /* unshare_expr is not needed here.  vexpr is either a
-	     SINGLE_RHS, that can be safely shared, some other RHS
-	     that was unshared when we found it had a single debug
-	     use, or a DEBUG_EXPR_DECL, that can be safely
-	     shared.  */
-	  SET_USE (use_p, value);
+	{
+	  FOR_EACH_IMM_USE_ON_STMT (use_p, imm_iter)
+	    /* unshare_expr is not needed here.  vexpr is either a
+	       SINGLE_RHS, that can be safely shared, some other RHS
+	       that was unshared when we found it had a single debug
+	       use, or a DEBUG_EXPR_DECL, that can be safely
+	       shared.  */
+	    SET_USE (use_p, value);
+	  /* If we didn't replace uses with a debug decl fold the
+	     resulting expression.  Otherwise we end up with invalid IL.  */
+	  if (TREE_CODE (value) != DEBUG_EXPR_DECL)
+	    fold_stmt_inplace (stmt);
+	}
       else
 	gimple_debug_bind_reset_value (stmt);
 
@@ -494,6 +504,37 @@ insert_debug_temps_for_defs (gimple_stmt_iterator *gsi)
 	continue;
 
       insert_debug_temp_for_var_def (gsi, var);
+    }
+}
+
+/* Reset all debug stmts that use SSA_NAME(s) defined in STMT.  */
+
+void
+reset_debug_uses (gimple stmt)
+{
+  ssa_op_iter op_iter;
+  def_operand_p def_p;
+  imm_use_iterator imm_iter;
+  gimple use_stmt;
+
+  if (!MAY_HAVE_DEBUG_STMTS)
+    return;
+
+  FOR_EACH_PHI_OR_STMT_DEF (def_p, stmt, op_iter, SSA_OP_DEF)
+    {
+      tree var = DEF_FROM_PTR (def_p);
+
+      if (TREE_CODE (var) != SSA_NAME)
+	continue;
+
+      FOR_EACH_IMM_USE_STMT (use_stmt, imm_iter, var)
+	{
+	  if (!gimple_debug_bind_p (use_stmt))
+	    continue;
+
+	  gimple_debug_bind_reset_value (use_stmt);
+	  update_stmt (use_stmt);
+	}
     }
 }
 
@@ -2162,6 +2203,17 @@ execute_update_addresses_taken (void)
 		    tree link = gimple_asm_input_op (stmt, i);
 		    maybe_rewrite_mem_ref_base (&TREE_VALUE (link));
 		  }
+	      }
+
+	    else if (gimple_debug_bind_p (stmt)
+		     && gimple_debug_bind_has_value_p (stmt))
+	      {
+		tree *valuep = gimple_debug_bind_get_value_ptr (stmt);
+		tree decl;
+		maybe_rewrite_mem_ref_base (valuep);
+		decl = non_rewritable_mem_ref_base (*valuep);
+		if (decl && symbol_marked_for_renaming (decl))
+		  gimple_debug_bind_reset_value (stmt);
 	      }
 
 	    if (gimple_references_memory_p (stmt)

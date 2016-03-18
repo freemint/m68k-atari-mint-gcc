@@ -137,9 +137,9 @@ get_unique_hashed_string (char *string, gfc_symbol *derived)
 {
   char tmp[2*GFC_MAX_SYMBOL_LEN+2];
   get_unique_type_string (&tmp[0], derived);
-  /* If string is too long, use hash value in hex representation
-     (allow for extra decoration, cf. gfc_build_class_symbol)*/
-  if (strlen (tmp) > GFC_MAX_SYMBOL_LEN - 10)
+  /* If string is too long, use hash value in hex representation (allow for
+     extra decoration, cf. gfc_build_class_symbol & gfc_find_derived_vtab).  */
+  if (strlen (tmp) > GFC_MAX_SYMBOL_LEN - 11)
     {
       int h = gfc_hash_value (derived);
       sprintf (string, "%X", h);
@@ -428,7 +428,7 @@ gfc_find_derived_vtab (gfc_symbol *derived)
 	                      &gfc_current_locus) == FAILURE)
 	    goto cleanup;
 	  vtab->attr.target = 1;
-	  vtab->attr.save = SAVE_EXPLICIT;
+	  vtab->attr.save = SAVE_IMPLICIT;
 	  vtab->attr.vtab = 1;
 	  vtab->attr.access = ACCESS_PUBLIC;
 	  gfc_set_sym_referenced (vtab);
@@ -516,7 +516,7 @@ gfc_find_derived_vtab (gfc_symbol *derived)
 		  sprintf (name, "__def_init_%s", tname);
 		  gfc_get_symbol (name, ns, &def_init);
 		  def_init->attr.target = 1;
-		  def_init->attr.save = SAVE_EXPLICIT;
+		  def_init->attr.save = SAVE_IMPLICIT;
 		  def_init->attr.access = ACCESS_PUBLIC;
 		  def_init->attr.flavor = FL_VARIABLE;
 		  gfc_set_sym_referenced (def_init);

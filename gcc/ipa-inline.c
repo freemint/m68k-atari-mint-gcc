@@ -895,7 +895,7 @@ cgraph_decide_recursive_inlining (struct cgraph_node *node,
 	  continue;
 	}
 
-      if (max_count)
+      if (max_count && node->count)
 	{
           if (!cgraph_maybe_hot_edge_p (curr))
 	    {
@@ -1336,6 +1336,9 @@ cgraph_flatten (struct cgraph_node *node)
 		     "Not inlining: Function body not available.\n");
 	  continue;
 	}
+
+      if (!e->callee->local.inlinable)
+	continue;
 
       /* We've hit cycle?  It is time to give up.  */
       if (e->callee->aux)
@@ -2091,11 +2094,7 @@ inline_generate_summary (void)
       cgraph_add_function_insertion_hook (&add_new_function, NULL);
 
   if (flag_indirect_inlining)
-    {
-      ipa_register_cgraph_hooks ();
-      ipa_check_create_node_params ();
-      ipa_check_create_edge_args ();
-    }
+    ipa_register_cgraph_hooks ();
 
   for (node = cgraph_nodes; node; node = node->next)
     if (node->analyzed)
