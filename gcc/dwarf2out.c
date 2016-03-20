@@ -7264,7 +7264,7 @@ mem_loc_descriptor (rtl, mode)
 
     case PRE_MODIFY:
       /* Extract the PLUS expression nested inside and fall into
-         PLUS code bellow.  */
+         PLUS code below.  */
       rtl = XEXP (rtl, 1);
       goto plus;
 
@@ -9430,10 +9430,13 @@ dwarf2out_abstract_function (decl)
 
   /* Be sure we've emitted the in-class declaration DIE (if any) first, so
      we don't get confused by DECL_ABSTRACT.  */
-  context = decl_class_context (decl);
-  if (context)
-    gen_type_die_for_member
-      (context, decl, decl_function_context (decl) ? NULL : comp_unit_die);
+  if (debug_info_level > DINFO_LEVEL_TERSE)
+    {
+      context = decl_class_context (decl);
+      if (context)
+	gen_type_die_for_member
+	  (context, decl, decl_function_context (decl) ? NULL : comp_unit_die);
+    }
  
   /* Pretend we've just finished compiling this function.  */
   save_fn = current_function_decl;

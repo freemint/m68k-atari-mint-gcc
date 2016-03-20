@@ -1,6 +1,6 @@
 ## Makefile for the math subdirectory of the GNU C++ Standard library.
 ##
-## Copyright (C) 1997, 1998, 1999, 2000 Cygnus Solutions
+## Copyright (C) 1997, 1998, 1999, 2000, 2001 Free Software Foundation, Inc.
 ##
 ## This file is part of the libstdc++ version 3 distribution.
 ## Process this file with automake to produce Makefile.in.
@@ -27,12 +27,9 @@ mkinstalldirs = $(SHELL) $(toplevel_srcdir)/mkinstalldirs
 
 noinst_LTLIBRARIES = libmath.la
 
-EXTRA_LONG_DOUBLE_yes = \
-	hypotl.c signbitl.c
+EXTRA_LONG_DOUBLE_yes = signbitl.c
 
-EXTRA_DIST = \
-	hypot.c hypotf.c atan2f.c expf.c \
-	$(EXTRA_LONG_DOUBLE_yes) 
+EXTRA_DIST = $(EXTRA_LONG_DOUBLE_yes) 
 
 libmath_la_LIBADD = \
 	@LIBMATHOBJS@ \
@@ -40,21 +37,13 @@ libmath_la_LIBADD = \
 
 libmath_la_DEPENDENCIES = $(libmath_la_LIBADD)
 
-libmath_la_SOURCES = \
-	signbit.c signbitf.c
+libmath_la_SOURCES = signbit.c signbitf.c stubs.c
 
 LINK = $(LIBTOOL) --mode=link "$(CCLD)" $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 
 # Use common includes from acinclude.m4/GLIBCPP_EXPORT_INCLUDES
-GLIBCPP_INCLUDE_DIR = @GLIBCPP_INCLUDE_DIR@
-C_INCLUDE_DIR = @C_INCLUDE_DIR@
 TOPLEVEL_INCLUDES = @TOPLEVEL_INCLUDES@
-LIBMATH_INCLUDES = @LIBMATH_INCLUDES@
-LIBSUPCXX_INCLUDES = @LIBSUPCXX_INCLUDES@
-LIBIO_INCLUDES = @LIBIO_INCLUDES@
-CSHADOW_INCLUDES = @CSHADOW_INCLUDES@
 
 INCLUDES = \
-	-I$(GLIBCPP_INCLUDE_DIR) -I$(top_builddir)/include  \
 	$(TOPLEVEL_INCLUDES) 
 

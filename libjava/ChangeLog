@@ -1,3 +1,103 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-01  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* include/posix.h (_POSIX_PII_SOCKET): Define.
+	* configure.in (HAVE_SOCKLEN_T): Define.
+	* java/net/natPlainSocketImpl.cc [!HAVE_SOCKLEN_T]: Move socklen_t
+	definition up. 
+	(_JV_accept): New function, avoids Tru64 UNIX accept macro.
+	(java::net::PlainSocketImpl::accept): Use it.
+	Fixes PRs libgcj/3694, libgcj/3696.
+	
+	* configure.in (HAVE_STRUCT_IPV6_MREQ): New test.
+	* acconfig.h (HAVE_STRUCT_IPV6_MREQ): Provide template.
+	* configure, include/config.h.in: Regenerate.
+	* java/net/natPlainDatagramSocketImpl.cc (union McastReq): Use it.
+	(mcastGrp): Likewise.
+	(java::net::PlainDatagramSocketImpl::setOption): Guard against
+	missing IPV6_MULTICAST_IF.
+	Fixes PR libgcj/3694.
+
+2001-07-31  Christian Iseli  <chris@ludwig-alpha.unil.ch>
+
+	* Makefile.in: Rebuilt.
+	* Makefile.am (GCJLINK): Added --tag=GCJ.
+	(LIBLINK): Likewise.
+
+2001-07-29  Mark Wielaard  <mark@klomp.org>
+
+	* HACKING: New documentation file.
+
+2001-07-24  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* gnu/gcj/runtime/natFirstThread.cc (_JNI_OnLoad): New function.
+	(JNI_OnLoad): Use it.
+	(gnu::gcj::runtime::FirstThread::run): Check for _JNI_OnLoad, not
+	NULL.
+
+2001-07-24  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* Makefile.am (AM_MAKEFLAGS): Pass RUNTESTFLAGS.
+	Makefile.in: Regenerate.
+
+2001-07-18  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* java/net/natPlainDatagramSocketImpl.cc (mcastGrp): Use new RFC
+	2533 socket options IPV6_JOIN_GROUP, IPV6_LEAVE_GROUP, falling
+	back to old RFC 2133 variants if missing.
+
+2001-07-18  Tom Tromey  <tromey@redhat.com>
+
+	* java/io/natFileWin32.cc (_access): Renamed.
+	(_stat): Likewise.
+	* java/io/natFile.cc (_access): Renamed.
+	(_stat): Likewise.
+	* java/io/File.java (access, stat): Add leading `_' to name.
+	Updated all callers.
+
+2001-07-18  Martin Kahlert  <martin.kahlert@infineon.com>
+
+	* java/lang/natClass.cc: Move calls of _Jv_InitClass from
+	java::lang::Class::isAssignableFrom and java::lang::Class::isInstance
+	into _Jv_IsAssignableFrom
+
+2001-07-18  Tom Tromey  <tromey@redhat.com>
+
+	For PR java/2812:
+	* libgcj.spec.in (*lib): Added LIBICONV.
+	* Makefile.am (GCJLINK): Added ICONV_LDFLAGS.
+	(LIBLINK): Likewise.
+	* configure: Rebuilt.
+	* configure.in: Call AM_ICONV.  Don't check for iconv function.
+	* acinclude.m4 (AM_ICONV): New macro, from Bruno Haible.  Then
+	modified to generate ICONV_LDFLAGS.
+
+2001-07-05  Tom Tromey  <tromey@redhat.com>
+
+	For PR java/3562:
+	* java/lang/Class.h (Class(void)): Now private.  Removed
+	implementation.  From dmorsberger@sensysdl.com.
+
+2001-07-02  Tom Tromey  <tromey@redhat.com>
+
+	Fix for PR bootstrap/3281:
+	* aclocal.m4, configure: Rebuilt.
+	* acinclude.m4 (LIBGCJ_CONFIGURE): Don't set libgcj_flagbasedir.
+	Correctly compute libgcj_basedir.
+	(mkinstalldirs): Define and subst.
+
+2001-07-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* configure.in (test for eh model): Fixed typo.
+	* configure: Rebuilt.
+	
 20010617 Release Manager
 
         * GCC 3.0 Released.

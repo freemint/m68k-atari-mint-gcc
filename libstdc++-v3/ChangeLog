@@ -1,3 +1,409 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-17  Loren J. Rittle  <ljrittle@acm.org>
+
+        bootstrap/3963
+        * include/Makefile.am: Use relative file path in rule to allow
+        colon in $(objdir).
+        * include/Makefile.in: Rebuilt.
+
+2001-08-16  Franz Sirl  <Franz.Sirl-kernel@lauterbach.com>
+
+	* configure.target: Set LIMITSH for powerpc-*-*.
+	* config/cpu/powerpc/bits/limits.h: New file.
+
+2001-08-16  Marc Espie <espie@openbsd.org>
+
+	* libmath/mathconf.h:  Include <sys/types.h> on OpenBSD  (branch
+	fix only, for robustness).
+
+2001-08-15  Andreas Schwab  <schwab@suse.de>
+
+	* configure.target (cpu_include_dir): Set to `config/cpu/m68k' for
+	m68k and m680[246]0.
+	* config/cpu/m68k/bits/atomicity.h: New file.
+
+	* include/bits/std_limits.h [__glibcpp_long_double_bits == 96]:
+	Define appropriate long double limits for m68k extended floating
+	point.
+	(__glibcpp_f32_digits10): Corrected, off by one.
+	(__glibcpp_f80_digits10): Likewise.
+	(__glibcpp_f128_digits10): Likewise.
+	* config/os/gnu-linux/bits/os_defines.h
+	(__glibcpp_long_double_bits) [__mc68000__]: Define to 96.
+
+2001-08-15  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+
+	* include/bits/std_limits.h (numeric_limits<char>::max): Fix
+	typo. 
+
+2001-08-14  Ulrich Weigand  <uweigand@de.ibm.com>
+ 
+	* configure.target (cpu_include_dir): Set to `config/cpu/s390'
+	for s390 and s390x.
+ 
+	* config/cpu/s390/bits/atomicity.h: New.
+
+2001-08-14  Gabriel Dos Reis  <gdr@codesourcery.com>
+
+	* include/bits/std_limits.h: Fix thinko.
+
+2001-08-14  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* src/Makefile.am (libstdc___la_LDFLAGS): Increase revision number.
+	* src/Makefile.in: Regenerate.
+	
+2001-08-14  Peter Schmid  <schmid@snake.iap.physik.tu-darmstadt.de>
+
+	* libstdc++-v3/libmath/stubs.c: Fix PR/3988, replace
+	_GBLICPP_HAVE_LOGL with HAVE_LOGL
+
+2001-08-13  Mark Mitchell  <mark@codesourcery.com>
+
+	* configure.in (LIMITS_INC_SRCDIR): New variable.
+	* configure.target (LIMITSH): New variable.
+	* porting.texi: Discuss numeric limits.
+	* config/cpu/generic/bits/limits.h: New file.
+	* config/cpu/i386/bits/limits.h: New file.
+	* include/Makefile.am: Install bits/limits.h.
+	* include/bits/c++config: Include bits/limits.h.
+
+2001-08-10  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+            Mark Mitchell <mark@codesourcery.com>
+	
+        * include/bits/std_limits.h: New file.
+        * include/Makefile.am (bits_headers): Add std_limits.h
+        (all-local): std_limits.h is no longer built.
+        (${target_builddir}/std_limits.h): Remove.
+        * include/Makefile.in: Regenerate.
+        * src/limits.cc: New file.
+        * src/Makefile.am (sources): Add limits.cc in replacement of
+        limitsMEMBERS.cc.
+        * src/Makefile.in: Regenerate.
+
+2001-08-09  David Edelsohn  <edelsohn@gnu.org>
+
+        * config/os/aix/bits/os_defines.h: Define std_limits.h macros.
+        * config/os/generic/bits/os_defines.h: Likewise.
+        * config/os/gnu-linux/bits/os_defines.h: Likewise.
+        * config/os/hpux/bits/os_defines.h: Likewise.
+        * config/os/irix/irix6.5/bits/os_defines.h: Likewise.
+        * config/os/solaris/solaris2.7/bits/os_defines.h: Likewise.
+
+2001-08-10   Gunter Winkler <gunter.winkler@mathematik.tu-chemnitz.de>
+
+	* include/bits/std_complex.h (complex<long double>::operator*=,
+	complex<long double>::operator/=): Fix thinko.
+
+2001-07-31  Loren J. Rittle  <ljrittle@acm.org>
+
+	* src/gen-num-limits.cc:  Use __LONG_LONG_MAX__.
+
+2001-07-26  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+
+	* acinclude.m4: CHECK_MATH_DECL_AND_LINKAGE for hypot, hypotf,
+	hypotl, atan2f, atan2l.  Remove from REPLACE_MATHFUNCS list.
+	* aclocal.m4: Regenerate.
+	* config.h.in: Likewise.
+	* configure: Likewise.
+	* libmath/Makefile.am (EXTRA_LONG_DOUBLE_yes): Remove hypotl.c
+	(EXTRA_DIST): Remove hypot.c hypotf.c.
+	* libmath/Makefile.am: Regenerate.
+	* libmath/hypotf.c: Remove.
+	* libmath/hypot.c: Likewise.
+	* libmath/hypotl.c: Likewise.
+	* libmath/stubs.c: The macros seen here are HAVE_xxx, not
+	_GLIBCPP_HAVE_xxx.  Add long double versions.
+
+2001-07-26  Stephen M. Webb  <stephen@bregmasoft.com>
+
+	* acinclude.m4 (GLIBCPP_ENABLE_CHEADERS):  Use glibcpp_srcdir when
+	setting C_INCLUDE_DIR.
+	* aclocal.m4:  Regenerate.
+	* configure:  Regenerate.
+
+2001-07-26  Stephen M. Webb  <stephen@bregmasoft.com>
+            Loren J. Rittle  <ljrittle@acm.org>
+            Phil Edwards  <pme@sources.redhat.com>
+
+	* include/Makefile.am:  New file encapsulating header generation rules.
+	* Makefile.am (SUBDIRS):  Prepend 'include' directory.
+	* acinclude.m4:  Moved/removed rules for building various headers.
+	* configure.in (AC_OUTPUT):  Add include/Makefile.
+	* mkc++config:  Removed.
+
+	* testsuite_flags.in:  Changed build-includes to match new scheme.
+	* mknumeric_limits:  Likewise.
+	* libio/Makefile.am:  Changed INCLUDES to maatch new header scheme.
+	* libmath/Makefile.am:  Likewise.
+	* libsupc++/Makefile.am:  Likewise.
+	* src/Makefile.am:  Likewise; removed rules to build headers.
+	* libmath/mathconf.h:  Changed #include'd header names to match.
+	* libmath/stubs.c:  Likewise.
+	* src/gen-num-limits.cc:  Likewise.
+
+	* configure:  Regenerated.
+	* config.h.in:  Regenerated.
+	* aclocal.m4:  Regenerated.
+	* Makefile.in:  Regenerated.
+	* include/Makefile.in:  Regenerated.
+	* libio/Makefile.in:  Regenerated.
+	* libmath/Makefile.in:  Regenerated.
+	* libsupc++/Makefile.in:  Regenerated.
+	* src/Makefile.in:  Regenerated.
+	* testsuite/Makefile.in:  Regenerated.
+
+2001-07-26  Daniel Jacobowitz  <drow@mvista.com>
+
+	* configure.in: Remove NATIVE, NULL_TARGET.
+	Set CANADIAN only for Canadian crosses.  Set xcompiling
+	for both Canadian crosses and host-x-host crosses.
+	* configure: Regenerated.
+
+2001-07-25  H.J. Lu <hjl@gnu.org>
+
+	* configure.target (cpu_include_dir): Set to `config/cpu/mips'
+	for mips.
+
+	* config/cpu/mips/bits/atomicity.h: New.
+
+2001-07-25  David Edelsohn  <edelsohn@gnu.org>
+
+	* include/bits/limits_generic.h (int): Set digits and digits10
+	appropriately for word size.
+	(unsigned int,long,unsigned long): Likewise.
+
+2001-07-19  Phil Edwards  <pme@sources.redhat.com>
+            Mark Mitchell <mark@codesourcery.com>
+
+	Merge from cp-parser-branch.
+	* include/bits/basic_string.h:  Qualify symbols with 'template'.
+	* include/bits/basic_string.tcc:  Likewise.
+	* include/bits/fstream.tcc:  Likewise.
+	* include/bits/istream.tcc:  Likewise.
+	* include/bits/sstream.tcc:  Likewise.
+	* include/bits/std_istream.h:  Likewise.
+	* include/bits/stl_iterator.h:  Likewise.
+	* include/bits/streambuf.tcc:  Likewise.
+	* src/gen-num-limits.cc:  Add 'template<>' to specializations.
+	* src/locale.cc:  Likewise.
+
+2001-07-19  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+	    Bert De Knuydt <Bert.Deknuydt@esat.kuleuven.ac.be>
+
+	* src/gen-num-limits.cc (set_signals_handler): New function.
+	Factor out signals setting.  Set signal handler for SIGILL.
+
+2001-07-18  Phil Edwards  <pme@sources.redhat.com>
+
+	* docs/html/27_io/howto.html:  Fix typo.
+	* docs/html/faq/index.html:  Minor updates for 3.0 all around.
+	* docs/html/faq/index.txt:  Regenerated.
+
+2001-07-13  Phil Edwards  <pme@sources.redhat.com>
+
+	* include/bits/std_sstream.h (basic_stringbuf::basic_stringbuf(string):
+	Initialize _M_string with pointer-and-size constructor, not just
+	pointer.  Fix some comments.
+	* testsuite/21_strings/ctor_copy_dtor.cc (test03):  New test.
+	* testsuite/27_io/stringbuf.cc (test02):  Remove unused variable.
+	(test03):  Add embedded-NUL tests.
+
+	* mkcheck.in:  When printing totals, match the order of the tests.
+	* include/bits/stringfwd.h:  Use same declaration keywords.
+	* include/bits/std_iosfwd.h:  Cosmetic spacing.
+
+2001-07-11   Felix Natter  <fnatter@gmx.net>
+
+	* docs/html/17_intro/porting-howto.xml:  Initial checkin of
+	master copy.
+	* docs/html/17_intro/porting-howto.html:  check in v0.9.3
+
+2001-07-11  Phil Edwards  <pme@sources.redhat.com>
+
+	* docs/doxygen/run_doxygen:  Don't keep output from previous run.
+	* docs/doxygen/user.cfg.in:  Tweaks.
+	* include/bits/c++config:  Documentation comments for Doxygen.
+	* include/bits/char_traits.h:  Likewise.
+	* include/bits/limits_generic.h:  Likewise.
+	* include/bits/std_stdexcept.h:  Likewise.
+	* include/bits/stl_pair.h:  Likewise.
+	* libsupc++/exception:  Likewise.
+	* libsupc++/new:  Likewise.
+	* libsupc++/typeinfo:  Likewise.
+	* libmath/Makefile.am:  Update and correct copyright.
+
+2001-07-10  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+
+        * acinclude.m4: Don't AC_REPLACE_MATHFUNCS expf and atan2f.
+        * aclocal.m4: Regenerate.
+        * configure: Same.
+	
+2001-07-09  Phil Edwards  <pme@sources.redhat.com>
+
+	* docs/html/configopts.html:  Fix thinko.
+	* docs/html/27_io/howto.html:  Fix thinko and HTML markup.
+	* include/bits/stl_iterator.h:  Fix typo.
+
+2001-07-09  Phil Edwards  <pme@sources.redhat.com>
+
+	* docs/html/explanations.html:  New file.
+	* docs/html/configopts.html:  Link to it to provide more notes
+	on cstdio.  Minor markup and spacing fixes.
+	* docs/html/27_io/howto.html:  Talk about sync_with_stdio.
+
+2001-07-09  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	* include/bits/valarray_meta.h (_Expr::operator+): Use qualified id
+	for _Expr template template argument.
+	(_Expr::operator-): Likewise.
+	(_Expr::operator~): Likewise.
+	(_Expr::operator!): Likewise.
+	(_DEFINE_EXPR_UNARY_OPERATOR): Likewise.
+
+2001-07-06  Gabriel Dos Reis  <gdr@merlin.codesourcery.com>
+
+	* libmath/Makefile.am (EXTRA_DIST): Remove atan2f.c and expf.c
+	* libmath/Makefile.in: Regenerate.
+	* libmath/expf.c: Remove.
+	* libmath/atan2f.c: Likewise.
+
+2001-07-02  Loren J. Rittle  <ljrittle@acm.org>
+
+	* acinclude.m4 (GLIBCPP_ENABLE_THREADS): Protect variable from shell
+	expansion (thanks to Alexandre Oliva).
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2001-07-02  Loren J. Rittle  <ljrittle@acm.org>
+
+	libstdc++/3284
+	* acinclude.m4 (GLIBCPP_ENABLE_THREADS): Portability enhancement.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2001-07-02  Loren J. Rittle  <ljrittle@acm.org>
+
+	libstdc++/3243
+	* acinclude.m4 (GLIBCPP_ENABLE_THREADS): Add relative path to
+	staged/installed area to support -I-.  Document.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2001-06-27  Phil Edwards  <pme@sources.redhat.com>
+
+	* include/backward/algo.h:  Add "GPL plus runtime exception" comment
+	block, this time for real.
+	* include/backward/algobase.h:  Likewise.
+	* include/backward/alloc.h:  Likewise.
+	* include/backward/bvector.h:  Likewise.
+	* include/backward/defalloc.h:  Likewise.
+	* include/backward/deque.h:  Likewise.
+	* include/backward/function.h:  Likewise.
+	* include/backward/hash_map.h:  Likewise.
+	* include/backward/hash_set.h:  Likewise.
+	* include/backward/hashtable.h:  Likewise.
+	* include/backward/heap.h:  Likewise.
+	* include/backward/iterator.h:  Likewise.
+	* include/backward/list.h:  Likewise.
+	* include/backward/map.h:  Likewise.
+	* include/backward/multimap.h:  Likewise.
+	* include/backward/multiset.h:  Likewise.
+	* include/backward/pair.h:  Likewise.
+	* include/backward/rope.h:  Likewise.
+	* include/backward/set.h:  Likewise.
+	* include/backward/slist.h:  Likewise.
+	* include/backward/stack.h:  Likewise.
+	* include/backward/strstream:  Likewise.
+	* include/backward/tempbuf.h:  Likewise.
+	* include/backward/tree.h:  Likewise.
+	* include/backward/vector.h:  Likewise.
+	* include/bits/pthread_allocimpl.h:  Likewise.
+	* include/bits/std_algorithm.h:  Likewise.
+	* include/bits/std_bitset.h:  Likewise.
+	* include/bits/std_deque.h:  Likewise.
+	* include/bits/std_functional.h:  Likewise.
+	* include/bits/std_iterator.h:  Likewise.
+	* include/bits/std_list.h:  Likewise.
+	* include/bits/std_map.h:  Likewise.
+	* include/bits/std_memory.h:  Likewise.
+	* include/bits/std_numeric.h:  Likewise.
+	* include/bits/std_queue.h:  Likewise.
+	* include/bits/std_set.h:  Likewise.
+	* include/bits/std_stack.h:  Likewise.
+	* include/bits/std_utility.h:  Likewise.
+	* include/bits/std_vector.h:  Likewise.
+	* include/bits/stl_algo.h:  Likewise.
+	* include/bits/stl_algobase.h:  Likewise.
+	* include/bits/stl_alloc.h:  Likewise.
+	* include/bits/stl_bvector.h:  Likewise.
+	* include/bits/stl_construct.h:  Likewise.
+	* include/bits/stl_deque.h:  Likewise.
+	* include/bits/stl_function.h:  Likewise.
+	* include/bits/stl_heap.h:  Likewise.
+	* include/bits/stl_iterator.h:  Likewise.
+	* include/bits/stl_iterator_base_funcs.h:  Likewise.
+	* include/bits/stl_iterator_base_types.h:  Likewise.
+	* include/bits/stl_list.h:  Likewise.
+	* include/bits/stl_map.h:  Likewise.
+	* include/bits/stl_multimap.h:  Likewise.
+	* include/bits/stl_multiset.h:  Likewise.
+	* include/bits/stl_numeric.h:  Likewise.
+	* include/bits/stl_pair.h:  Likewise.
+	* include/bits/stl_pthread_alloc.h:  Likewise.
+	* include/bits/stl_queue.h:  Likewise.
+	* include/bits/stl_raw_storage_iter.h:  Likewise.
+	* include/bits/stl_relops.h:  Likewise.
+	* include/bits/stl_set.h:  Likewise.
+	* include/bits/stl_stack.h:  Likewise.
+	* include/bits/stl_tempbuf.h:  Likewise.
+	* include/bits/stl_threads.h:  Likewise.
+	* include/bits/stl_tree.h:  Likewise.
+	* include/bits/stl_uninitialized.h:  Likewise.
+	* include/bits/stl_vector.h:  Likewise.
+	* include/bits/type_traits.h:  Likewise.
+	* include/ext/hash_map:  Likewise.
+	* include/ext/hash_set:  Likewise.
+	* include/ext/rope:  Likewise.
+	* include/ext/ropeimpl.h:  Likewise.
+	* include/ext/slist:  Likewise.
+	* include/ext/stl_hash_fun.h:  Likewise.
+	* include/ext/stl_hashtable.h:  Likewise.
+	* include/ext/stl_rope.h:  Likewise.
+	* src/bitset.cc:  Likewise.
+	* src/strstream.cc:  Likewise.
+
+2001-06-26  Felix Natter  <f.natter@ndh.net>
+
+	* docs/html/17_intro/porting-howto.html:  Fixed some errors.
+
+2001-06-25  Phil Edwards  <pme@sources.redhat.com>
+            Kurt Garloff <garloff@suse.de>
+
+	PR libstdc++/3377
+	* src/cmath.cc:  New [version of an old] file; instantiate
+	__cmath_power to start with.
+	* src/Makefile.am (sources):  Add cmath.cc (and alphabetize).
+	* Makefile.in:  Regenerate.
+	* libio/Makefile.in:  Regenerate.
+	* libmath/Makefile.in:  Regenerate.
+	* libsupc++/Makefile.in:  Regenerate.
+	* src/Makefile.in:  Regenerate.
+	* testsuite/Makefile.in:  Regenerate.
+
+2001-06-24  Gabriel Dos Reis  <gdr@codesourcery.com>
+            David Edelsohn <dje@watson.ibm.com>
+
+	* libmath/stubs.c: New file.
+	* libmath/Makefile.am (libmath_la_SOURCES): Add stubs.c.
+	* libmath/Makefile.in: Regenerate.
+
 20010617 Release Manager
 
         * GCC 3.0 Released.

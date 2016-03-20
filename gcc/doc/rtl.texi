@@ -160,7 +160,7 @@ An RTX code for other three input operations.  Currently only
 
 @item i
 An RTX code for an entire instruction:  @code{INSN}, @code{JUMP_INSN}, and
-@code{CALL_INSN}. @xref{Insns}.
+@code{CALL_INSN}.  @xref{Insns}.
 
 @item m
 An RTX code for something that matches in insns, such as
@@ -185,7 +185,7 @@ expression (actually a pointer to an expression), @samp{i} for integer,
 @samp{w} for wide integer, @samp{s} for string, and @samp{E} for vector
 of expressions.  The sequence of letters for an expression code is
 called its @dfn{format}.  For example, the format of @code{subreg} is
-@samp{ei}.@refill
+@samp{ei}.
 
 @cindex RTL format characters
 A few other format characters are used occasionally:
@@ -271,7 +271,7 @@ You can make no assumptions about the format of these codes.
 Operands of expressions are accessed using the macros @code{XEXP},
 @code{XINT}, @code{XWINT} and @code{XSTR}.  Each of these macros takes
 two arguments: an expression-pointer (RTX) and an operand number
-(counting from zero).  Thus,@refill
+(counting from zero).  Thus,
 
 @example
 XEXP (@var{x}, 2)
@@ -304,7 +304,7 @@ compile without error, and would return the second, integer operand cast as
 an expression pointer, which would probably result in a crash when
 accessed.  Nothing stops you from writing @code{XEXP (@var{x}, 28)} either,
 but this will access memory past the end of the expression with
-unpredictable results.@refill
+unpredictable results.
 
 Access to operands which are vectors is more complicated.  You can use the
 macro @code{XVEC} to get the vector-pointer itself, or the macros
@@ -324,7 +324,7 @@ in operand number @var{idx} in @var{exp}.  This value is an @code{int}.
 @findex XVECEXP
 @item XVECEXP (@var{exp}, @var{idx}, @var{eltnum})
 Access element number @var{eltnum} in the vector which is
-in operand number @var{idx} in @var{exp}.  This value is an RTX.
+in operand number @var{idx} in @var{exp}.  This value is an RTX@.
 
 It is up to you to make sure that @var{eltnum} is not negative
 and is less than @code{XVECLEN (@var{exp}, @var{idx})}.
@@ -380,7 +380,7 @@ never be simultaneously set.
 In @code{mem} expressions, the alias set to which @var{x} belongs.  If
 zero, @var{x} is not in any alias set, and may alias anything.  If
 nonzero, @var{x} may only alias objects in the same alias set.  This
-value is set (in a language-specific manner) by the front-end.  This
+value is set (in a language-specific manner) by the front end.  This
 field is not a bit-field; it is in an integer, found as the second
 argument to the @code{mem}.
 
@@ -546,7 +546,7 @@ field and printed as @samp{/s}.
 @item CONSTANT_POOL_ADDRESS_P (@var{x})
 Nonzero in a @code{symbol_ref} if it refers to part of the current
 function's ``constants pool''.  These are addresses close to the
-beginning of the function, and GNU CC assumes they can be addressed
+beginning of the function, and GCC assumes they can be addressed
 directly (perhaps with the help of base registers).  Stored in the
 @code{unchanging} field and printed as @samp{/u}.
 
@@ -767,7 +767,7 @@ the condition code.  These modes are not used on machines that use
 ``Block'' mode represents values that are aggregates to which none of
 the other modes apply.  In RTL, only memory references can have this mode,
 and only if they appear in string-move or vector instructions.  On machines
-which have no such instructions, @code{BLKmode} will not appear in RTL.
+which have no such instructions, @code{BLKmode} will not appear in RTL@.
 
 @findex VOIDmode
 @item VOIDmode
@@ -959,7 +959,7 @@ only expression for integer value negative one is found in
 @code{constm1_rtx}.  Any attempt to create an expression of code
 @code{const_int} and value zero, one, two or negative one will return
 @code{const0_rtx}, @code{const1_rtx}, @code{const2_rtx} or
-@code{constm1_rtx} as appropriate.@refill
+@code{constm1_rtx} as appropriate.
 
 @findex const_true_rtx
 Similarly, there is only one object for the integer whose value is
@@ -967,13 +967,13 @@ Similarly, there is only one object for the integer whose value is
 @code{STORE_FLAG_VALUE} is one, @code{const_true_rtx} and
 @code{const1_rtx} will point to the same object.  If
 @code{STORE_FLAG_VALUE} is @minus{}1, @code{const_true_rtx} and
-@code{constm1_rtx} will point to the same object.@refill
+@code{constm1_rtx} will point to the same object.
 
 @findex const_double
 @item (const_double:@var{m} @var{addr} @var{i0} @var{i1} @dots{})
 Represents either a floating-point constant of mode @var{m} or an
 integer constant too large to fit into @code{HOST_BITS_PER_WIDE_INT}
-bits but small enough to fit within twice that number of bits (GNU CC
+bits but small enough to fit within twice that number of bits (GCC
 does not provide a mechanism to represent even larger constants).  In
 the latter case, @var{m} will be @code{VOIDmode}.
 
@@ -986,7 +986,7 @@ it has not been allocated a memory location, but is on the chain of all
 undisplayed field), @var{addr} contains @code{const0_rtx}.  If it is not
 on the chain, @var{addr} contains @code{cc0_rtx}.  @var{addr} is
 customarily accessed with the macro @code{CONST_DOUBLE_MEM} and the
-chain field via @code{CONST_DOUBLE_CHAIN}.@refill
+chain field via @code{CONST_DOUBLE_CHAIN}.
 
 @findex CONST_DOUBLE_LOW
 If @var{m} is @code{VOIDmode}, the bits of the value are stored in
@@ -1330,14 +1330,14 @@ of the variable @code{pc_rtx}.  Any attempt to create an expression of
 code @code{pc} will return @code{pc_rtx}.
 
 All instructions that do not jump alter the program counter implicitly
-by incrementing it, but there is no need to mention this in the RTL.
+by incrementing it, but there is no need to mention this in the RTL@.
 
 @findex mem
 @item (mem:@var{m} @var{addr} @var{alias})
 This RTX represents a reference to main memory at an address
 represented by the expression @var{addr}.  @var{m} specifies how large
-a unit of memory is accessed. @var{alias} specifies an alias set for the
-reference. In general two items are in different alias sets if they cannot
+a unit of memory is accessed.  @var{alias} specifies an alias set for the
+reference.  In general two items are in different alias sets if they cannot
 reference the same memory address.
 
 @findex addressof
@@ -1763,7 +1763,7 @@ are filled to an entire word with zeros instead of by sign-extension.
 @section Vector Operations
 @cindex vector operations
 
-All normal rtl expressions can be used with vector modes; they are
+All normal RTL expressions can be used with vector modes; they are
 interpreted as operating on each part of the vector independently.
 Additionally, there are a few new expressions to describe specific vector
 operations.
@@ -1951,10 +1951,10 @@ Represents the action of storing the value of @var{x} into the place
 represented by @var{lval}.  @var{lval} must be an expression
 representing a place that can be stored in: @code{reg} (or @code{subreg}
 or @code{strict_low_part}), @code{mem}, @code{pc}, @code{parallel}, or
-@code{cc0}.@refill
+@code{cc0}.
 
 If @var{lval} is a @code{reg}, @code{subreg} or @code{mem}, it has a
-machine mode; then @var{x} must be valid for that mode.@refill
+machine mode; then @var{x} must be valid for that mode.
 
 If @var{lval} is a @code{reg} whose machine mode is less than the full
 width of the register, then it means that the part of the register
@@ -1967,7 +1967,7 @@ an undefined way.
 If @var{lval} is a @code{strict_low_part} of a @code{subreg}, then the
 part of the register specified by the machine mode of the
 @code{subreg} is given the value @var{x} and the rest of the register
-is not changed.@refill
+is not changed.
 
 If @var{lval} is @code{(cc0)}, it has no machine mode, and @var{x} may
 be either a @code{compare} expression or a value that may have any mode.
@@ -1995,7 +1995,7 @@ does not jump) and the other of the two must be a @code{label_ref}
 (for the case which does jump).  @var{x} may also be a @code{mem} or
 @code{(plus:SI (pc) @var{y})}, where @var{y} may be a @code{reg} or a
 @code{mem}; these unusual patterns are used to represent jumps through
-branch tables.@refill
+branch tables.
 
 If @var{lval} is neither @code{(cc0)} nor @code{(pc)}, the mode of
 @var{lval} must not be @code{VOIDmode} and the mode of @var{x} must be
@@ -2078,7 +2078,7 @@ insn.  However, the reload phase may allocate a register used for one of
 the inputs unless the @samp{&} constraint is specified for the selected
 alternative (@pxref{Modifiers}).  You can clobber either a specific hard
 register, a pseudo register, or a @code{scratch} expression; in the
-latter two cases, GNU CC will allocate a hard register that is available
+latter two cases, GCC will allocate a hard register that is available
 there for use as a temporary.
 
 For instructions that require a temporary register, you should use
@@ -2086,7 +2086,7 @@ For instructions that require a temporary register, you should use
 combiner phase to add the @code{clobber} when required.  You do this by
 coding (@code{clobber} (@code{match_scratch} @dots{})).  If you do
 clobber a pseudo register, use one which appears nowhere else---generate
-a new one each time.  Otherwise, you may confuse CSE.
+a new one each time.  Otherwise, you may confuse CSE@.
 
 There is one other known use for clobbering a pseudo register in a
 @code{parallel}: when one of the input operands of the insn is also
@@ -2145,7 +2145,7 @@ Represents several side effects performed in parallel.  The square
 brackets stand for a vector; the operand of @code{parallel} is a
 vector of expressions.  @var{x0}, @var{x1} and so on are individual
 side effect expressions---expressions of code @code{set}, @code{call},
-@code{return}, @code{clobber} or @code{use}.@refill
+@code{return}, @code{clobber} or @code{use}.
 
 ``In parallel'' means that first all the values used in the individual
 side-effects are computed, and second all the actual side-effects are
@@ -2255,7 +2255,7 @@ space is given to each address-difference.  @var{min} and @var{max}
 are set up by branch shortening and hold a label with a minimum and a
 maximum address, respectively.  @var{flags} indicates the relative
 position of @var{base}, @var{min} and @var{max} to the containing insn
-and of @var{min} and @var{max} to @var{base}.  See rtl.def for details.@refill
+and of @var{min} and @var{max} to @var{base}.  See rtl.def for details.
 @end table
 
 @node Incdec
@@ -2277,7 +2277,7 @@ machines allow only a @code{reg}.  @var{m} must be the machine mode
 for pointers on the machine in use.  The amount @var{x} is decremented
 by is the length in bytes of the machine mode of the containing memory
 reference of which this expression serves as the address.  Here is an
-example of its use:@refill
+example of its use:
 
 @example
 (mem:DF (pre_dec:SI (reg:SI 39)))
@@ -2320,10 +2320,11 @@ The expression @var{y} must be one of three forms:
 @end table
 where @var{z} is an index register and @var{i} is a constant.
 
-Here is an example of its use:@refill
+Here is an example of its use:
 
 @example
-(mem:SF (post_modify:SI (reg:SI 42) (plus (reg:SI 42) (reg:SI 48))))
+(mem:SF (post_modify:SI (reg:SI 42) (plus (reg:SI 42)
+                                          (reg:SI 48))))
 @end example
 
 This says to modify pseudo register 42 by adding the contents of pseudo
@@ -2470,7 +2471,7 @@ first insn in a @code{sequence}, @code{NEXT_INSN (PREV_INSN (@var{insn}))}
 is the insn containing the @code{sequence} expression, as is the value
 of @code{PREV_INSN (NEXT_INSN (@var{insn}))} is @var{insn} is the last
 insn in the @code{sequence} expression.  You can use these expressions
-to find the containing @code{sequence} expression.@refill
+to find the containing @code{sequence} expression.
 
 Every insn has one of the following six expression codes:
 
@@ -2935,7 +2936,7 @@ filling is done, this may no longer be true.  In this case a
 @code{REG_CC_USER} note will be placed on the insn setting @code{cc0} to
 point to the insn using @code{cc0} and a @code{REG_CC_SETTER} note will
 be placed on the insn using @code{cc0} to point to the insn setting
-@code{cc0}.@refill
+@code{cc0}.
 @end table
 
 These values are only used in the @code{LOG_LINKS} field, and indicate
@@ -2976,7 +2977,7 @@ probability that the branch will be taken.
 @item REG_BR_PRED
 These notes are found in JUMP insns after delayed branch scheduling
 has taken place.  They indicate both the direction and the likelihood
-of the JUMP.  The format is a bitmask of ATTR_FLAG_* values.
+of the JUMP@.  The format is a bitmask of ATTR_FLAG_* values.
 
 @findex REG_FRAME_RELATED_EXPR
 @item REG_FRAME_RELATED_EXPR
@@ -3167,14 +3168,14 @@ problem since reading RTL occurs only as part of building the
 compiler.
 
 People frequently have the idea of using RTL stored as text in a file as
-an interface between a language front end and the bulk of GNU CC.  This
+an interface between a language front end and the bulk of GCC@.  This
 idea is not feasible.
 
-GNU CC was designed to use RTL internally only.  Correct RTL for a given
+GCC was designed to use RTL internally only.  Correct RTL for a given
 program is very dependent on the particular target machine.  And the RTL
 does not contain all the information about the program.
 
-The proper way to interface GNU CC to a new language front end is with
+The proper way to interface GCC to a new language front end is with
 the ``tree'' data structure, described in the files @file{tree.h} and
 @file{tree.def}.  The documentation for this structure (@pxref{Trees})
 is incomplete.

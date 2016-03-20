@@ -130,6 +130,20 @@ do { ASM_OUTPUT_LABEL(FILE,LABEL_ALTERNATE_NAME (INSN)); } while (0)
   ASM_OUTPUT_INTERNAL_LABEL (FILE, PREFIX, NUM)
 #endif
 
+/* This is how we tell the assembler that a symbol is weak.  */
+#ifndef ASM_OUTPUT_WEAK_ALIAS
+#if defined (ASM_WEAKEN_LABEL) && defined (ASM_OUTPUT_DEF)
+#define ASM_OUTPUT_WEAK_ALIAS(STREAM, NAME, VALUE)	\
+  do							\
+    {							\
+      ASM_WEAKEN_LABEL (STREAM, NAME);			\
+      if (VALUE)					\
+        ASM_OUTPUT_DEF (STREAM, NAME, VALUE);		\
+    }							\
+  while (0)
+#endif
+#endif
+
 /* This determines whether or not we support weak symbols.  */
 #ifndef SUPPORTS_WEAK
 #ifdef ASM_WEAKEN_LABEL

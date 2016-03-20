@@ -1,3 +1,30 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-07-16  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* src/x86/sysv.S: Avoid gas-only .balign directive.
+	Use C style comments.
+
+2001-07-16  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* src/alpha/ffi.c (ffi_prep_closure): Avoid gas-only mnemonic.
+	Fixes PR bootstrap/3563.
+
+2001-06-26  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* src/alpha/osf.S (ffi_closure_osf): Use .rdata for ECOFF.
+
+2001-06-25  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* configure.in: Recognize sparc*-sun-* host.
+	* configure: Regenerate.
+	
 20010617 Release Manager
 
         * GCC 3.0 Released.

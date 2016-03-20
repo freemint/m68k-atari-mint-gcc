@@ -1254,7 +1254,7 @@ m68hc11_initial_elimination_offset (from, to)
 
   if (from == FRAME_POINTER_REGNUM && to == HARD_FRAME_POINTER_REGNUM)
     {
-      return 0;
+      return m68hc11_sp_correction;
     }
 
   /* Push any 2 byte pseudo hard registers that we need to save.  */
@@ -1273,7 +1273,7 @@ m68hc11_initial_elimination_offset (from, to)
 
   if (from == FRAME_POINTER_REGNUM && to == HARD_SP_REGNUM)
     {
-      return size - m68hc11_sp_correction;
+      return size;
     }
   return 0;
 }
@@ -1939,18 +1939,30 @@ m68hc11_gen_highpart (mode, x)
     }
 
   /* gen_highpart crashes when it is called with a SUBREG.  */
-  if (GET_CODE (x) == SUBREG && SUBREG_WORD (x) != 0)
+  if (GET_CODE (x) == SUBREG)
     {
       return gen_rtx (SUBREG, mode, XEXP (x, 0), XEXP (x, 1));
     }
-  x = gen_highpart (mode, x);
+  if (GET_CODE (x) == REG)
+    {
+      if (REGNO (x) < FIRST_PSEUDO_REGISTER)
+        return gen_rtx (REG, mode, REGNO (x));
+      else
+        return gen_rtx_SUBREG (mode, x, 0);
+    }
 
-  /* Return a different rtx to avoid to share it in several insns
-     (when used by a split pattern).  Sharing addresses within
-     a MEM breaks the Z register replacement (and reloading).  */
   if (GET_CODE (x) == MEM)
-    x = copy_rtx (x);
-  return x;
+    {
+      x = change_address (x, mode, 0);
+
+      /* Return a different rtx to avoid to share it in several insns
+	 (when used by a split pattern).  Sharing addresses within
+	 a MEM breaks the Z register replacement (and reloading).  */
+      if (GET_CODE (x) == MEM)
+	x = copy_rtx (x);
+      return x;
+    }
+  abort ();
 }
 
 

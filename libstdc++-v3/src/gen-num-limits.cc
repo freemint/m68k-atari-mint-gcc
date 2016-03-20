@@ -33,24 +33,7 @@
 // Do not compile with optimization turned on.
 //
 
-#include <bits/c++config.h>
-
-#if HAVE_CONFIG_H
-# include <config.h>
-#endif
-
-//
-// Force Linux <limits.h> to define the *LONG_LONG*
-//
-#if __linux__ && _GLIBCPP_USE_LONG_LONG
-# ifndef __USE_GNU
-#  define __USE_GNU 1
-# endif
-# ifndef _GNU_SOURCE
-#  define _GNU_SOURCE 1
-# endif
-#endif
-
+#include <config.h>
 #include <limits.h>
 #include <float.h>
 #include <stdio.h>
@@ -174,15 +157,23 @@ template<typename T>
 
 template<typename T> struct underflow { };
 
+
+// Set various signals handler for trapping aritmetic ops.
+void set_signals_handler()
+{
+  signal_adapter(signal, SIGFPE, signal_handler);
+  signal_adapter(signal, SIGTRAP, signal_handler);
+  // This is necessary for Linux/SPARC.
+  signal_adapter(signal, SIGILL, signal_handler);
+}
+
 // traps
 template<typename T> void traps()
 {
   fflush(NULL);
-  signal_adapter (signal, SIGFPE, signal_handler);
-  signal_adapter (signal, SIGTRAP, signal_handler);
+  set_signals_handler();
   bool trap_flag = trapping(division_by_zero<T>());
-  signal_adapter (signal, SIGFPE, signal_handler);
-  signal_adapter (signal, SIGTRAP, signal_handler);
+  set_signals_handler();
   trap_flag = trap_flag || trapping(overflow<T>());
   const char* p = bool_alpha[trap_flag];
   printf("%s%s = %s;\n", tab2, "static const bool traps", p);    
@@ -192,8 +183,7 @@ template<typename T> void traps()
 template<> void traps< T >()                                            \
 {       								\
   fflush(NULL);                                                         \
-  signal_adapter (signal, SIGFPE, signal_handler);                      \
-  signal_adapter (signal, SIGTRAP, signal_handler);                     \
+  set_signals_handler();                                                \
   const char* p = bool_alpha[trapping(division_by_zero<T>())];          \
   printf("%s%s = %s;\n", tab2, "static const bool traps", p);           \
 }
@@ -216,7 +206,9 @@ template<typename T>
   };
 
 #define DEFINED_TYPE_NAME(T)                                            \
+template<>                                                              \
 const char type_name_trait< T >::type_name[] = #T;                      \
+template<>                                                              \
 const char type_name_trait< T >::trait_name[] = "numeric_limits<" #T ">";
 
 DEFINED_TYPE_NAME(bool);
@@ -289,7 +281,9 @@ template<typename T>
 const bool predicate<T>::is_exact = true;
 
 #define SPECIALIZE_EXACTNESS(T)						\
+template<>                                                              \
 const bool predicate< T >::is_integer = false;				\
+template<>                                                              \
 const bool predicate< T >::is_exact = false
 
 SPECIALIZE_EXACTNESS(float);
@@ -321,6 +315,7 @@ template<typename T>
 const bool predicate<T>::is_iec559 = false;
 
 #define SPECIALIZE_IEC559(T)						\
+template<>                                                              \
 const bool predicate< T >::is_iec559 = true
 
 SPECIALIZE_IEC559(bool);
@@ -359,7 +354,9 @@ template<typename T>
 
 #define DEFINE_EXTREMA(T, m, M)  DO_DEFINE_EXTREMA(T, m, M)
 #define DO_DEFINE_EXTREMA(T, m, M)					\
+template<>                                                              \
 const char value< T >::min[] = #m;					\
+template<>                                                              \
 const char value< T >::max[] = #M
 
 DEFINE_EXTREMA(bool, false, true);
@@ -376,8 +373,8 @@ DEFINE_EXTREMA(unsigned int, 0, UINT_MAX);
 DEFINE_EXTREMA(long, LONG_MIN, LONG_MAX);
 DEFINE_EXTREMA(unsigned long, 0, ULONG_MAX);
 #ifdef _GLIBCPP_USE_LONG_LONG
-DEFINE_EXTREMA(long long, LONG_LONG_MIN, LONG_LONG_MAX);
-DEFINE_EXTREMA(unsigned long long, 0, ULONG_LONG_MAX);
+DEFINE_EXTREMA(long long, (-__LONG_LONG_MAX__-1), __LONG_LONG_MAX__);
+DEFINE_EXTREMA(unsigned long long, 0, (__LONG_LONG_MAX__ * 2ULL + 1));
 #endif
 DEFINE_EXTREMA(float, FLT_MIN, FLT_MAX);
 DEFINE_EXTREMA(double, DBL_MIN, DBL_MAX);
@@ -396,8 +393,10 @@ const int value<T>::digits =
 template<typename T>
 const int value<T>::radix = 2;
 
-#define SPECIALIZE_DIGITS(T, D, D10)					\
-const int value< T >::digits = D;					\
+#define SPECIALIZE_DIGITS(T, D, D10)		\
+template<>					\
+const int value< T >::digits = D;		\
+template<>					\
 const int value< T >::digits10 = D10
 
 SPECIALIZE_DIGITS(float, FLT_MANT_DIG, FLT_DIG);
@@ -407,7 +406,9 @@ SPECIALIZE_DIGITS(long double, LDBL_MANT_DIG, LDBL_DIG);
 #undef SPECIALIZE_DIGITS
 
 
-#define SPECIALIZE_RADIX(T, R) const int value< T >::radix = R
+#define SPECIALIZE_RADIX(T, R)			\
+template<>					\
+const int value< T >::radix = R
 
 SPECIALIZE_RADIX(float, FLT_RADIX);
 SPECIALIZE_RADIX(double, FLT_RADIX);
@@ -428,7 +429,9 @@ const char value<T>::epsilon[] = "0";
 #endif
 
 #define SPECIALIZE_EPSILON(T, E) DO_SPECIALIZE_EPSILON(T, E)
-#define DO_SPECIALIZE_EPSILON(T, E) const char value< T >::epsilon[] = #E
+#define DO_SPECIALIZE_EPSILON(T, E)		\
+template<> 					\
+const char value< T >::epsilon[] = #E
 
 // unsophisticated, gross method
 #if 1
@@ -467,7 +470,9 @@ template<typename T>
 const char value<T>::round_error[] = "0";
 #endif
 
-#define SPECIALIZE_ROUND_ERROR(T, R) const char value< T >::round_error[] = #R
+#define SPECIALIZE_ROUND_ERROR(T, R) 		\
+template<>					\
+const char value< T >::round_error[] = #R
 // unsophisticated, gross method
 #if 1
 SPECIALIZE_ROUND_ERROR(bool, 0);
@@ -504,10 +509,14 @@ const int value<T>::max_exponent = 0;
 template<typename T>
 const int value<T>::max_exponent10 = 0;
 
-#define SPECIALIZE_EXPONENTS(T, m, m10, M, M10)				\
-const int value< T >::min_exponent = m;					\
-const int value< T >::min_exponent10 = m10;				\
-const int value< T >::max_exponent = M;					\
+#define SPECIALIZE_EXPONENTS(T, m, m10, M, M10)	\
+template<>					\
+const int value< T >::min_exponent = m;		\
+template<>					\
+const int value< T >::min_exponent10 = m10;	\
+template<>					\
+const int value< T >::max_exponent = M;		\
+template<>					\
 const int value< T >::max_exponent10 = M10
 
 SPECIALIZE_EXPONENTS(float, FLT_MIN_EXP, FLT_MIN_10_EXP,
@@ -575,7 +584,7 @@ template<typename T>
 void digits10()
 {
   printf("%s%s = %d;\n", tab2, "static const int digits10",
-	 int(log10_of_two * value<T>::digits));
+	 int(log10_of_two * value<T>::digits) + 1);
 }
 
 template<typename T>

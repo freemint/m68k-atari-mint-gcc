@@ -1,6 +1,984 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-17  Janis Johnson  <janis187@us.ibm.com>
+
+	* doc/install.texi (Install GCC): Add links to build status pages.
+	(Specific): Ditto.
+	(Final install): Ditto; request updates for specific info
+
+2001-08-17  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/invoke.texi (Optimize Options): The default for 
+	-finline-limit is 600.
+
+2001-08-16  Joel Sherrill <joel@OARcorp.com>
+
+	* config/rs6000/rtems.h: Set STARTFILE_DEFAULT_SPEC and
+	ENDFILE_DEFAULT_SPEC to correctly include ecrti and ecrtn.
+	* config/arm/rtems-elf.h: Remove bad -Darm and -Darm_elf.
+
+2001-08-14  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	* config/s390/linux64.h (CPP_PREDEFINES): Define __s390__
+	also on 64-bit s390x targets.
+ 
+2001-08-14  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (Specific, avr): Fix markup.
+	(Specific, c4x): Ditto.
+
+2001-08-13  Andreas Jaeger  <aj@suse.de>
+
+	* config.gcc: Use t-slibgcc-elf to build shared libgcc_s on
+	s390*linux.
+
+2001-08-13  Roman Zippel  <zippel@linux-m68k.org>
+	    Richard Henderson  <rth@redhat.com>
+
+	* regmove.c (regmove_optimize): Avoid setting a register twice in
+	a parallel set.
+
+2001-08-12  David Edelsohn  <edelsohn@gnu.org>
+
+	Revert:
+	2001-08-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+	* gcc.c (set_collect_gcc_options): New function, split out from
+	main.
+	Ignore elided switches.
+	(do_spec_1): Invoke before executing command.
+	(set_input): Export.
+	Move declaration ...
+	* gcc.h (set_input): ... here.
+	* config/alpha/osf.h (ASM_FINAL_SPEC): Use %U.s to refer to input
+	file.
+
+2001-08-11  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (Specific, c4x): Fix cross-reference to the
+	main manual to work both for info and HTML versions.
+	
+2001-08-10  Ulrich Weigand  <uweigand@de.ibm.com>
+ 
+ 	* glimits.h (__LONG_MAX__): Add s390x as 64-bit architecture.
+
+ 	* config/s390/s390.c (legitimize_pic_address): Don't generate
+	unnecessary moves (to avoid confusing loop optimization).
+ 	(check_and_change_labels): Replace jump_long by indirect_jump.
+	(s390_final_chunkify): Don't start a new literal pool on section 
+	switch in 64-bit code.
+	(s390_va_start, s390_va_arg): Fixed incorrect sizes for 64-bit.
+	
+	* config/s390/s390.h (HARD_REGNO_MODE_OK, RETURN_IN_MEMORY):
+	Support complex integer modes correctly.
+	(reg_class, REG_CLASS_NAMES, REG_CLASS_CONTENTS): Remove CC_REGS.
+	(EH_RETURN_HANDLER_RTX): Fixed incorrect offset for 64-bit.
+	(CONST_COSTS): Fixed incorrect costs.
+
+	* config/s390/s390.md (divsi3, modsi3): Clobber low word of
+	divmoddisi3 before shifting (to avoid confusing flow analysis).
+	(cjump_long, icjump_long, jump_long, indirect_jump, casesi_jump): 
+	Never use "address_operand" without "p" or "memory_operand" 
+	without mode.
+	(builtin_setjmp_setup, builtin_setjmp_receiver, builtin_longjmp):
+	Fixed broken setjmp/longjmp handling.
+	(do_builtin_setjmp_setup): Removed.
+
+2001-08-10  John David Anglin  <dave@hiauly1.hia.nrc.ca>
+
+	* doc/install.texi (vax-dec-ultrix): Change `Vax' to VAX.
+
+2001-08-10  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (Specific, avr): Fix cross-reference to the
+	main manual to work both for info and HTML versions.
+
+2001-08-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/ia64/fde-glibc.c: Require glibc 2.2.4+ headers.
+	(find_fde_for_dso): Remove.
+	(_Unwind_IteratePhdrCallback): New.
+	(_Unwind_FindTableEntry): Use dl_iterate_phdr.
+	* config/ia64/crtbegin.asm (__ia64_app_header): Remove.
+
+2001-08-08  Kelley Cook  <kelley.cook@home.com>
+
+	* Makefile.in: Move many of the *_H definitions eariler in the file,
+	so that rules in t-* files that use them for dependencies will work
+	in a parallel build.
+	* config/i386/t-cygwin (winnt.o): Depend on $(CONFIG_H).
+
+2001-08-08  Mark Mitchell  <mark@codesourcery.com>
+
+	* except.c (remove_fixup_regions): Fix typo.
+
+2001-08-07  Daniel Jacobowitz  <drow@mvista.com>
+
+        * config.gcc: Quote target_cpu_default2 correctly for
+        powerpc*-*-* targets.
+
+2001-08-07  David Edelsohn  <edelsohn@gnu.org>
+
+	* doc/install.texi: Document fine-grained multilib configuration.
+
+2001-08-06  Richard Henderson  <rth@redhat.com>
+
+	* config/i386/i386.h (FORCE_PREFERRED_STACK_BOUNDARY_IN_MAIN): New.
+	* function.c (expand_main_function): Implement it.
+	* doc/tm.texi: Document it.
+
+	* i386-protos.h, i386.c, i386.h, osf1elf.h, osfrose.h: Revert 08-01
+	ix86_output_main_function_alignment_hack patch.
+
+2001-08-06  Richard Henderson  <rth@redhat.com>
+
+	2001-07-23  Richard Henderson  <rth@redhat.com>
+	* config/i386/i386.c (ix86_expand_setcc): Don't use method 0
+	before CSE.
+	* config/i386/i386.md: New setcc+movzbl peephole2.
+
+	2001-07-22  Richard Henderson  <rth@redhat.com>
+	* fold-const.c (fold): Test vs FLOAT_TYPE_P instead of
+	INTEGRAL_TYPE_P when folding comparisons with operand_equal_p
+	arguments.
+
+2001-08-06  John David Anglin  <dave@hiauly1.hia.nrc.ca>
+
+	* varasm.c (output_constant_def_contents): Use for the length of a
+	string constant either its TREE_STRING_LENGTH or its int_size_in_bytes
+	depending on which is larger.
+
+2001-08-04  Hans-Peter Nilsson  <hp@bitrange.com>
+
+	* doc/extend.texi (Other Builtins): Fix typo in last change.
+
+2001-08-04  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.md ("cmphi_1", "cmpqi_1"): Allow memory 
+	and soft register for operand 0.
+	("cmphi_z_used", "cmpqi_z_used"): Allow memory for operand 0.
+
+2001-08-04  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.md ("bitcmpqi"): Allow memory and soft
+	register for operand 0.
+	("bitcmpqi_z_used"): Allow memory for operand 0.
+	(split "bitcmpqi"): New split to handle address reg as operand 1.
+
+2001-08-03  Zack Weinberg  <zackw@stanford.edu>
+
+	* builtins.c (fold_builtin_constant_p): Return integer_zero_node
+	for complex expressions when cfun == 0.
+	* doc/extend.texi: Document that __builtin_constant_p can be
+	used in data initializers as well as functions.
+
+2001-08-03  Richard Henderson  <rth@redhat.com>
+
+	* except.c (collect_one_action_chain): Add an explicit cleanup
+	action if regions surrounding a catch were encoded entirely
+	within the call-site entry.
+
+2001-08-03  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/t-m68hc11-gas (T_CPPFLAGS): Add _ctor and _dtor.
+	* config/m68hc11/larith.asm (_exit): Split in several sub-sections
+	merged by linker script to get a final _exit().
+	(__do_global_dtors): New for destructor handling in specific exit
+	section.
+	(__do_global_ctors): New for constructors in specific install section.
+	(__map_data_section): Map data sections before running constructors.
+	* config/m68hc11/m68hc11.h (INT_ASM_OP): Define to use .word.
+	(CTORS_SECTION_ASM_OP): Define to put in readonly section.
+	(DTORS_SECTION_ASM_OP): Likewise.
+	(CTORS_SECTION_FUNCTION): Define to force a reference to
+	__do_global_ctors.
+	(DTORS_SECTION_FUNCTION): Likewise for __do_global_dtors.
+
+2001-08-03  Ulrich Weigand  <uweigand@de.ibm.com>
+ 
+ 	* config.gcc (s390-*-linux*, s390x-*-linux*): Added.
+ 	* doc/install.texi: Add s390 and s390x targets.
+ 	* doc/invoke.texi: Add s390 and s390x target options.
+ 	* doc/md.texi: Add s390 and s390x extra constraints.
+ 	* config/s390/s390.c: New. Subroutines for code generation.
+ 	* config/s390/s390.h: New. Definitions for S/390.
+ 	* config/s390/s390-protos.h: New. Prototypes.
+ 	* config/s390/linux.h: New. Definitions for Linux for S/390.
+ 	* config/s390/linux64.h: New. Definitions for Linux for zSeries.
+ 	* config/s390/t-linux: New. Makefile fragment.
+ 	* config/s390/s390.md: New. Machine description for S/390 and zSeries.
+ 	* config/s390/xm-390.h: New. Host definitions for S/390.
+ 	* config/s390/xm-390x.h: New. Host definitions for zSeries.
+ 	* config/s390/fixdfdi.h: New. Fix L_fix*di.
+ 
+2001-08-03  Neil Booth  <neil@cat.daikokuya.demon.co.uk>
+
+	* cpplex.c (parse_string): Warn once per string.
+	* cpplib.c (_cpp_do_file_change): Call hook correctly.
+
+2001-08-03  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* doc/install.texi (Configuration): Fix markup.
+	(Specific, i?86-*-udk): Likewise.
+	(Specific, alpha*-dec-osf*): Warn against --with-gnu-as,
+	--with-gnu-ld. 
+	Document --enable-threads and --enable-libgcj status.
+	(Specific, mips-sgi-irix*): Canonicalize triples.
+	(Specific, mips-sgi-irix5): Warn about problems with this config.
+	Mention required GNU as patch.
+	Native assembler problems are fixed.
+	(Specific, mips-sgi-irix6): Update O32 ABI support status.
+	Document --enable-threads and --enable-libgcj status.
+
+2001-08-02  David Edelsohn  <edelsohn@gnu.org>
+
+	* doc/install.texi (Install GCC: Binaries): Update Bull info.
+
+2001-08-02  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Remove -fhonor-std.
+	* doc/invoke.texi (C++ Dialect Options): Remove -fno-honor-std.
+
+2001-08-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* gcc.c (set_collect_gcc_options): New function, split out from
+	main.
+	Ignore elided switches.
+	(do_spec_1): Invoke before executing command.
+	(set_input): Export.
+	Move declaration ...
+	* gcc.h (set_input): ... here.
+	* config/alpha/osf.h (ASM_FINAL_SPEC): Use %U.s to refer to input
+	file.
+
+2001-08-01  Hartmut Penner  <hpenner@de.ibm.com>
+
+	* varasm.c (decode_rtx_const): Allow unspec (symbol_ref) in 
+	constant pool to be identical by string address and index.
+	
+2001-08-01  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* params.def (PARAM_MAX_INLINE_INSNS): Change default to 600.
+	Correct comment that had been missed in the previous change.
+
+2001-08-01  Robert Lipe  <robertl@caldera.com>
+
+	* dwarfout.c: Remove reference to README.DWARF.
+
+2001-08-01  Richard Henderson  <rth@redhat.com>
+
+	* rtl.c (read_name): Consider \r whitespace.
+
+2001-08-01  Mark Kettenis  <kettenis@gnu.org>
+
+	* unwind-pe.h (base_of_encoded_value, read_encoded_value): Define
+	only if NO_BASE_OF_ENCODED_VALUE isn't defined.
+	* unwind-dw2-fde.c (NO_BASE_OF_ENCODED_VALUE): Define before
+	including "unwind-pe.h".
+
+Wed Aug  1 20:15:33 CEST 2001  Jan Hubicka  <jh@suse.cz>
+
+	* i386-protos.h (ix86_output_main_function_alignment_hack): Declare.
+	* i386.c (ix86_output_main_function_alignment_hack): New global
+	function.
+	* i386.h (FUNCTION_PROLOGUE): New macro.
+	* osf1elf.h (FUNCTION_PROLOGUE): Call new function.
+	* osfrose.h (FUNCTION_PROLOGUE): Likewise.
+
+2001-08-01  H.J. Lu <hjl@gnu.org>
+
+	* config/mips/linux.h (ASM_OUTPUT_IDENT): Defined.
+
+2001-08-01  H.J. Lu <hjl@gnu.org>
+
+	* gcc/config/mips/linux.h (ASM_OUTPUT_SOURCE_LINE): Defined.
+
+2001-07-31  Jeff Sturm  <jsturm@one-point.com>
+
+	* except.c (duplicate_eh_regions): Test n_array[i] for NULL.
+
+2001-07-30  Roman Zippel  <zippel@linux-m68k.org>
+
+	* config/m68k/m68k.md: Replace all general_operand with
+	nonimmediate_operand for all destinations.
+	* config/m68k/m68k.c: Include expr.h and reload.h.
+	(not_sp_operand): Check nonimmediate_operand.
+
+2001-07-30  Roman Zippel  <zippel@linux-m68k.org>
+
+	* config/m68k/m68k.h (TARGET_SWITCHES/TARGET_OPTIONS):
+	Add missing doc strings.
+	* config/m68k/linux-aout.h (SUBTARGET_SWITCHES): Likewise.
+	* config/m68k/linux.h (SUBTARGET_SWITCHES): Likewise.
+
+2001-07-30  H.J. Lu <hjl@gnu.org>
+
+	* config/mips/linux.h (CPLUSPLUS_CPP_SPEC): Add -D_GNU_SOURCE.
+	(ASM_DECLARE_FUNCTION_NAME): Defined.
+	(ASM_DECLARE_FUNCTION_SIZE): Likewise.
+	(FUNCTION_NAME_ALREADY_DECLARED): Likewise.
+
+2001-07-30  Janis Johnson  <janis@us.ibm.com>
+
+	* profile.c (branch_prob): Fix .bbg info for computed gotos
+	and C++ EH code.
+
+2001-07-28  Golubev I. N.  <gin@mo.msk.ru>
+
+	* config/i386/sco5.h (DWARF2_DEBUGGING_INFO): Define.
+
+2001-07-27  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (Configuration): Properly link the host
+	specific instructions also when generating HTML.
+
+2001-07-26  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* glimits.h (_MACH_MACHLIMITS_H_): Delete.
+
+Thu Jul 26 22:01:30 2001  Denis Chertykov  <denisc@overta.ru>
+
+	* cse.c (cse_process_notes): Replace any registers if the address
+	remains valid.
+
+2001-07-26  Rainer Orth <ro@TechFak.Uni-Bielefeld.DE>
+
+	* Makefile.in (LIBICONV): Define.
+
+2001-07-26  Andrew MacLeod  <amacleod@redhat.com>
+
+	* params.def (PARAM_MAX_PENDING_LIST_LENGTH): Add parameter to
+	limit length of dependancy flush list.
+	* params.h (MAX_PENDING_LIST_LENGTH): Define.
+	* sched-int.h  (struct deps): Add pending_flush_length field.
+	* sched-deps.c (flush_pending_lists): Last_pending_memory_flush now
+	has 1 element in it.
+	(sched_analyze_1): Use MAX_PENDING_LIST_LENGTH.
+	(sched_analyze): After a jump, if the pending memory flush list is too
+	large, flush the pending lists.
+	(init_deps): Initialize pending_flush_length to 0.
+	* doc/invoke.texi (max_pending_list_length): Document parameter.
+
+2001-07-25  Richard Henderson  <rth@redhat.com>
+
+	* varasm.c (assemble_variable): Create DECL_RTL before setting
+	TREE_ASM_WRITTEN.
+
+2001-07-25  Andrew MacLeod  <amacleod@redhat.com>
+	    Janis Johnson  <janis@us.ibm.com>
+
+	* stmt.c (expand_goto): A nonlocal goto can be a call too.
+	* builtins.c (expand_builtin_longjmp): Reverse label and static chain
+	pointer parameters to match documented usage of nonlocal_goto.
+	* config/ia64/ia64.md (nonlocal_goto): Revert label and static chain
+	parameters to their correct order.
+	* config/sparc/sparc.md (nonlocal_goto): Revert label and static chain
+	parameters to their correct order.
+
+2001-07-25  Andrew MacLeod  <amacleod@redhat.com>
+
+	* config/ia64/ia64.h (STRIP_NAME_ENCODING): Strip out '*' as well.
+
+2001-07-24  Joel Sherrill <joel@OARcorp.com>
+
+	* config/i960/i960.h (CPP_SPEC): Define _SOFT_FLOAT for -msoft-float.
+
+2001-07-24  Joel Sherrill <joel@OARcorp.com>
+
+	* config/sparc/rtems.h (CPP_PREDEFINES): Remove redundant
+	-Acpu and -Amachine.h.
+	* config/sparc/rtemself.h (CPP_PREDEFINES): Likewise.
+	Corrected header to say ELF not a.out.
+	* config/sparc/sparc.h (CPP_CPU_SPEC): Define _SOFT_FLOAT
+	when given -msoft-float.
+
+2001-07-24  Joel Sherrill <joel@OARcorp.com>
+
+	* config.gcc (arm*-*-rtems*): Include crtinit.o and crtfini.o as
+	extra multilib parts like arm-elf.
+	(i960-*-coff*, i960-*-rtems): Should not use collect2.
+	(m68020-*-elf*, m68k-*-elf*, m68k-*-rtems*): Include crtinit.o and
+	crtfini.o as extra multilib parts.
+
+2001-07-24  Joel Sherrill <joel@OARcorp.com>
+
+	* configure.in: Add rtems as a supported thread model.
+	* gthr-rtems.h: Add missing entry point __gthread_active_p.
+	* configure: Rebuilt.
+
+2001-07-24  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* config/mips/irix6-libc-compat.c: New file.
+	* config/mips/t-iris6 (LIB2FUNCS_STATIC_EXTRA): Use it.
+	* doc/install.texi (Specific, mips*-sgi-irix6): Mention structure
+	passing workaround.
+
+2001-07-23  Kazu Hirata  <kazu@hxi.com>
+
+	* reload.c: Fix comment typos.
+
+2001-07-23  Richard Henderson  <rth@redhat.com>
+
+	* config/i386/i386.c (ix86_expand_setcc): Don't use method 0
+	before CSE.
+	* config/i386/i386.md: New setcc+movzbl peephole2.
+
+2001-07-23  lars brinkhoff  <lars@nocrew.org>
+
+	* tm.texi (TARGET_FLOAT_FORMAT): Document IBM_FLOAT_FORMAT
+	and C4X_FLOAT_FORMAT.
+	(BOOL_TYPE_SIZE): Document.
+
+2001-07-22  Richard Henderson  <rth@redhat.com>
+
+	* fold-const.c (fold): Test vs FLOAT_TYPE_P instead of
+	INTEGRAL_TYPE_P when folding comparisons with operand_equal_p
+	arguments.
+
+2001-07-22  Alexandre Oliva  <aoliva@redhat.com>
+
+	* config/i386/freebsd-aout.h (ASM_PREFERRED_EH_DATA_FORMAT): Use
+	the definition in defaults.h.
+
+2001-07-22  Richard Henderson  <rth@redhat.com>
+
+	* regrename.c (regrename_optimize): Compute nregs for each
+	potential target register.
+
+2001-07-20  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.md ("andqi3"): Accept d as second operand.
+	("iorqi3"): Likewise.
+	("xorqi3"): Likewise.
+	("*addhi3"): Fix constraint to avoid reloading in a soft register.
+	("*subhi3_sp): Likewise.
+	("*subhi3"): Likewise.
+	("extendhisi2"): Accept D, X and Y as source operand to avoid
+	reload problems.
+
+2001-07-20  Bruce Korb  <bkorb@gnu.org>
+
+	* fixinc/fixincl.c(test_for_changes): force unsigned char comparisons
+	because getc() and char* may disagree on signedness.
+
+2001-07-20  Richard Henderson  <rth@redhat.com>
+
+	Wed May  9 10:40:25 2001  Alexandre Oliva  <aoliva@redhat.com>
+	* regclass.c (scan_one_insn): Update REG_N_REFS when optimizing
+	handling of two-address insns.
+
+2001-07-20  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.md ("movdi", "movdi_internal"): Use an
+	expand to emit the pattern; put a REG_INC note for push/pop
+	instructions.
+	("movdf", "movdf_internal"): Likewise.
+	("movsi", "movsi_internal"): Likewise.
+	("movsf", "movsf_internal"): Likewise.
+	("movhi", "movqi"): Emit a REG_INC note for push/pop instructions.
+
+2001-07-20  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.c (m68hc11_gen_highpart): Don't use
+	gen_highpart.
+
+2001-07-20  Daniel Berlin  <dan@cgsoftware.com>
+
+	* params.def: Change default max inline insns to 100.
+
+2001-06-20  Kelley Cook  <kelley.cook@home.com>
+
+	* doc/install.texi (sparc-sun-solaris*): Add in 4.x assembler bug
+	information.   Move rest into ...
+	(*-*-solaris): ... here.  Eliminate redundant information and
+	reword necessary packages section.  Delete 4.x assembler bug info.
+	(sparc-sun-*): Merge into ...
+	(sparc-sun-sunos*): here.
+
+2001-07-19  Mark Mitchell  <mark@codesourcery.com>
+
+	* reorg.c (fill_simple_delay_slots): If an instruction might throw
+	an exception that will be caught within this function, do not fill
+	its delay slot with any subsequent instruction.
+
+2001-07-19  Mark Kettenis  <kettenis@wins.uva.nl>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	* unwind-dw2.c (_Unwind_FrameState): Add eh_ptr.
+	(extract_cie_info): Handle "eh" augmentation properly,
+	remember eh_ptr.
+	(struct frame_state, __frame_state_for): New.
+
+2001-07-19  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* config/alpha/osf.h (ASM_OUTPUT_WEAK_ALIAS, ASM_WEAKEN_LABEL,
+	HANDLE_SYSV_PRAGMA): Define.
+	* mips-tfile.c (add_ext_symbol): Pass complete symbol ptr, inline
+	previous args.
+	(copy_object): Caller changed.
+
+2001-07-19  Andreas Schwab  <schwab@suse.de>
+
+	* configure.in (assembler dwarf2 debug_line support): Define nop
+	insn for m68k.
+	* configure: Regenerated.
+
+2001-07-18  Jeff Sturm  <jsturm@one-point.com>
+
+	* dwarf2out.c (dwarf2out_abstract_function): Don't emit
+	in-class declaration at -g1.  Fixes c++/2814.
+
+2001-07-18  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* defaults.h (ASM_OUTPUT_WEAK_ALIAS): Check for ASM_WEAKEN_LABEL.
+
+2001-07-18  Andreas Schwab  <schwab@suse.de>
+
+	* configure.in (assembler eh_frame optimization): Handle big
+	endian.
+	* configure: Regenerated.
+
+2001-07-18  Tom Tromey  <tromey@redhat.com>
+
+	For PR java/2812:
+	* configure: Rebuilt.
+	* configure.in: Don't check for iconv.h or iconv(); use AM_ICONV
+	instead.
+	* aclocal.m4 (AM_ICONV): New macro from Bruno Haible.
+
+Wed Jul 18 12:05:29 2001  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* gthr-posix.h (__gthread_objc_mutex_trylock): Fixed return value
+	on error.  We can't blindly return the result of
+	pthread_mutex_trylock because it returns a positive number on
+	error, while we must return -1 on error.
+	(__gthread_objc_mutex_lock, __gthread_objc_mutex_unlock): Similar
+	fixes.
+	Reported by Stephen Brandon <stephen@brandonitconsulting.co.uk>.
+
+2001-07-17  H.J. Lu <hjl@gnu.org>
+	    Rainer Orth <ro@TechFak.Uni-Bielefeld.DE>
+
+	* c-pragma.h (HANDLE_PRAGMA_WEAK): Define iff ASM_WEAKEN_LABEL and
+	ASM_OUTPUT_WEAK_ALIAS are defined.
+	* defaults.h (ASM_OUTPUT_WEAK_ALIAS): Define if possible.
+	* config/mips/iris6.h (ASM_OUTPUT_WEAK_ALIAS, ASM_WEAKEN_LABEL):
+	Moved ...
+	* config/mips/iris5.h: ... here.
+	(HANDLE_SYSV_PRAGMA): Defined as 1.
+	* varasm.c (weak_finish): Use ASM_OUTPUT_WEAK_ALIAS.
+	* doc/tm.texi (ASM_OUTPUT_WEAK_ALIAS): Support the undefined weak
+	symbol.
+
+2001-07-15  Richard Henderson  <rth@redhat.com>
+
+	* config/alpha/alpha.c (alpha_emit_xfloating_compare): Use CCmode
+	instead of COMPARE for the EQUIV expression.
+
+2001-07-14  David Edelsohn  <edelsohn@gnu.org>
+
+	* rs6000.c (reg_or_{add,sub}_cint64_operand): New predicates.
+	(add_operand): Compare CONST_INT with fewer function calls.
+	(print_operand, case 'p'): Ensure positive operand.
+	* rs6000.h (CONST_OK_FOR_LETTER_P, case 'N'): Ensure positive value.
+	(PREDICATE_CODES): Add new predicates.
+	* rs6000.md (addsi3): Split 32-bit constants more correctly.
+	(divsi3, modsi3): Ensure positive power-of-2.
+	(adddi3): Use new predicate.  Split 32-bit constants more
+	correctly.  Re-arrange splitter to handle any constant.
+	(subdi3): Use new predicate.
+	(divdi3, moddi3): Ensure positive power-of-2.
+
+2001-07-13  Kazu Hirata  <kazu@hxi.com>
+
+	* jump.c (reversed_comparison_code_parts): Fix comment typos.
+
+2001-07-13  Marc Espie  <espie@cvs.openbsd.org>
+
+	* config.gcc (*-*-openbsd*):  Add fragment to compile libgcc
+	correctly for shared configurations.
+	* config/t-libgcc-pic:  New.
+	* config/{i386,m68k,sparc}/t-openbsd:  New.
+	* config/openbsd.h:  Include cpu_spec in cpp_spec where needed.
+	Support -shared.  Support debugging libraries with -g.
+	* config/i386/openbsd.h:  Correct ASM_COMMENT_START.  Ensure dwarf2
+	frame information does not emit pointer diffs.
+	* config/sparc/openbsd.h:  Ensure dwarf2 frame information does not
+	emit pointer diffs.
+
+2001-07-13  David Edelsohn  <edelsohn@gnu.org>
+
+	* combine.c (try_combine): Ensure const_int pow2 is positive.
+
+2001-07-11  Kazu Hirata  <kazu@hxi.com>
+
+	* recog.c (validate_change): Fix a comment typo.
+
+2001-07-11  Mark Mitchell  <mark@codesourcery.com>
+
+	* stmt.c (parse_output_constraint): New function, split out
+	from ...
+	(expand_asm_operands): ... here.  Use parse_output_constraint.
+	* tree.h (parse_output_constraint): Declare it.
+
+2001-07-10  Kazu Hirata  <kazu@hxi.com>
+
+	* calls.c (emit_library_call_value_1): Fix a comment typo.
+	* dwarf2out.c (mem_loc_descriptor): Likewise.
+
+2001-07-09  Kazu Hirata  <kazu@hxi.com>
+
+	* config/h8300/t-h8300 (LIB1ASMFUNCS): Add _floatdisf and _fixsfdi.
+	* config/mn10200/t-mn10200 (LIB1ASMFUNCS): Likewise.
+
+2001-07-09  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/c-tree.texi: Document representation of attributes.
+
+2001-07-08  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/tm.texi: Fix typo.
+
+2001-07-07  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.c (m68hc11_initial_elimination_offset):
+	Take into account m68hc11_sp_correction for FRAME_POINTER_REGNUM
+	elimination.
+	* config/m68hc11/m68hc11.h (STARTING_FRAME_OFFSET): Use 0.
+
+2001-07-06  Richard Henderson  <rth@redhat.com>
+
+	* except.h (MUST_USE_SJLJ_EXCEPTIONS): Examine the value of
+	DWARF2_UNWIND_INFO not just whether it is defined.
+
+2001-07-06  DJ Delorie  <dj@redhat.com>
+
+	* doc/gcc.texi (Makefile): Rename to be a more general purpose
+	chapter about various build hints and history.  Add section
+	talking about the various types of native and cross builds.
+
+2001-07-05  David Edelsohn  <edelsohn@gnu.org>
+
+	* doc/install.texi (Install GCC: Binaries): Fix typo.
+
+2001-07-04  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.md ("*ashlsi3"): Operand 1 can be a memory
+	reference using the stack pointer, adjust it since we push Y
+	temporarily.
+	("*ashrsi3"): Likewise.
+	("*lshrsi3"): Likewise.
+
+2001-07-05  Stephane Carrez  <Stephane.Carrez@worldnet.fr>
+
+	* config/m68hc11/m68hc11.h (RETURN_ADDR_RTX): Fix return address
+	when -fomit-frame-pointer is used.
+
+2001-07-05  Brad Lucier <lucier@math.purdue.edu>
+	    Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/invoke.texi (Optimize Options): Document that -fgcse may
+	cause programs using computed gotos to run more slowly.
+
+2001-07-04  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* doc/install.texi (Specific): Markup, spelling and typo fixes.
+	Fixed sorting.
+	Consistently require binutils 2.11.2, not prereleases.
+	(Specific, decstation-*): Canonicalize as mips-dec-*.
+	(Specific, i?86-*-sco3.2v5*): Remove make bootstrap requirement,
+	always necessary.
+	(Specific, m68k-altos): Removed reference to README.altos, deleted.
+	(Specific, mips-*): Reword MIPS C compiler requirements.
+	(Specific, powerpc*-*-*): New, mention --with-cpu once.
+	(Specific, sunv5): Removed, obsolete.
+
+2001-07-04  Kazu Hirata  <kazu@hxi.com>
+
+	* config/h8300/h8300.c (get_shift_alg): Remove an extra operand
+	from shll.
+
+2001-07-04  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/include: New directory.
+	* doc/fdl.texi: Move to doc/include/fdl.texi.
+	* doc/texinfo.tex: Move to doc/include/texinfo.tex.
+	* doc/include/funding.texi, doc/include/gpl.texi: New files.
+	* doc/gcc.texi: Use funding.texi and gpl.texi.
+	* Makefile.in ($(docdir)/cpp.info, $(docdir)/gcc.info,
+	$(docdir)/cppinternals.info, cpp.dvi. gcc.dvi. cppinternals.dvi):
+	Update dependencies and use -I $(docdir)/include.
+
+2001-07-04  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (sparc64-*-*): Remove garbage.
+
+2001-07-04  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi (Specific): Update information for *-*-solaris*.
+
+2001-07-03  Jan Hubicka  <jh@suse.cz>
+
+	* optabs.c (expand_twoval_binop): Avoid undefined behaviour.
+
+2001-07-03  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* config/i386/sol2.h (ASM_PREFERRED_EH_DATA_FORMAT): Define.
+	Fixes PRs bootstrap/3067, bootstrap/3249, bootstrap/3275.
+
+2001-07-03  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/cppinternals.texi: Improve formatting and logical markup.
+
+2001-07-03  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/cppinternals.texi: Merge from mainline.
+
+	* doc/extend.texi, doc/gcc.texi, doc/invoke.texi, doc/md.texi,
+	doc/rtl.texi, doc/tm.texi: Improve formatting.  Improve
+	documentation of -std and -Wwrite-strings.
+	* doc/cpp.1, doc/gcc.1: Regenerate.
+
+2001-07-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* doc/install.texi: Various spelling and markup fixes.
+	(Installing GCC): Component specific installation instructions are
+	gone.
+	Fix reference.
+	Warn about removing old install dir in the presence of shared libs.
+	(Configuration): Invoke with options target to match configure
+	--help.
+	Consistently refer to gas, gld pathnames.
+	Invert --enable-multilib documentation.
+	Remove references to old compiler versions.
+
+2001-07-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* doc/install.texi (Specific, mips*-sgi-irix4): Split from IRIX 5
+	section.
+	(Specific, mips*-sgi-irix5): Note IDO download.
+	Reworded MIPS C hints.
+	Use GNU as instead of GAS.
+	Markup fixes.
+	Removed SGI Freeware reference, IRIX 6 only.
+	(Specific, mips*-sgi-irix6): Removed ranlib caveats, obsolete.
+	Note N64 library requirement/workaround.
+	Update O32 hints.
+	Complete list of structure passing bug victims.
+
+2001-07-02  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* doc/install.texi: Remove CVS Id.
+
+2001-07-01  Mark Mitchell  <mark@codesourcery.com>
+
+	* expr.c (expand_expr, case ARRAY_REF): Correct check for
+	side-effects in the value of an array element.
+
+2001-06-29  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* objc/objc-act.c (handle_class_ref): Always place decl in
+	variable section.
+	(handle_impent): Always place decl in readonly data section.
+	Fixes PRs libobjc/917, libobjc/3237, bootstrap/3251.
+
+2001-06-29  Alan Modra  <amodra@bigpond.net.au>
+
+	* recog.c (validate_replace_rtx_1): Exit early if nothing changed
+	in args of commutative of comparison operations.
+
+2001-06-28  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* gthr-posix.h [LIBOBJC]: Add weak definitions of
+	sched_get_priority_max, sched_get_priority_min.
+
+Thu Jun 28 11:32:24 CEST 2001  Jan Hubicka  <jh@suse.cz>
+
+	* i386.c (x86_use_loop): Disable for K6 temporarily.
+
+2001-06-27  Bruce Korb  <bkorb@gnu.org>
+
+	* fixinc/inclhack.def(hpux11_cpp_pow_inline): new, but real similar to
+	hpux10_cpp_pow_inline.  Not similar enough.
+	(solaris_mutex_init): renamed.  PTHREAD_*_INITIALIZER is a problem for
+	all Solaris versions.  This fix patches MUTEX and COND initializers,
+	the RWLOCK one will wait for someone to complain.  For now, anyway.
+	(uw7_byteorder_fix): It was looking for the byteorder.h file in the
+	wrong directory.
+
+Thu Jun 28 00:31:24 2001  Denis Chertykov  <denisc@overta.ru>
+
+	* config/avr/avr.md (strlenhi): PARALLEL keyword removed.
+	* config/avr/avr.c (legitimate_address_p): Return value changed
+	from letter to register classes. For better debugging.
+
+2001-06-27  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/c-tree.texi, doc/contrib.texi, doc/cpp.texi,
+	doc/cppinternals.texi, doc/extend.texi, doc/gcc.texi,
+	doc/gcov.texi, doc/install-old.texi, doc/install.texi,
+	doc/invoke.texi, doc/md.texi, doc/rtl.texi, doc/tm.texi: Replace
+	. at end of sentences preceded by a capital letter with @..
+
+2001-06-18  Jason Merrill  <jason_merrill@redhat.com>
+
+	* expr.c (clear_storage): Set TREE_NOTHROW on the decl for memset.
+	(emit_block_move): Likewise.
+
+2001-06-27  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/cpp.texi, doc/cppinternals.texi, doc/extend.texi,
+	doc/gcc.texi, doc/install.texi, doc/invoke.texi, doc/md.texi,
+	doc/tm.texi: Use @: where necessary when a full stop does not end
+	a sentence.
+
+2001-06-27  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/gcc.texi, doc/install.texi, doc/invoke.texi: Remove trailing
+	whitespace.
+
+2001-06-26  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/c-tree.texi, doc/cpp.texi, doc/extend.texi, doc/gcc.texi,
+	doc/install.texi, doc/invoke.texi, doc/objc.texi, doc/rtl.texi,
+	doc/tm.texi: Use two spaces after ends of sentences.
+
+2001-06-26  Daniel Berlin  <dan@cgsoftware.com>
+
+	* toplev.c (display_help): Fix param thinko.
+	* Makefile.in: Fix params.h dependencies.
+
+2001-06-26  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* config/i386/sol2.h (CPP_SPEC): Pass -P for .S files.
+
+2001-06-26  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* config/mips/iris5.h (UNALIGNED_INT_ASM_OP,
+	UNALIGNED_SHORT_ASM_OP): Define.
+	* config/mips/iris6.h (UNALIGNED_INT_ASM_OP,
+	UNALIGNED_SHORT_ASM_OP): Undef.
+
+2001-06-26  Aldy Hernandez  <aldyh@redhat.com>
+
+	* config/sh/sh.md (interrupt_function): Use
+	current_function_interrupt.
+	(define_delay): Schedule in delay slot if TARGET_SH3, even if it is
+	an interrupt function.
+
+	* config/sh/sh.h (current_function_interrupt): Define extern.
+
+	* config/sh/sh.c (current_function_interrupt): New global.
+	(sh_expand_prologue): Set current_function_interrupt.
+
+2001-06-25  Neil Booth  <neil@daikokuya.demon.co.uk>
+
+	* cppmacro.c (make_string_token): Null terminate.
+	* doc/cpp.texi: Update.
+	* doc/cpp.1: Regenerate.
+
+2001-06-25  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/c-tree.texi, doc/contrib.texi, doc/extend.texi,
+	doc/gcc.texi, doc/gcov.texi, doc/install.texi, doc/invoke.texi,
+	doc/md.texi, doc/rtl.texi, doc/tm.texi: Be more consistent about
+	the use of "GCC" and related terms.
+	* doc/gcc.1, doc/gcov.1: Regenerate.
+
+2001-06-24  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/extend.texi, doc/gcc.texi, doc/install-old.texi,
+	doc/invoke.texi, doc/md.texi, doc/rtl.texi, doc/tm.texi: Remove
+	uses of @refill.
+
+2001-06-24  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/install-old.texi: Remove more documentation of configure
+	options.
+	* doc/install.texi: Add it here.
+
+2001-06-23  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/install.texi: Merge from mainline:
+	2001-06-21  Phil Edwards  <pme@sources.redhat.com>
+	* doc/install.texi:  Add 'c' to list of --enable-languages choices.
+	2001-06-21  Stan Shebs  <shebs@apple.com>
+	* doc/install.texi: Use the correct name "Objective-C" everywhere
+	instead of "Objective C".
+	2001-06-15  Loren J. Rittle  <ljrittle@acm.org>
+	* doc/install.texi: Use correct markup hints.
+	2001-06-15  Loren J. Rittle  <ljrittle@acm.org>
+	* doc/install.texi: Update --enable-threads to match reality.
+
+2001-06-22  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/gcc.texi: Update documentation of source files of C
+	compiler.
+
+2001-06-22  Toshiyasu Morita  (toshiyasu.morita@hsa.hitachi.com)
+
+	* predict.c: (expected_value_to_br_prob): Check for const_true_rtx
+	instead of const1_rtx for true case.
+
+2001-06-22  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* doc/c-tree.texi, doc/contrib.texi, doc/extend.texi,
+	doc/gcc.texi, doc/install-old.texi, doc/install.texi,
+	doc/invoke.texi, doc/rtl.texi: Consistently use "front end" and
+	"back end" as nouns and "front-end" and "back-end" as adjectives.
+
+2001-06-22  Toshiyasu Morita  <toshiyasu.morita@hsa.hitachi.com>
+
+	* config/v850/v850.c (v850_mark_machine_status): Don't mark the
+	p->machine->ra_rtx for GC if p->machine has already been
+	freed.
+
+2001-06-22  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* c-common.c (verify_tree): Check for x being NULL.
+	* doc/c-tree.texi: Document COMPOUND_BODY of an empty
+	COMPOUND_STMT.
+	Fixes PR c/3259.
+
+2001-06-21  Geoff Keating  <geoffk@redhat.com>
+
+	* config/rs6000/rs6000.md (maxsf3): Use rs6000_emit_minmax.
+	(maxsf3+1): Delete.
+	(minsf3): Use rs6000_emit_minmax.
+	(minsf3+1): Generalize to handle both SMIN and SMAX.  Use
+	rs6000_emit_minmax.
+	(movsfcc): Use rs6000_emit_cmove.
+	(fselsfsf4): Don't compare a CONST_INT with a floating-point value.
+	Don't generate emit_fselsfsf4.
+	(fseldfsf4): Likewise.
+	(maxdf3): Use rs6000_emit_minmax.
+	(maxdf3+1): Delete.
+	(mindf3): Use rs6000_emit_minmax.
+	(mindf3+1): Generalize to handle both SMIN and SMAX.  Use
+	rs6000_emit_minmax.
+	(movdfcc): Use rs6000_emit_cmove.
+	(fseldfdf4): Don't compare a CONST_INT with a floating-point value.
+	Don't generate emit_fselsfsf4.
+	(fselsfdf4): Likewise.
+	* config/rs6000/rs6000.c (zero_fp_constant): New predicate.
+	(min_max_operator): New predicate.
+	(rs6000_emit_cmove): New function.
+	(rs6000_emit_minmax): New function.
+	* config/rs6000/rs6000-protos.h: Prototype new functions.
+	* config/rs6000/rs6000.h (PREDICATE_CODES): Add zero_fp_constant
+	and min_max_operator.
+
+	* config/rs6000/rs6000.c (output_cbranch): Handle all
+	conditional types in the switch statement.
+
 20010617 Release Manager
 
-        * GCC 3.0 Released.
+	* GCC 3.0 Released.
 
 2001-06-15  Andreas Jaeger  <aj@suse.de>
 

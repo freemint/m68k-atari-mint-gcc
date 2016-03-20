@@ -113,7 +113,7 @@ EOF
 old_CXXFLAGS="$CXXFLAGS"  
 CXXFLAGS=-S
 if AC_TRY_EVAL(ac_compile); then
-  if grep _Unwind_Sjlj_Resume conftest.s >/dev/null 2>&1 ; then
+  if grep _Unwind_SjLj_Resume conftest.s >/dev/null 2>&1 ; then
     enable_sjlj_exceptions=yes
   elif grep _Unwind_Resume conftest.s >/dev/null 2>&1 ; then
     enable_sjlj_exceptions=no
@@ -394,7 +394,7 @@ else
    AC_CHECK_FUNCS(strerror ioctl select fstat open fsync sleep)
    AC_CHECK_FUNCS(gmtime_r localtime_r readdir_r getpwuid_r getcwd)
    AC_CHECK_FUNCS(access stat mkdir rename rmdir unlink realpath utime chmod)
-   AC_CHECK_FUNCS(iconv nl_langinfo setlocale)
+   AC_CHECK_FUNCS(nl_langinfo setlocale)
    AC_CHECK_FUNCS(inet_aton inet_addr, break)
    AC_CHECK_FUNCS(inet_pton uname inet_ntoa)
    AC_CHECK_FUNCS(backtrace fork execvp pipe)
@@ -403,6 +403,8 @@ else
      AC_DEFINE(HAVE_DLADDR)])
    AC_CHECK_FILES(/proc/self/exe, [
      AC_DEFINE(HAVE_PROC_SELF_EXE)])
+
+   AM_ICONV
 
    AC_CHECK_FUNCS(gethostbyname_r, [
      AC_DEFINE(HAVE_GETHOSTBYNAME_R)
@@ -698,6 +700,12 @@ AC_TRY_COMPILE([#include <netinet/in.h>], [struct ip_mreq mreq;],
    AC_MSG_RESULT(yes)],
   [AC_MSG_RESULT(no)])
 
+AC_MSG_CHECKING([whether struct ipv6_mreq is in netinet/in.h])
+AC_TRY_COMPILE([#include <netinet/in.h>], [struct ipv6_mreq mreq6;],
+  [AC_DEFINE(HAVE_STRUCT_IPV6_MREQ)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)])
+
 AC_MSG_CHECKING([whether struct sockaddr_in6 is in netinet/in.h])
 AC_TRY_COMPILE([#include <netinet/in.h>], [struct sockaddr_in6 addr6;],
   [AC_DEFINE(HAVE_INET6)
@@ -705,7 +713,8 @@ AC_TRY_COMPILE([#include <netinet/in.h>], [struct sockaddr_in6 addr6;],
   [AC_MSG_RESULT(no)])
 
 AC_MSG_CHECKING([for socklen_t in sys/socket.h])
-AC_TRY_COMPILE([#include <sys/types.h>
+AC_TRY_COMPILE([#define _POSIX_PII_SOCKET
+#include <sys/types.h>
 #include <sys/socket.h>], [socklen_t x = 5;],
   [AC_DEFINE(HAVE_SOCKLEN_T)
    AC_MSG_RESULT(yes)],

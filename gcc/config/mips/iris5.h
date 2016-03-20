@@ -1,5 +1,6 @@
 /* Definitions of target machine for GNU compiler.  Iris version 5.
-   Copyright (C) 1993, 1995, 1996, 1998, 2000 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1995, 1996, 1998, 2000,
+   2001 Free Software Foundation, Inc.
 
 This file is part of GNU CC.
 
@@ -154,6 +155,10 @@ do {						\
   fputs (" .text\n", FILE);			\
 } while (0)
 
+/* To get unaligned data, we have to turn off auto alignment.  */
+#define UNALIGNED_SHORT_ASM_OP		"\t.align 0\n\t.half\t"
+#define UNALIGNED_INT_ASM_OP		"\t.align 0\n\t.word\t"
+
 /* Also do this for libcalls.  */
 #define ASM_OUTPUT_EXTERNAL_LIBCALL(FILE, FUN)	\
   mips_output_external_libcall (FILE, XSTR (FUN, 0))
@@ -165,3 +170,26 @@ do {							\
   tree name_tree = get_identifier (NAME);		\
   TREE_ASM_WRITTEN (name_tree) = 1;			\
 } while (0)
+
+/* This is how we tell the assembler that a symbol is weak.  */
+
+#define ASM_OUTPUT_WEAK_ALIAS(FILE, NAME, VALUE)	\
+  do							\
+    {							\
+      ASM_GLOBALIZE_LABEL (FILE, NAME);			\
+      fputs ("\t.weakext\t", FILE);			\
+      assemble_name (FILE, NAME);			\
+      if (VALUE)					\
+        {						\
+          fputc (' ', FILE);				\
+          assemble_name (FILE, VALUE);			\
+        }						\
+      fputc ('\n', FILE);				\
+    }							\
+  while (0)
+
+#define ASM_WEAKEN_LABEL(FILE, NAME) ASM_OUTPUT_WEAK_ALIAS(FILE, NAME, 0)
+
+/* Handle #pragma weak and #pragma pack.  */
+#undef HANDLE_SYSV_PRAGMA
+#define HANDLE_SYSV_PRAGMA 1

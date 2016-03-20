@@ -220,12 +220,14 @@ initialize ( argc, argv )
   char** argv;
 {
   static const char var_not_found[] =
+#ifndef __STDC__
     "fixincl ERROR:  %s environment variable not defined\n"
-#ifdef __STDC__
+#else
+    "fixincl ERROR:  %s environment variable not defined\n"
     "each of these must be defined:\n"
-#define _ENV_(v,m,n,t) "\t" n "  - " t "\n"
-ENV_TABLE
-#undef _ENV_
+# define _ENV_(v,m,n,t) "\t" n "  - " t "\n"
+  ENV_TABLE
+# undef _ENV_
 #endif
     ;
 
@@ -1259,7 +1261,7 @@ test_for_changes (read_fd)
 {
   FILE *in_fp = fdopen (read_fd, "r");
   FILE *out_fp = (FILE *) NULL;
-  char *pz_cmp = pz_curr_data;
+  unsigned char *pz_cmp = (unsigned char*)pz_curr_data;
 
 #ifdef DO_STATS
   fixed_ct++;
@@ -1271,6 +1273,7 @@ test_for_changes (read_fd)
       ch = getc (in_fp);
       if (ch == EOF)
         break;
+      ch &= 0xFF; /* all bytes are 8 bits */
 
       /*  IF we are emitting the output
           THEN emit this character, too.
@@ -1289,8 +1292,9 @@ test_for_changes (read_fd)
           altered_ct++;
 #endif
           /*  IF there are matched data, write the matched part now. */
-          if (pz_cmp != pz_curr_data)
-            fwrite (pz_curr_data, (size_t)(pz_cmp - pz_curr_data), 1, out_fp);
+          if ((char*)pz_cmp != pz_curr_data)
+            fwrite (pz_curr_data, (size_t)((char*)pz_cmp - pz_curr_data),
+					1, out_fp);
 
           /*  Emit the current unmatching character */
           putc (ch, out_fp);

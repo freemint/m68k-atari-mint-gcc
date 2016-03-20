@@ -1,3 +1,163 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-16  Mark Mitchell  <mark@codesourcery.com>
+
+	* cvt.c (convert_to_void): Preserve TREE_SIDE_EFFECTS
+	on COMPOUND_EXPRs.
+
+2001-08-13  Mark Mitchell  <mark@codesourcery.com>
+
+	* call.c (build_over_call): Mark COMPOUND_EXPRs generated for
+	empty class assignment as having side-effects to avoid
+	spurious warnings.
+
+2001-08-07  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3820
+	Stop using TYPE_NONCOPIED_PARTS.
+	* call.c (build_over_call): Be careful when copy constructing
+	or assigning to an empty class.
+	* class.c (check_bases_and_members): It has a
+	COMPLEX_ASSIGN_REF if it has a vptr.
+	(layout_class_type): Don't add empty class padding to
+	TYPE_NONCOPIED_PARTS.
+	(finish_struct_1): Don't add the VFIELD either.
+	* cp-tree.h (TYPE_HAS_TRIVIAL_INIT_REF): Mention _copy_
+	initialization.
+
+2001-08-02  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Remove -fhonor-std.
+	* NEWS: Document.
+	* decl2.c (lang_f_options): Remove honor-std.
+	(unsupported_options): Add honor-std.
+	* lang-options.h: Remove -fhonor-std, -fno-honor-std.
+
+2001-07-31  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3631
+	* class.c (update_vtable_entry_for_fn): The fixed adjustment
+	of a virtual thunk should be from declaring base.
+
+2001-07-31  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* class.c (dfs_ctor_vtable_bases_queue_p): Always walk into
+	the shared virtual base, so preserving inheritance graph order.
+
+2001-07-27  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* class.c (mark_primary_virtual_base): Don't adjust base
+	offsets here.
+	(dfs_unshared_virtual_bases): Adjust them here.
+	(mark_primary_bases): Explain why we adjust at the end.
+
+2001-07-27  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* class.c (finish_struct_1): When copying the primary base's
+	VFIELD, make sure we find it is at offset zero.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3621
+	* spew.c (yylex): Only copy the token's lineno, if it is
+	non-zero.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3624
+	* call.c (resolve_args): Simplify, call
+	convert_from_reference.
+	(build_new_op): Resolve and convert from reference ARG1
+	earlier. Adjust ARG2 & ARG3 resolve and conversion.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3152
+	* decl.c (grokdeclarator): Detect when a function typedef is
+	declaring a function, and create last_function_parms correctly.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3416
+	* call.c (build_conditional_expr): Recheck args after
+	conversions.
+	* cp-tree.h (build_conditional_expr): Move to correct file.
+	* typeck.c (decay_conversion): Diagnose any unknown types
+	reaching here.
+	(build_binary_op): Don't do initial decay or default
+	conversions on overloaded functions.
+	(build_static_cast): Don't do a decay conversion here.
+
+2001-07-25  Jason Merrill  <jason_merrill@redhat.com>
+
+	PR c++/3529
+	Copied from mainline.
+	* cvt.c (convert_lvalue): New fn.
+	* cp-tree.h: Declare it.
+	* method.c (do_build_assign_ref): Use it.
+        (do_build_copy_constructor): Convert parm to base types
+	before calling base constructors.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/3543
+	* typeck.c (condition_conversion): Resolve an OFFSET_REF.
+	* expr.c (cplus_expand_expr): An OFFSET_REF should never get here.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* class.c (build_vbase_offset_vbtl_entries): Look for
+	non-primary base of which we are a sub vtable.
+
+2001-07-20  Daniel Berlin  <dan@cgsoftware.com>
+
+	* Make-lang.in (cp/optimize.o): Depend on $(PARAMS_H), not
+	params.h.
+
+2001-07-18  Xavier Delacour <xavier@fmaudio.net>,
+            Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* NEWS (Changes in GCC 3.0): Fix typo.
+
+2001-07-12  Mark Mitchell  <mark@codesourcery.com>
+
+	* decl.c (make_rtl_for_nonlocal_decl): Set DECL_C_HARD_REGISTER
+	for `register' variables with an asm-specification.
+
+2001-07-11  Mark Mitchell  <mark@codesourcery.com>
+
+	* semantics.c (finish_asm_stmt): Mark the output operands
+	to an asm addressable, if necessary.
+
+2001-07-10  Mark Mitchell  <mark@codesourcery.com>
+
+	* pt.c (tsubst_decl): Set DECL_CONTEXT for namespace-scope
+	variables.
+
+2001-06-19  Richard Sandiford  <rsandifo@redhat.com>
+
+	* except.c (initialize_handler_parm): Expect __cxa_begin_catch to
+	return pointers to data members by reference rather than by value.
+
+2001-06-18  Jason Merrill  <jason_merrill@redhat.com>
+
+	* class.c (dfs_accumulate_vtbl_inits): Just point to the base we're
+	sharing a ctor vtable with.  Merge code for cases 1 and 2.
+	(binfo_ctor_vtable): New fn.
+	(build_vtt_inits, dfs_build_secondary_vptr_vtt_inits): Use it.
+
+	* class.c (dfs_find_final_overrider): Fix logic.
+
+	* pt.c (unify): Don't recurse between the POINTER_TYPE and the
+	OFFSET_TYPE.  If we're adding cv-quals, the extra ones would be on
+	PARM, not ARG.
+
 20010617 Release Manager
 
         * GCC 3.0 Released.

@@ -195,7 +195,8 @@ const int x86_cmove = m_PPRO | m_ATHLON;
 const int x86_deep_branch = m_PPRO | m_K6 | m_ATHLON;
 const int x86_use_sahf = m_PPRO | m_K6;
 const int x86_partial_reg_stall = m_PPRO;
-const int x86_use_loop = m_K6;
+const int x86_use_loop = 0;  /* Should be set to K6 and i386, but is broken
+				and temporarily disabled for 3.0.x.  */
 const int x86_use_fiop = ~(m_PPRO | m_ATHLON | m_PENT);
 const int x86_use_mov0 = m_K6;
 const int x86_use_cltd = ~(m_PENT | m_K6);
@@ -5537,9 +5538,12 @@ ix86_expand_setcc (code, dest)
           emit subreg setcc, zero extend.
      2 -- destination is in QImode:
           emit setcc only.
-  */
 
-  type = 0;
+     We don't use mode 0 early in compilation because it confuses CSE.
+     There are peepholes to turn mode 1 into mode 0 if things work out
+     nicely after reload.  */
+
+  type = cse_not_expected ? 0 : 1;
 
   if (GET_MODE (dest) == QImode)
     type = 2;

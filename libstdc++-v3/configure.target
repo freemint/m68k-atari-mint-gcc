@@ -39,8 +39,17 @@ case "${target_cpu}" in
   i486 | i586 | i686 | i786)
     cpu_include_dir="config/cpu/i486"
     ;;
+  m68k | m680[246]0)
+    cpu_include_dir="config/cpu/m68k"
+    ;;
+  mips*)
+    cpu_include_dir="config/cpu/mips"
+    ;;
   powerpc | rs6000)
     cpu_include_dir="config/cpu/powerpc"
+    ;;
+  s390 | s390x)
+    cpu_include_dir="config/cpu/s390"
     ;;
   sparc64 | ultrasparc)
     cpu_include_dir="config/cpu/sparc/sparc64"
@@ -123,5 +132,21 @@ case "${target}" in
      ;;
    *)
      ATOMICITYH=$cpu_include_dir
+     ;;
+esac
+
+# Set LIMITSH to the directory where the configuration-dependent
+# limits.h can be found.
+# THIS TABLE IS SORTED.  KEEP IT THAT WAY.
+
+case "${target}" in
+   i?86-*-*)
+     LIMITSH=config/cpu/i386
+     ;;
+   powerpc-*-*)
+     LIMITSH=config/cpu/powerpc
+     ;;
+   *)
+     LIMITSH=config/cpu/generic
      ;;
 esac

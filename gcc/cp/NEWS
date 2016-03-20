@@ -1,3 +1,9 @@
+*** Changes in GCC 3.0.1:
+
+* -fhonor-std and -fno-honor-std have been removed. -fno-honor-std was
+  a workaround to allow std compliant code to work with the non-std
+  compliant libstdc++-v2. libstdc++-v3 is std compliant.
+
 *** Changes in GCC 3.0:
 
 * Support for guiding declarations has been removed.
@@ -9,7 +15,7 @@
 
 * In some obscure cases, functions with the same type could have the
   same mangled name.  This bug caused compiler crashes, link-time clashes,
-  and debugger crahses.  Fixing this bug required breaking ABI
+  and debugger crashes.  Fixing this bug required breaking ABI
   compatibility for the functions involved.  The functions in questions
   are those whose types involve non-type template arguments whose
   mangled representations require more than one digit.

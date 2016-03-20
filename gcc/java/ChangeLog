@@ -1,3 +1,50 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-12  David Edelsohn  <edelsohn@gnu.org>
+
+	Revert previous patch.
+
+2001-08-02  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* jvspec.c (jvgenmain_spec): Cannot use %umain, breaks
+	ASM_FINAL_SPEC.
+	(lang_specific_pre_link): Use set_input to set input_filename.
+	Append `main' here.
+	* jvgenmain.c (usage): Append literal `main' to CLASSNAME.
+	(main): Fix definition.
+	Strip `main' from classname.
+	Fixes PR java/227.
+
+2001-07-18  Tom Tromey  <tromey@redhat.com>
+
+	For PR java/2812:
+	* lex.h: Use HAVE_ICONV, not HAVE_ICONV_H.
+	* lex.c (java_new_lexer): Use ICONV_CONST.
+	(java_read_char): Likewise.
+	* Make-lang.in (jc1$(exeext)): Link against LIBICONV.
+	(jv-scan$(exeext)): Likewise.
+
+2001-07-13  Tom Tromey  <tromey@redhat.com>
+
+	* jvspec.c (jvgenmain_spec): Remove -ffilelist-file from cc1
+	invocation.
+
+2001-07-04  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcj.texi: Use gpl.texi.
+	* Make-lang.in ($(srcdir)/java/gcj.info, java/gcj.dvi): Update
+	dependencies and use doc/include in search path.
+
+2001-07-04  Jeffrey Oldham  <oldham@codesourcery.com>
+
+	* jvgenmain.c (do_mangle_classname): End string constant with '\0'.
+
 20010617 Release Manager
 
         * GCC 3.0 Released.

@@ -121,7 +121,7 @@ java-warn =
 jc1$(exeext): $(JAVA_OBJS) $(BACKEND) $(LIBDEPS)
 	rm -f $@
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ \
-		$(JAVA_OBJS) $(BACKEND) $(ZLIB) $(LIBS)
+		$(JAVA_OBJS) $(BACKEND) $(ZLIB) $(LIBICONV) $(LIBS)
 
 gcjh$(exeext): $(GCJH_OBJS) $(LIBDEPS)
 	rm -f $@
@@ -129,7 +129,7 @@ gcjh$(exeext): $(GCJH_OBJS) $(LIBDEPS)
 
 jv-scan$(exeext): $(JVSCAN_OBJS) $(LIBDEPS)
 	rm -f $@
-	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(JVSCAN_OBJS) $(LIBS)
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(JVSCAN_OBJS) $(LIBICONV) $(LIBS)
 
 jcf-dump$(exeext): $(JCFDUMP_OBJS) $(LIBDEPS)
 	rm -f $@
@@ -294,12 +294,14 @@ java/jcf-path.o: java/jcf-path.c $(CONFIG_H) system.h java/jcf.h
 	  $(srcdir)/java/jcf-path.c $(OUTPUT_OPTION)
 
 # Documentation
-$(srcdir)/java/gcj.info: $(srcdir)/java/gcj.texi $(srcdir)/doc/fdl.texi
+$(srcdir)/java/gcj.info: $(srcdir)/java/gcj.texi \
+	 $(srcdir)/doc/include/fdl.texi $(srcdir)/doc/include/gpl.texi
 	if test "x$(BUILD_INFO)" = xinfo; then \
 	  rm -f $(srcdir)/java/gcc.info*; \
-	  cd $(srcdir)/java && $(MAKEINFO) -I../doc -o gcj.info gcj.texi; \
+	  cd $(srcdir)/java && $(MAKEINFO) -I../doc/include -o gcj.info gcj.texi; \
 	else true; fi
 
-java/gcj.dvi: $(srcdir)/java/gcj.texi $(srcdir)/doc/fdl.texi
+java/gcj.dvi: $(srcdir)/java/gcj.texi $(srcdir)/doc/include/fdl.texi \
+	 $(srcdir)/doc/include/gpl.texi
 	s=`cd $(srcdir); pwd`; export s; \
-	cd java && $(TEXI2DVI) -I $$s/doc $$s/java/gcj.texi
+	cd java && $(TEXI2DVI) -I $$s/doc/include $$s/java/gcj.texi

@@ -82,82 +82,7 @@ ignored.  So you might as well specify the version if you know it.
 
 See @ref{Configurations}, for a list of supported configuration names and
 notes on many of the configurations.  You should check the notes in that
-section before proceeding any further with the installation of GNU CC.
-
-@item
-When running @code{configure}, you may also need to specify certain
-additional options that describe variant hardware and software
-configurations.  These are @option{--with-gnu-as}, @option{--with-gnu-ld},
-@option{--with-stabs} and @option{--nfp}.
-
-@table @samp
-@item --with-gnu-as
-If you will use GNU CC with the GNU assembler (GAS), you should declare
-this by using the @option{--with-gnu-as} option when you run
-@file{configure}.
-
-Using this option does not install GAS.  It only modifies the output of
-GNU CC to work with GAS.  Building and installing GAS is up to you.
-
-Conversely, if you @emph{do not} wish to use GAS and do not specify
-@option{--with-gnu-as} when building GNU CC, it is up to you to make sure
-that GAS is not installed.  GNU CC searches for a program named
-@code{as} in various directories; if the program it finds is GAS, then
-it runs GAS.  If you are not sure where GNU CC finds the assembler it is
-using, try specifying @option{-v} when you run it.
-
-The systems where it makes a difference whether you use GAS are@*
-@samp{hppa1.0-@var{any}-@var{any}}, @samp{hppa1.1-@var{any}-@var{any}},
-@samp{i386-@var{any}-sysv}, @samp{i386-@var{any}-isc},@*
-@samp{i860-@var{any}-bsd}, @samp{m68k-bull-sysv},@*
-@samp{m68k-hp-hpux}, @samp{m68k-sony-bsd},@*
-@samp{m68k-altos-sysv}, @samp{m68000-hp-hpux},@*
-@samp{m68000-att-sysv}, @samp{@var{any}-lynx-lynxos},
-and @samp{mips-@var{any}}).
-On any other system, @option{--with-gnu-as} has no effect.
-
-On the systems listed above (except for the HP-PA, for ISC on the
-386, and for @samp{mips-sgi-irix5.*}), if you use GAS, you should also
-use the GNU linker (and specify @option{--with-gnu-ld}).
-
-@item --with-gnu-ld
-Specify the option @option{--with-gnu-ld} if you plan to use the GNU
-linker with GNU CC.
-
-This option does not cause the GNU linker to be installed; it just
-modifies the behavior of GNU CC to work with the GNU linker.
-@c Specifically, it inhibits the installation of @code{collect2}, a program
-@c which otherwise serves as a front-end for the system's linker on most
-@c configurations.
-
-@item --with-stabs
-On MIPS based systems and on Alphas, you must specify whether you want
-GNU CC to create the normal ECOFF debugging format, or to use BSD-style
-stabs passed through the ECOFF symbol table.  The normal ECOFF debug
-format cannot fully handle languages other than C.  BSD stabs format can
-handle other languages, but it only works with the GNU debugger GDB.
-
-Normally, GNU CC uses the ECOFF debugging format by default; if you
-prefer BSD stabs, specify @option{--with-stabs} when you configure GNU
-CC.
-
-No matter which default you choose when you configure GNU CC, the user
-can use the @option{-gcoff} and @option{-gstabs+} options to specify explicitly
-the debug format for a particular compilation.
-
-@option{--with-stabs} is meaningful on the ISC system on the 386, also, if
-@option{--with-gas} is used.  It selects use of stabs debugging
-information embedded in COFF output.  This kind of debugging information
-supports C++ well; ordinary COFF debugging information does not.
-
-@option{--with-stabs} is also meaningful on 386 systems running SVR4.  It
-selects use of stabs debugging information embedded in ELF output.  The
-C++ compiler currently (2.6.0) does not support the DWARF debugging
-information normally used on 386 SVR4 platforms; stabs provide a
-workable alternative.  This requires gas and gdb, as the normal SVR4
-tools can not generate or interpret stabs.
-
-@end table
+section before proceeding any further with the installation of GNU CC@.
 
 @end enumerate
 
@@ -260,7 +185,7 @@ operating system from the CPU and company.
 
 You can add a version number to the system type; this may or may not
 make a difference.  For example, you can write @samp{bsd4.3} or
-@samp{bsd4.4} to distinguish versions of BSD.  In practice, the version
+@samp{bsd4.4} to distinguish versions of BSD@.  In practice, the version
 number is most needed for @samp{sysv3} and @samp{sysv4}, which are often
 treated differently.
 
@@ -317,7 +242,7 @@ things you must know:
 
 @table @samp
 @item vax-dec-vms
-See @ref{VMS Install}, for details on how to install GNU CC on VMS.
+See @ref{VMS Install}, for details on how to install GNU CC on VMS@.
 @end table
 
 @node Cross-Compiler
@@ -386,7 +311,7 @@ startup files (typically @file{crt@dots{}.o}) for the target machine.
 @end itemize
 
 It is most convenient to do all of these steps on the same host machine,
-since then you can do it all with a single invocation of GNU CC.  This
+since then you can do it all with a single invocation of GNU CC@.  This
 requires a suitable cross-assembler and cross-linker.  For some targets,
 the GNU assembler and linker are available.
 
@@ -433,7 +358,7 @@ and copy or link them to the proper place to for the cross-compiler to
 find them when run later.
 
 The easiest way to provide these files is to build the Binutils package
-and GAS.  Configure them with the same @option{--host} and @option{--target}
+and GAS@.  Configure them with the same @option{--host} and @option{--target}
 options that you use for configuring GNU CC, then build and install
 them.  They install their executables automatically into the proper
 directory.  Alas, they do not support all the targets that GNU CC
@@ -514,7 +439,7 @@ them.
 Provide the header files before you build the cross-compiler, because
 the build stage actually runs the cross-compiler to produce parts of
 @file{libgcc.a}.  (These are the parts that @emph{can} be compiled with
-GNU CC.)  Some of them need suitable header files.
+GNU CC@.)  Some of them need suitable header files.
 
 Here's an example showing how to copy the header files from a target
 machine.  On the target machine, do this:
@@ -578,7 +503,7 @@ file for GNU CC as follows:
 Define the VMS logical names @samp{GNU_CC} and @samp{GNU_CC_INCLUDE}
 to point to the directories where the GNU CC executables
 (@file{gcc-cpp.exe}, @file{gcc-cc1.exe}, etc.) and the C include files are
-kept respectively.  This should be done with the commands:@refill
+kept respectively.  This should be done with the commands:
 
 @smallexample
 $ assign /system /translation=concealed -
@@ -622,7 +547,7 @@ perform the following steps:
 @item
 Define the VMS logical name @samp{GNU_GXX_INCLUDE} to point to the
 directory where the preprocessor will search for the C++ header files.
-This can be done with the command:@refill
+This can be done with the command:
 
 @smallexample
 $ assign /system /translation=concealed -
@@ -657,7 +582,7 @@ Execute the command procedure @file{vmsconfig.com} to set up the files
 @file{tm.h}, @file{config.h}, @file{aux-output.c}, and @file{md.}, and
 to create files @file{tconfig.h} and @file{hconfig.h}.  This procedure
 also creates several linker option files used by @file{make-cc1.com} and
-a data file used by @file{make-l2.com}.@refill
+a data file used by @file{make-l2.com}.
 
 @smallexample
 $ @@vmsconfig.com
@@ -667,7 +592,7 @@ $ @@vmsconfig.com
 Setup the logical names and command tables as defined above.  In
 addition, define the VMS logical name @samp{GNU_BISON} to point at the
 to the directories where the Bison executable is kept.  This should be
-done with the command:@refill
+done with the command:
 
 @smallexample
 $ assign /system /translation=concealed -
@@ -678,7 +603,7 @@ You may, if you choose, use the @file{INSTALL_BISON.COM} script in the
 @file{[BISON]} directory.
 
 @item
-Install the @samp{BISON} command with the command line:@refill
+Install the @samp{BISON} command with the command line:
 
 @smallexample
 $ set command /table=sys$common:[syslib]dcltables -
@@ -692,7 +617,7 @@ Type @samp{@@make-gcc} to recompile everything (alternatively, submit
 the file @file{make-gcc.com} to a batch queue).  If you wish to build
 the GNU C++ compiler as well as the GNU CC compiler, you must first edit
 @file{make-gcc.com} and follow the instructions that appear in the
-comments.@refill
+comments.
 
 @item
 In order to use GCC, you need a library of functions which GCC compiled code
@@ -703,7 +628,7 @@ file @file{libgcc2.c}.  To compile this you should use the command procedure
 the same distribution that @file{libgcc2.c} came from, and
 @file{make-gcc.com} will automatically do all of this for you.
 
-To install the library, use the following commands:@refill
+To install the library, use the following commands:
 
 @smallexample
 $ library gnu_cc:[000000]gcclib/delete=(new,eprintf)
@@ -767,7 +692,7 @@ make minor changes in @file{make-cccp.com} and @file{make-cc1.com}
 to choose alternate definitions of @code{CC}, @code{CFLAGS}, and
 @code{LIBS}.  See comments in those files.  However, you must
 also have a working version of the GNU assembler (GNU as, aka GAS) as
-it is used as the back-end for GNU CC to produce binary object modules
+it is used as the back end for GNU CC to produce binary object modules
 and is not included in the GNU CC sources.  GAS is also needed to
 compile @file{libgcc2} in order to build @file{gcclib} (see above);
 @file{make-l2.com} expects to be able to find it operational in
@@ -823,7 +748,7 @@ compiles it, and links the program a second time including that file.
 The actual calls to the constructors are carried out by a subroutine
 called @code{__main}, which is called (automatically) at the beginning
 of the body of @code{main} (provided @code{main} was compiled with GNU
-CC).  Calling @code{__main} is necessary, even when compiling C code, to
+CC)@.  Calling @code{__main} is necessary, even when compiling C code, to
 allow linking C and C++ object code together.  (If you use
 @option{-nostdlib}, you get an unresolved reference to @code{__main},
 since it's defined in the standard GCC library.  Include @option{-lgcc} at

@@ -1,9 +1,5 @@
 #ifndef _LIMITS_H___
-#ifndef _MACH_MACHLIMITS_H_
-
-/* _MACH_MACHLIMITS_H_ is used on OSF/1.  */
 #define _LIMITS_H___
-#define _MACH_MACHLIMITS_H_
 
 /* Number of bits in a `char'.  */
 #undef CHAR_BIT
@@ -64,7 +60,7 @@
 /* Minimum and maximum values a `signed long int' can hold.
    (Same as `int').  */
 #ifndef __LONG_MAX__
-#if defined (__alpha__) || (defined (__sparc__) && defined(__arch64__)) || defined (__sparcv9)
+#if defined (__alpha__) || (defined (__sparc__) && defined(__arch64__)) || defined (__sparcv9) || defined (__s390x__)
 #define __LONG_MAX__ 9223372036854775807L
 #else
 #define __LONG_MAX__ 2147483647L
@@ -107,5 +103,4 @@
 #define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1)
 #endif
 
-#endif /* _MACH_MACHLIMITS_H_ */
 #endif /* _LIMITS_H___ */

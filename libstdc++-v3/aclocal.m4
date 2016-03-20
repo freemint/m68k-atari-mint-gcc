@@ -653,6 +653,7 @@ AC_DEFUN(GLIBCPP_CHECK_MATH_SUPPORT, [
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_3(sincos)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(fpclass)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(qfpclass)
+  GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(hypot)
 
   dnl Check to see if basic C math functions have float versions.
   GLIBCPP_CHECK_MATH_DECLS_AND_LINKAGES_1(float trig,
@@ -665,9 +666,11 @@ AC_DEFUN(GLIBCPP_CHECK_MATH_SUPPORT, [
                                           ceilf floorf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(isnanf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(isinff)
+  GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(atan2f)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(fabsf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(fmodf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(frexpf)
+  GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(hypotf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(ldexpf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(logf)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(log10f)
@@ -694,6 +697,7 @@ AC_DEFUN(GLIBCPP_CHECK_MATH_SUPPORT, [
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(fabsl)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(fmodl)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(frexpl)
+  GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(hypotl)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_2(ldexpl)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(logl)
   GLIBCPP_CHECK_MATH_DECL_AND_LINKAGE_1(log10l)
@@ -738,23 +742,22 @@ dnl Check to see if there is native support for complex
 dnl
 dnl Don't compile bits in math/* if native support exits.
 dnl
-dnl Define USE_COMPLEX_LONG_DOUBLE etc if "atan2l/copysignl" is found.
+dnl Define USE_COMPLEX_LONG_DOUBLE etc if "copysignl" is found.
 dnl
 dnl GLIBCPP_CHECK_COMPLEX_MATH_SUPPORT
 AC_DEFUN(GLIBCPP_CHECK_COMPLEX_MATH_SUPPORT, [
   dnl Check for complex versions of math functions of platform.
   AC_CHECK_LIB(m, main)
-  AC_REPLACE_MATHFUNCS(nan hypot hypotf atan2f expf copysignf)
+  AC_REPLACE_MATHFUNCS(nan copysignf)
 
   dnl Compile the long double complex functions only if the function 
   dnl provides the non-complex long double functions that are needed.
-  dnl Currently this includes copysignl and atan2l, which should be
+  dnl Currently this includes copysignl, which should be
   dnl cached from the GLIBCPP_CHECK_MATH_SUPPORT macro, above.
   USE_COMPLEX_LONG_DOUBLE=no
-  if test x$ac_cv_func_atan2l = x"yes" \
-     && test x$ac_cv_func_copysignl = x"yes"; then
+  if test x$ac_cv_func_copysignl = x"yes"; then
     USE_COMPLEX_LONG_DOUBLE=yes
-    AC_REPLACE_MATHFUNCS(hypotl signbitl)
+    AC_REPLACE_MATHFUNCS(signbitl)
   fi
 
   AC_SUBST(USE_COMPLEX_LONG_DOUBLE)
@@ -770,7 +773,6 @@ AC_DEFUN(GLIBCPP_CHECK_TARGET, [
     . [$]{glibcpp_basedir}/configure.target
     AC_MSG_RESULT(CPU config directory is $cpu_include_dir)
     AC_MSG_RESULT(OS config directory is $os_include_dir)
-    AC_LINK_FILES($os_include_dir/bits/os_defines.h, include/bits/os_defines.h)
 ])
 
 
@@ -1018,7 +1020,7 @@ AC_DEFUN(GLIBCPP_ENABLE_CLOCALE, [
       ;;
   esac
 
-  AC_LINK_FILES($CLOCALE_H, include/bits/c++locale.h)
+  AC_SUBST(CLOCALE_H)
   AC_LINK_FILES($CLOCALE_CC, src/c++locale.cc)
 ])
 
@@ -1118,13 +1120,13 @@ AC_DEFUN(GLIBCPP_ENABLE_CSTDIO, [
       exit 1
       ;;
   esac
-  AC_LINK_FILES($CSTDIO_H, include/bits/c++io.h)
-  AC_LINK_FILES($BASIC_FILE_H, include/bits/basic_file_model.h)
+  AC_SUBST(CSTDIO_H)
+  AC_SUBST(BASIC_FILE_H)
   AC_LINK_FILES($BASIC_FILE_CC, src/basic_file.cc)
 
   # 2000-08-04 bkoz hack
   CCODECVT_C=config/c_io_libio_codecvt.c
-  AC_LINK_FILES($CCODECVT_C, libio/c_codecvt.c)
+  AC_SUBST(CCODECVT_C)
   # 2000-08-04 bkoz hack
 
   AM_CONDITIONAL(GLIBCPP_BUILD_LIBIO,
@@ -1149,30 +1151,21 @@ dnl macro names into user-provided C++ code, we first stage into <file>-in
 dnl and process to <file> with an output command.  The reason for a two-
 dnl stage process here is to correctly handle $srcdir!=$objdir without
 dnl having to write complex code (the sed commands to clean the macro
-dnl namespace are complex and fragile enough as it is).
+dnl namespace are complex and fragile enough as it is).  We must also
+dnl add a relative path so that -I- is supported properly.
 dnl
 AC_DEFUN(GLIBCPP_ENABLE_THREADS, [
   AC_MSG_CHECKING([for thread model used by GCC])
   target_thread_file=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
   AC_MSG_RESULT([$target_thread_file])
 
-  AC_LINK_FILES($toprel/gcc/gthr.h, include/bits/gthr.h-in)
-  AC_LINK_FILES($toprel/gcc/gthr-single.h,
-		include/bits/gthr-single.h-in)
-  AC_LINK_FILES($toprel/gcc/gthr-$target_thread_file.h,
-		include/bits/gthr-default.h-in)
   if test $target_thread_file != single; then
     AC_DEFINE(HAVE_GTHR_DEFAULT)
     AC_DEFINE(_GLIBCPP_SUPPORTS_WEAK, __GXX_WEAK__)
   fi
-  AC_OUTPUT_COMMANDS([d=include/bits
-    rm -f $d/gthr.h $d/gthr-single.h $d/gthr-default.h
-    sed '/^#/s/\([A-Z_][A-Z_]*\)/_GLIBCPP_\1/g' <$d/gthr.h-in >$d/gthr.h
-    sed 's/\(UNUSED\)/_GLIBCPP_\1/g' <$d/gthr-single.h-in \
-      | sed 's/\(GCC[A-Z_]*_H\)/_GLIBCPP_\1/g' >$d/gthr-single.h
-    sed 's/\(UNUSED\)/_GLIBCPP_\1/g' <$d/gthr-default.h-in \
-      | sed 's/\(GCC[A-Z_]*_H\)/_GLIBCPP_\1/g' \
-      | sed 's/\([A-Z_]*WEAK\)/_GLIBCPP_\1/g' >$d/gthr-default.h])
+
+  glibcpp_thread_h=gthr-$target_thread_file.h
+  AC_SUBST(glibcpp_thread_h)
 ])
 
 
@@ -1453,16 +1446,16 @@ changequote([, ])
   case "$enable_cheaders" in
     c_shadow) 
         CSHADOW_FLAGS="-fno-builtin"
-        C_INCLUDE_DIR='${top_srcdir}/include/c_shadow'
+        C_INCLUDE_DIR='${glibcpp_srcdir}/include/c_shadow'
         AC_DEFINE(_GLIBCPP_USE_SHADOW_HEADERS)
         ;;
     c_std)   
         CSHADOW_FLAGS=""
-        C_INCLUDE_DIR='${top_srcdir}/include/c_std'
+        C_INCLUDE_DIR='${glibcpp_srcdir}/include/c_std'
         ;;
     c)   
         CSHADOW_FLAGS=""
-        C_INCLUDE_DIR='${top_srcdir}/include/c'
+        C_INCLUDE_DIR='${glibcpp_srcdir}/include/c'
         ;;
   esac
 
@@ -1501,25 +1494,19 @@ dnl Option parsed, now other scripts can test enable_c_mbchar for yes/no.
 dnl
 dnl Set up *_INCLUDES and *_INCLUDE_DIR variables for all sundry Makefile.am's.
 dnl
-dnl GLIBCPP_INCLUDE_DIR
-dnl C_INCLUDE_DIR
 dnl TOPLEVEL_INCLUDES
 dnl LIBMATH_INCLUDES
 dnl LIBSUPCXX_INCLUDES
 dnl LIBIO_INCLUDES
 dnl CSHADOW_INCLUDES
 dnl
-dnl GLIBCPP_EXPORT_INCLUDE
+dnl GLIBCPP_EXPORT_INCLUDES
 AC_DEFUN(GLIBCPP_EXPORT_INCLUDES, [
-  # Root level of the include sources.
-  GLIBCPP_INCLUDE_DIR='$(top_srcdir)/include'
+  # Root level of the build directory include sources.
+  GLIBCPP_INCLUDES="-I${glibcpp_builddir}/include/${target_alias} -I${glibcpp_builddir}/include"
 
-  # Can either use include/c or include/c_std to grab "C" headers. This
-  # variable is set to the include directory currently in use.
-  # set with C_INCLUDE_DIR in GLIBCPP_ENABLE_CHEADERS
-   
   # Passed down for canadian crosses.
-  if  test x"$CANADIAN" = xyes; then
+  if test x"$CANADIAN" = xyes; then
     TOPLEVEL_INCLUDES='-I$(includedir)'
   fi
 
@@ -1527,26 +1514,16 @@ AC_DEFUN(GLIBCPP_EXPORT_INCLUDES, [
 
   LIBSUPCXX_INCLUDES='-I$(top_srcdir)/libsupc++'
 
-  #if GLIBCPP_NEED_LIBIO
-  LIBIO_INCLUDES='-I$(top_builddir)/libio -I$(top_srcdir)/libio'
-  #else
-  #LIBIO_INCLUDES='-I$(top_srcdir)/libio'
-  #endif
-
-  #if GLIBCPP_USE_CSHADOW
-  #  CSHADOW_INCLUDES='-I$(GLIBCPP_INCLUDE_DIR)/std -I$(C_INCLUDE_DIR) \
-  #                   -I$(top_blddir)/cshadow'
-  #else
-  CSTD_INCLUDES='-I$(GLIBCPP_INCLUDE_DIR)/std -I$(C_INCLUDE_DIR)'
-  #endif
+  if test x"$need_libio" = xyes; then
+    LIBIO_INCLUDES='-I$(top_builddir)/libio -I$(top_srcdir)/libio'
+    AC_SUBST(LIBIO_INCLUDES)
+  fi
 
   # Now, export this to all the little Makefiles....
-  AC_SUBST(GLIBCPP_INCLUDE_DIR)
+  AC_SUBST(GLIBCPP_INCLUDES)
   AC_SUBST(TOPLEVEL_INCLUDES)
   AC_SUBST(LIBMATH_INCLUDES)
   AC_SUBST(LIBSUPCXX_INCLUDES)
-  AC_SUBST(LIBIO_INCLUDES)
-  AC_SUBST(CSTD_INCLUDES)
 ])
 
 

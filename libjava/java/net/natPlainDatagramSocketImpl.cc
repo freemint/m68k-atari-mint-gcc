@@ -158,7 +158,7 @@ union McastReq
 #if HAVE_STRUCT_IP_MREQ
   struct ip_mreq mreq;
 #endif
-#ifdef HAVE_INET6
+#if HAVE_STRUCT_IPV6_MREQ
   struct ipv6_mreq mreq6;
 #endif
 };
@@ -423,11 +423,20 @@ java::net::PlainDatagramSocketImpl::mcastGrp (java::net::InetAddress *inetaddr,
       ptr = (const char *) &u.mreq;
     }
 #endif
-#ifdef HAVE_INET6
+#if HAVE_STRUCT_IPV6_MREQ
   else if (len == 16)
     {
       level = IPPROTO_IPV6;
-      opname = join ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP;
+
+      /* Prefer new RFC 2553 names.  */
+#ifndef IPV6_JOIN_GROUP
+#define IPV6_JOIN_GROUP IPV6_ADD_MEMBERSHIP
+#endif
+#ifndef IPV6_LEAVE_GROUP
+#define IPV6_LEAVE_GROUP IPV6_DROP_MEMBERSHIP
+#endif
+
+      opname = join ? IPV6_JOIN_GROUP : IPV6_LEAVE_GROUP;
       memcpy (&u.mreq6.ipv6mr_multiaddr, bytes, len);
       // FIXME:  If a non-default interface is set, use it; see Stevens p. 501.
       // Maybe not, see note in last paragraph at bottom of Stevens p. 497.
@@ -522,7 +531,8 @@ java::net::PlainDatagramSocketImpl::setOption (jint optID,
 	    len = sizeof (struct in_addr);
 	    ptr = (const char *) &u.addr;
 	  }
-#ifdef HAVE_INET6
+// Tru64 UNIX V5.0 has struct sockaddr_in6, but no IPV6_MULTICAST_IF
+#if defined (HAVE_INET6) && defined (IPV6_MULTICAST_IF)
 	else if (len == 16)
 	  {
 	    level = IPPROTO_IPV6;

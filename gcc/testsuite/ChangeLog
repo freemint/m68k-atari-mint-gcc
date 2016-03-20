@@ -1,3 +1,139 @@
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-19  Release Manager
+
+	* GCC 3.0.1 Released.
+
+2001-08-07  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/empty4.C: New test.
+
+2001-08-06  Franz Sirl  <Franz.Sirl-kernel@lauterbach.com>
+
+	* gcc.c-torture/compile/20010408-1.c: New test.
+	* gcc.c-torture/execute/ieee/ieee.exp: Only use -ffloat-store on
+	i[34567]86-*-*.
+	Delete handling of ieee_multilib_flags.
+	Pass -mieee for alpha*-*-* and sh-*-*.
+	* gcc.c-torture/execute/20010114-2.c: Move into ieee subdir.
+	* gcc.c-torture/execute/20010114-2.x: Remove.
+
+2001-08-03  Zack Weinberg  <zackw@stanford.edu>
+
+	* gcc.dg/bconstp-1.c: New test.
+
+2001-08-02  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Remove -fhonor-std.
+	* g++.old-deja/g++.ns/ns14.C: Remove special options.
+	* g++.old-deja/g++.other/std1.C: Likewise.
+	* g++.old-deja/g++.robertl/eb133.C: Likewise. Add using directive.
+
+2001-07-31  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/vthunk1.C: New test.
+
+2001-07-31  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/vbase8-22.C: New test.
+
+2001-07-30  Janis Johnson <janis@us.ibm.com>
+
+	* gcc.misc-tests/gcov-3.c: New test.
+
+2001-07-27  Peter Schmid  <schmid@snake.iap.physik.tu-darmstadt.de>
+
+	Copied from mainline by ljrittle (to go along with 2001-07-26
+	libstdc++-v3 header staging configuration patch).
+	* g++.old-deja/g++.robertl/eb130.C: Include the correct header file.
+
+2001-07-27  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/vbase8-21.C: New test.
+
+2001-07-27  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/vbase8-10.C: New test.
+
+2001-07-27  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* lib/g++.exp (g++_set_ld_library_path): Renamed to
+	${tool}_set_ld_library_path.
+	Changed caller.
+	* lib/objc.exp (${tool}_set_ld_library_path): New, copied from
+	g++.exp.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.other/lineno5.C: New test.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.pt/crash68.C: New test.
+
+2001-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.other/crash42.C: New test.
+
+2001-07-25  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* gcc.c-torture/execute/20010724-1.c: New file.
+	* gcc.c-torture/execute/20010724-1.x: New file.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.other/cond7.C: New test.
+
+2001-07-25  Jason Merrill  <jason_merrill@redhat.com>
+
+	Copied from mainline.
+	* g++.old-deja/g++.mike/p2846.C: Check correct copy ctor called.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.other/optimize4.C: New test.
+
+2001-07-25  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.old-deja/g++.abi/vbase8-5.C: New test.
+
+2001-07-19  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* g++.old-deja/g++.pt/static3.C: Removed alpha*-*-osf* XFAIL.
+	g++.old-deja/g++.pt/static6.C: Likewise.
+	* lib/target-supports.exp (check_weak_available): alpha*-*-osf*
+	supports weak symbols.
+
+2001-07-16  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* gcc.c-torture/execute/20001229-1.c: Include <sys/proc.h> for
+	UAC_SIGBUS, UAC_NOPRINT definitions.
+
+Mon Jul 16 12:21:56 2001  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* objc/execute/object_is_class.m: New test.
+	* objc/execute/object_is_meta_class.m: New test.
+
+2000-09-10  Michael Chamberlain <michael@chamberlain.net.au>
+
+        * gcc.misc-tests/mg.exp (compiler_output): Support tcl 8.3.1.
+
+2001-06-29  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* lib/objc.exp (objc_target_compile): Declare rootme.  Append to
+	ld_library_path.
+
+2001-06-28  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* lib/objc.exp (objc_target_compile): Don't need -lposix4 on any
+	Solaris 2.[678] system.
+
+2001-06-22  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc.dg/20010622-1.c: New test.
+
 20010617 Release Manager
 
         * GCC 3.0 Released.

@@ -877,8 +877,7 @@ extern enum reg_class m68hc11_tmp_regs_class;
    If FRAME_GROWS_DOWNWARD, this is the offset to the END of the
    first local allocated.  Otherwise, it is the offset to the BEGINNING
    of the first local allocated.  */
-extern int m68hc11_sp_correction;
-#define STARTING_FRAME_OFFSET		m68hc11_sp_correction
+#define STARTING_FRAME_OFFSET		0
 
 /* Offset of first parameter from the argument pointer register value.  */
 
@@ -894,10 +893,10 @@ extern int m68hc11_sp_correction;
 #define INCOMING_RETURN_ADDR_RTX \
     gen_rtx_MEM (VOIDmode, gen_rtx_REG (VOIDmode, STACK_POINTER_REGNUM))
 
-/* After the prologue, RA is at -2(AP) in the current frame.  */
+/* After the prologue, RA is at 0(AP) in the current frame.  */
 #define RETURN_ADDR_RTX(COUNT, FRAME)					\
   ((COUNT) == 0								\
-   ? gen_rtx_MEM (Pmode, plus_constant (arg_pointer_rtx, -2))\
+   ? gen_rtx_MEM (Pmode, arg_pointer_rtx)                               \
    : 0)
 
 /* Before the prologue, the top of the frame is at 2(sp).  */
@@ -1613,6 +1612,52 @@ do {                                                                    \
 
 /* Output before uninitialized data.  */
 #define BSS_SECTION_ASM_OP 	("\t.sect\t.bss")
+
+/* This is the pseudo-op used to generate a reference to a specific
+   symbol in some section.  It is only used in machine-specific
+   configuration files, typically only in ASM_OUTPUT_CONSTRUCTOR and
+   ASM_OUTPUT_DESTRUCTOR.  This is the same for all known svr4
+   assemblers, except those in targets that don't use 32-bit pointers.
+   Those should override INT_ASM_OP.  Yes, the name of the macro is
+   misleading.  */
+#undef INT_ASM_OP
+#define INT_ASM_OP		"\t.word\t"
+
+/* Define the pseudo-ops used to switch to the .ctors and .dtors sections.
+
+   Same as config/elfos.h but don't mark these section SHF_WRITE since
+   there is no shared library problem.  */
+#undef CTORS_SECTION_ASM_OP
+#define CTORS_SECTION_ASM_OP	"\t.section\t.ctors,\"a\""
+
+#undef DTORS_SECTION_ASM_OP
+#define DTORS_SECTION_ASM_OP	"\t.section\t.dtors,\"a\""
+
+#undef CTORS_SECTION_FUNCTION
+#define CTORS_SECTION_FUNCTION					\
+void								\
+ctors_section ()						\
+{								\
+  if (in_section != in_ctors)					\
+    {								\
+      fprintf (asm_out_file, "\t.globl\t__do_global_ctors\n");	\
+      fprintf (asm_out_file, "%s\n", CTORS_SECTION_ASM_OP);	\
+      in_section = in_ctors;					\
+    }								\
+}
+
+#undef DTORS_SECTION_FUNCTION
+#define DTORS_SECTION_FUNCTION					\
+void								\
+dtors_section ()						\
+{								\
+  if (in_section != in_dtors)					\
+    {								\
+      fprintf (asm_out_file, "\t.globl\t__do_global_dtors\n");	\
+      fprintf (asm_out_file, "%s\n", DTORS_SECTION_ASM_OP);	\
+      in_section = in_dtors;					\
+    }								\
+}
 
 /* This is how to begin an assembly language file.  Most svr4 assemblers want
    at least a .file directive to come first, and some want to see a .version

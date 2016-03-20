@@ -1044,7 +1044,7 @@ enum reg_class
    `K' is a constant with only the low-order 16 bits non-zero
    `L' is a signed 16-bit constant shifted left 16 bits
    `M' is a constant that is greater than 31
-   `N' is a constant that is an exact power of two
+   `N' is a positive constant that is an exact power of two
    `O' is the constant zero
    `P' is a constant whose negation is a signed 16-bit constant */
 
@@ -1055,7 +1055,7 @@ enum reg_class
    : (C) == 'L' ? (((VALUE) & 0xffff) == 0				\
 		   && ((VALUE) >> 31 == -1 || (VALUE) >> 31 == 0))	\
    : (C) == 'M' ? (VALUE) > 31						\
-   : (C) == 'N' ? exact_log2 (VALUE) >= 0				\
+   : (C) == 'N' ? (VALUE) > 0 && exact_log2 (VALUE) >= 0		\
    : (C) == 'O' ? (VALUE) == 0						\
    : (C) == 'P' ? (unsigned HOST_WIDE_INT) ((- (VALUE)) + 0x8000) < 0x10000 \
    : 0)
@@ -2675,10 +2675,13 @@ do {									\
   {"reg_or_u_short_operand", {SUBREG, REG, CONST_INT}},			   \
   {"reg_or_cint_operand", {SUBREG, REG, CONST_INT}},			   \
   {"reg_or_arith_cint_operand", {SUBREG, REG, CONST_INT}},		   \
+  {"reg_or_add_cint64_operand", {SUBREG, REG, CONST_INT}},		   \
+  {"reg_or_sub_cint64_operand", {SUBREG, REG, CONST_INT}},		   \
   {"reg_or_logical_cint_operand", {SUBREG, REG, CONST_INT, CONST_DOUBLE}}, \
   {"got_operand", {SYMBOL_REF, CONST, LABEL_REF}},			   \
   {"got_no_const_operand", {SYMBOL_REF, LABEL_REF}},			   \
   {"easy_fp_constant", {CONST_DOUBLE}},					   \
+  {"zero_fp_constant", {CONST_DOUBLE}},					   \
   {"reg_or_mem_operand", {SUBREG, MEM, REG}},				   \
   {"lwa_operand", {SUBREG, MEM, REG}},					   \
   {"volatile_mem_operand", {MEM}},					   \
@@ -2714,7 +2717,8 @@ do {									\
   {"trap_comparison_operator", {EQ, NE, LE, LT, GE,			   \
 				GT, LEU, LTU, GEU, GTU}},		   \
   {"boolean_operator", {AND, IOR, XOR}},				   \
-  {"boolean_or_operator", {IOR, XOR}},
+  {"boolean_or_operator", {IOR, XOR}},					   \
+  {"min_max_operator", {SMIN, SMAX, UMIN, UMAX}},
 
 /* uncomment for disabling the corresponding default options */
 /* #define  MACHINE_no_sched_interblock */

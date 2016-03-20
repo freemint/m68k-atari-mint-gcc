@@ -7804,7 +7804,14 @@ make_rtl_for_nonlocal_decl (decl, init, asmspec)
 
   /* Set the DECL_ASSEMBLER_NAME for the variable.  */
   if (asmspec)
-    SET_DECL_ASSEMBLER_NAME (decl, get_identifier (asmspec));
+    {
+      SET_DECL_ASSEMBLER_NAME (decl, get_identifier (asmspec));
+      /* The `register' keyword, when used together with an
+	 asm-specification, indicates that the variable should be
+	 placed in a particular register.  */
+      if (DECL_REGISTER (decl))
+	DECL_C_HARD_REGISTER (decl) = 1;
+    }
 
   /* We don't create any RTL for local variables.  */
   if (DECL_FUNCTION_SCOPE_P (decl) && !TREE_STATIC (decl))
@@ -11143,6 +11150,26 @@ grokdeclarator (declarator, declspecs, decl_context, initialized, attrlist)
       && TYPE_DOMAIN (type) == NULL_TREE)
     {
       type = build_cplus_array_type (TREE_TYPE (type), TYPE_DOMAIN (type));
+    }
+
+  /* Detect where we're using a typedef of function type to declare a
+     function. last_function_parms will not be set, so we must create
+     it now.  */
+  
+  if (type == typedef_type && TREE_CODE (type) == FUNCTION_TYPE)
+    {
+      tree decls = NULL_TREE;
+      tree args;
+
+      for (args = TYPE_ARG_TYPES (type); args; args = TREE_CHAIN (args))
+	{
+	  tree decl = build_decl (PARM_DECL, NULL_TREE, TREE_VALUE (args));
+
+	  TREE_CHAIN (decl) = decls;
+	  decls = decl;
+	}
+      
+      last_function_parms = nreverse (decls);
     }
 
   /* If this is a type name (such as, in a cast or sizeof),
