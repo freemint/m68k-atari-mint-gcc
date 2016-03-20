@@ -2816,7 +2816,8 @@ rest_of_compilation (decl)
       tem = cse_main (insns, max_reg_num (), 0, rtl_dump_file);
       if (tem)
 	rebuild_jump_labels (insns);
-      purge_all_dead_edges (0);
+      if (purge_all_dead_edges (0))
+	delete_unreachable_blocks ();
 
       delete_trivially_dead_insns (insns, max_reg_num ());
 
@@ -2847,8 +2848,8 @@ rest_of_compilation (decl)
   open_dump_file (DFI_addressof, decl);
 
   purge_addressof (insns);
-  if (optimize)
-    purge_all_dead_edges (0);
+  if (optimize && purge_all_dead_edges (0))
+    delete_unreachable_blocks ();
   reg_scan (insns, max_reg_num (), 1);
 
   close_dump_file (DFI_addressof, print_rtl, insns);
@@ -3461,6 +3462,23 @@ rest_of_compilation (decl)
 #endif
 
 #ifdef STACK_REGS
+#if defined (HAVE_ATTR_length)
+  /* If flow2 creates new instructions which need splitting
+     and scheduling after reload is not done, they might not be
+     splitten until final which doesn't allow splitting
+     if HAVE_ATTR_length.  */
+#ifdef INSN_SCHEDULING
+  if (optimize && !flag_schedule_insns_after_reload)
+#else
+  if (optimize)
+#endif
+    {
+      timevar_push (TV_SHORTEN_BRANCH);
+      split_all_insns (1);
+      timevar_pop (TV_SHORTEN_BRANCH);
+    }
+#endif
+
   timevar_push (TV_REG_STACK);
   open_dump_file (DFI_stack, decl);
 
@@ -3683,6 +3701,10 @@ display_help ()
   printf (_("  -fmessage-length=<number> Limits diagnostics messages lengths to <number> characters per line.  0 suppresses line-wrapping\n"));
   printf (_("  -fdiagnostics-show-location=[once | every-line] Indicates how often source location information should be emitted, as prefix, at the beginning of diagnostics when line-wrapping\n"));
   printf (_("  -ftls-model=[global-dynamic | local-dynamic | initial-exec | local-exec] Indicates the default thread-local storage code generation model\n"));
+  printf (_("  -fstack-limit-register=<register>  Trap if the stack goes past <register>\n"));
+  printf (_("  -fstack-limit-symbol=<name>  Trap if the stack goes past symbol <name>\n"));
+  printf (_("  -frandom-seed=<string>  Make compile reproducible using <string>\n"));
+  
 
   for (i = ARRAY_SIZE (f_options); i--;)
     {
@@ -4038,6 +4060,10 @@ decode_f_option (arg)
     }
   else if (!strcmp (arg, "no-stack-limit"))
     stack_limit_rtx = NULL_RTX;
+  else if ((option_value = skip_leading_substring (arg, "random-seed=")))
+    flag_random_seed = option_value;
+  else if (!strcmp (arg, "no-random-seed"))
+    flag_random_seed = NULL;
   else if (!strcmp (arg, "preprocessed"))
     /* Recognize this switch but do nothing.  This prevents warnings
        about an unrecognized switch if cpplib has not been linked in.  */
@@ -4591,6 +4617,12 @@ print_switch_values (file, pos, max, indent, sep, term)
 {
   size_t j;
   char **p;
+
+  /* Fill in the -frandom-seed option, if the user didn't pass it, so
+     that it can be printed below.  This helps reproducibility.  Of
+     course, the string may never be used, but we can't tell that at
+     this point in the compile.  */
+  default_flag_random_seed ();
 
   /* Print the options as passed.  */
 

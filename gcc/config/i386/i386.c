@@ -2463,23 +2463,55 @@ int
 ix86_return_in_memory (type)
      tree type;
 {
-  int needed_intregs, needed_sseregs;
+  int needed_intregs, needed_sseregs, size;
+  enum machine_mode mode = TYPE_MODE (type);
+
   if (TARGET_64BIT)
+    return !examine_argument (mode, type, 1, &needed_intregs, &needed_sseregs);
+
+  if (mode == BLKmode)
+    return 1;
+
+  size = int_size_in_bytes (type);
+
+  if (VECTOR_MODE_P (mode) || mode == TImode)
     {
-      return !examine_argument (TYPE_MODE (type), type, 1,
-				&needed_intregs, &needed_sseregs);
-    }
-  else
-    {
-      if (TYPE_MODE (type) == BLKmode
-	  || (VECTOR_MODE_P (TYPE_MODE (type))
-	      && int_size_in_bytes (type) == 8)
-	  || (int_size_in_bytes (type) > 12 && TYPE_MODE (type) != TImode
-	      && TYPE_MODE (type) != TFmode
-	      && !VECTOR_MODE_P (TYPE_MODE (type))))
+      /* User-created vectors small enough to fit in EAX.  */
+      if (size < 8)
+	return 0;
+
+      /* MMX/3dNow values are returned on the stack, since we've
+	 got to EMMS/FEMMS before returning.  */
+      if (size == 8)
 	return 1;
-      return 0;
+
+      /* SSE values are returned in XMM0.  */
+      /* ??? Except when it doesn't exist?  We have a choice of
+	 either (1) being abi incompatible with a -march switch,
+	 or (2) generating an error here.  Given no good solution,
+	 I think the safest thing is one warning.  The user won't
+	 be able to use -Werror, but...  */
+      if (size == 16)
+	{
+	  static bool warned;
+
+	  if (TARGET_SSE)
+	    return 0;
+
+	  if (!warned)
+	    {
+	      warned = true;
+	      warning ("SSE vector return without SSE enabled changes the ABI");
+	    }
+	  return 1;
+	}
     }
+
+  if (mode == TFmode)
+    return 0;
+  if (size > 12)
+    return 1;
+  return 0;
 }
 
 /* Define how to find the value returned by a library function
@@ -2514,10 +2546,14 @@ static int
 ix86_value_regno (mode)
      enum machine_mode mode;
 {
+  /* Floating point return values in %st(0).  */
   if (GET_MODE_CLASS (mode) == MODE_FLOAT && TARGET_FLOAT_RETURNS_IN_80387)
     return FIRST_FLOAT_REG;
-  if (mode == TImode || VECTOR_MODE_P (mode))
+  /* 16-byte vector modes in %xmm0.  See ix86_return_in_memory for where
+     we prevent this case when sse is not available.  */
+  if (mode == TImode || (VECTOR_MODE_P (mode) && GET_MODE_SIZE (mode) == 16))
     return FIRST_SSE_REG;
+  /* Everything else in %eax.  */
   return 0;
 }
 
@@ -2884,10 +2920,12 @@ ix86_va_arg (valist, type)
 	{
 	  int i;
 	  rtx mem;
+	  rtx x;
 
 	  /* Never use the memory itself, as it has the alias set.  */
-	  addr_rtx = XEXP (assign_temp (type, 0, 1, 0), 0);
-	  mem = gen_rtx_MEM (BLKmode, addr_rtx);
+	  x = XEXP (assign_temp (type, 0, 1, 0), 0);
+	  mem = gen_rtx_MEM (BLKmode, x);
+	  force_operand (x, addr_rtx);
 	  set_mem_alias_set (mem, get_varargs_alias_set ());
 	  set_mem_align (mem, BITS_PER_UNIT);
 
@@ -3074,6 +3112,29 @@ x86_64_movabs_operand (op, mode)
   if (CONSTANT_P (op) && !symbolic_reference_mentioned_p (op))
     return 1;
   return 0;
+}
+
+/* Return nonzero if OPNUM's MEM should be matched
+   in movabs* patterns.  */
+
+int
+ix86_check_movabs (insn, opnum)
+     rtx insn;
+     int opnum;
+{
+  rtx set, mem;
+
+  set = PATTERN (insn);
+  if (GET_CODE (set) == PARALLEL)
+    set = XVECEXP (set, 0, 0);
+  if (GET_CODE (set) != SET)
+    abort ();
+  mem = XEXP (set, opnum);
+  while (GET_CODE (mem) == SUBREG)
+    mem = SUBREG_REG (mem);
+  if (GET_CODE (mem) != MEM)
+    abort ();
+  return (volatile_ok || !MEM_VOLATILE_P (mem));
 }
 
 /* Return nonzero if OP is nonmemory operand representable on x86_64.  */
@@ -4205,7 +4266,7 @@ ix86_setup_frame_addresses ()
   cfun->machine->accesses_prev_frame = 1;
 }
 
-#if defined(HAVE_GAS_HIDDEN) && defined(SUPPORTS_ONE_ONLY)
+#if defined(HAVE_GAS_HIDDEN) && (defined(SUPPORTS_ONE_ONLY) && SUPPORTS_ONE_ONLY)
 # define USE_HIDDEN_LINKONCE 1
 #else
 # define USE_HIDDEN_LINKONCE 0
@@ -6676,8 +6737,8 @@ get_some_local_dynamic_name_1 (px, data)
    C -- print opcode suffix for set/cmov insn.
    c -- like C, but print reversed condition
    F,f -- likewise, but for floating-point.
-   O -- if CMOV_SUN_AS_SYNTAX, expand to "w.", "l." or "q.", otherwise
-        nothing
+   O -- if HAVE_AS_IX86_CMOV_SUN_SYNTAX, expand to "w.", "l." or "q.",
+        otherwise nothing
    R -- print the prefix for register names.
    z -- print the opcode suffix for the size of the current operand.
    * -- print a star (in certain assembler syntax)
@@ -6881,7 +6942,7 @@ print_operand (file, x, code)
 	    }
 	  return;
 	case 'O':
-#ifdef CMOV_SUN_AS_SYNTAX
+#ifdef HAVE_AS_IX86_CMOV_SUN_SYNTAX
 	  if (ASSEMBLER_DIALECT == ASM_ATT)
 	    {
 	      switch (GET_MODE (x))
@@ -6901,7 +6962,7 @@ print_operand (file, x, code)
 	  put_condition_code (GET_CODE (x), GET_MODE (XEXP (x, 0)), 0, 0, file);
 	  return;
 	case 'F':
-#ifdef CMOV_SUN_AS_SYNTAX
+#ifdef HAVE_AS_IX86_CMOV_SUN_SYNTAX
 	  if (ASSEMBLER_DIALECT == ASM_ATT)
 	    putc ('.', file);
 #endif
@@ -6920,7 +6981,7 @@ print_operand (file, x, code)
 	  put_condition_code (GET_CODE (x), GET_MODE (XEXP (x, 0)), 1, 0, file);
 	  return;
 	case 'f':
-#ifdef CMOV_SUN_AS_SYNTAX
+#ifdef HAVE_AS_IX86_CMOV_SUN_SYNTAX
 	  if (ASSEMBLER_DIALECT == ASM_ATT)
 	    putc ('.', file);
 #endif
@@ -9983,15 +10044,24 @@ ix86_split_long_move (operands)
 	 Do an lea to the last part and use only one colliding move.  */
       else if (collisions > 1)
 	{
+	  rtx base;
+
 	  collisions = 1;
-	  emit_insn (gen_rtx_SET (VOIDmode, part[0][nparts - 1],
-				  XEXP (part[1][0], 0)));
-	  part[1][0] = change_address (part[1][0],
-				       TARGET_64BIT ? DImode : SImode,
-				       part[0][nparts - 1]);
-	  part[1][1] = adjust_address (part[1][0], VOIDmode, UNITS_PER_WORD);
+
+	  base = part[0][nparts - 1];
+
+	  /* Handle the case when the last part isn't valid for lea.
+	     Happens in 64-bit mode storing the 12-byte XFmode.  */
+	  if (GET_MODE (base) != Pmode)
+	    base = gen_rtx_REG (Pmode, REGNO (base));
+
+	  emit_insn (gen_rtx_SET (VOIDmode, base, XEXP (part[1][0], 0)));
+	  part[1][0] = replace_equiv_address (part[1][0], base);
+	  part[1][1] = replace_equiv_address (part[1][1],
+				      plus_constant (base, UNITS_PER_WORD));
 	  if (nparts == 3)
-	    part[1][2] = adjust_address (part[1][0], VOIDmode, 8);
+	    part[1][2] = replace_equiv_address (part[1][2],
+				      plus_constant (base, 8));
 	}
     }
 
@@ -11113,10 +11183,15 @@ memory_address_length (addr)
   disp = parts.disp;
   len = 0;
 
+  /* Rule of thumb:
+       - esp as the base always wants an index,
+       - ebp as the base always wants a displacement.  */
+
   /* Register Indirect.  */
   if (base && !index && !disp)
     {
-      /* Special cases: ebp and esp need the two-byte modrm form.  */
+      /* esp (for its index) and ebp (for its displacement) need
+	 the two-byte modrm form.  */
       if (addr == stack_pointer_rtx
 	  || addr == arg_pointer_rtx
 	  || addr == frame_pointer_rtx
@@ -11140,9 +11215,16 @@ memory_address_length (addr)
 	  else
 	    len = 4;
 	}
+      /* ebp always wants a displacement.  */
+      else if (base == hard_frame_pointer_rtx)
+        len = 1;
 
-      /* An index requires the two-byte modrm form.  */
-      if (index)
+      /* An index requires the two-byte modrm form...  */
+      if (index
+	  /* ...like esp, which always wants an index.  */
+	  || base == stack_pointer_rtx
+	  || base == arg_pointer_rtx
+	  || base == frame_pointer_rtx)
 	len += 1;
     }
 

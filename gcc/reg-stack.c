@@ -584,6 +584,9 @@ get_true_reg (pat)
       }
 }
 
+/* Set if we find any malformed asms in a block.  */
+static bool any_malformed_asm;
+
 /* There are many rules that an asm statement for stack-like regs must
    follow.  Those rules are explained at the top of this file: the rule
    numbers below refer to that explanation.  */
@@ -765,6 +768,7 @@ check_asm_stack_operands (insn)
     {
       /* Avoid further trouble with this insn.  */
       PATTERN (insn) = gen_rtx_USE (VOIDmode, const0_rtx);
+      any_malformed_asm = true;
       return 0;
     }
 
@@ -2612,11 +2616,13 @@ convert_regs_1 (file, block)
 {
   struct stack_def regstack;
   block_info bi = BLOCK_INFO (block);
-  int inserted, reg;
+  int deleted, inserted, reg;
   rtx insn, next;
   edge e, beste = NULL;
 
   inserted = 0;
+  deleted = 0;
+  any_malformed_asm = false;
 
   /* Find the edge we will copy stack from.  It should be the most frequent
      one as it will get cheapest after compensation code is generated,
@@ -2688,6 +2694,7 @@ convert_regs_1 (file, block)
 	      print_stack (file, &regstack);
 	    }
 	  subst_stack_regs (insn, &regstack);
+	  deleted |= (GET_CODE (insn) == NOTE || INSN_DELETED_P (insn));
 	}
     }
   while (next);
@@ -2727,12 +2734,30 @@ convert_regs_1 (file, block)
 			     nan);
 	  insn = emit_insn_after (set, insn);
 	  subst_stack_regs (insn, &regstack);
+	  deleted |= (GET_CODE (insn) == NOTE || INSN_DELETED_P (insn));
 	}
     }
+  
+  /* Amongst the insns possibly deleted during the substitution process above,
+     might have been the only trapping insn in the block.  We purge the now
+     possibly dead EH edges here to avoid an ICE from fixup_abnormal_edges,
+     called at the end of convert_regs.  The order in which we process the
+     blocks ensures that we never delete an already processed edge.
 
-  /* Something failed if the stack lives don't match.  */
+     ??? We are normally supposed not to delete trapping insns, so we pretend
+     that the insns deleted above don't actually trap.  It would have been
+     better to detect this earlier and avoid creating the EH edge in the first
+     place, still, but we don't have enough information at that time.  */
+
+  if (deleted)
+    purge_dead_edges (block);
+
+  /* Something failed if the stack lives don't match.  If we had malformed
+     asms, we zapped the instruction itself, but that didn't produce the
+     same pattern of register kills as before.  */
   GO_IF_HARD_REG_EQUAL (regstack.reg_set, bi->out_reg_set, win);
-  abort ();
+  if (!any_malformed_asm)
+    abort ();
  win:
   bi->stack_out = regstack;
 
@@ -2772,6 +2797,10 @@ convert_regs_2 (file, block)
   basic_block *stack, *sp;
   int inserted;
 
+  /* We process the blocks in a top-down manner, in a way such that one block
+     is only processed after all its predecessors.  The number of predecessors
+     of every block has already been computed.  */ 
+
   stack = (basic_block *) xmalloc (sizeof (*stack) * n_basic_blocks);
   sp = stack;
 
@@ -2783,9 +2812,13 @@ convert_regs_2 (file, block)
       edge e;
 
       block = *--sp;
-      inserted |= convert_regs_1 (file, block);
-      BLOCK_INFO (block)->done = 1;
 
+      /* Processing "block" is achieved by convert_regs_1, which may purge
+	 some dead EH outgoing edge after the possible deletion of the
+	 trapping insn inside the block.  Since the number of predecessors of
+	 "block"'s successors has been computed based on the initial edge set,
+	 we check for the possiblity to process some of these successors
+	 before such an edge deletion may happen.  */
       for (e = block->succ; e ; e = e->succ_next)
 	if (! (e->flags & EDGE_DFS_BACK))
 	  {
@@ -2793,6 +2826,9 @@ convert_regs_2 (file, block)
 	    if (!BLOCK_INFO (e->dest)->predecessors)
 	       *sp++ = e->dest;
 	  }
+
+      inserted |= convert_regs_1 (file, block);
+      BLOCK_INFO (block)->done = 1;
     }
   while (sp != stack);
 

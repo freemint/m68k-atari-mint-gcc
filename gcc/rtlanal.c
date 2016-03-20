@@ -1481,7 +1481,9 @@ reg_overlap_mentioned_p (x, in)
   unsigned int regno, endregno;
 
   /* Overly conservative.  */
-  if (GET_CODE (x) == STRICT_LOW_PART)
+  if (GET_CODE (x) == STRICT_LOW_PART
+      || GET_CODE (x) == ZERO_EXTRACT
+      || GET_CODE (x) == SIGN_EXTRACT)
     x = XEXP (x, 0);
 
   /* If either argument is a constant, then modifying X can not affect IN.  */
@@ -3198,16 +3200,10 @@ subreg_offset_representable_p (xregno, xmode, offset, ymode)
 
 #ifdef ENABLE_CHECKING
   /* This should always pass, otherwise we don't know how to verify the
-     constraint. 
-
-     These conditions may be relaxed but subreg_offset would need to be
-     redesigned.  */
+     constraint.  These conditions may be relaxed but subreg_offset would
+     need to be redesigned.  */
   if (GET_MODE_SIZE (xmode) % GET_MODE_SIZE (ymode)
       || GET_MODE_SIZE (ymode) % nregs_ymode
-      || (GET_MODE_BITSIZE (mode_for_size (GET_MODE_BITSIZE (xmode)
-			      		   / nregs_xmode,
-					   MODE_INT, 0))
-	  != GET_MODE_BITSIZE (xmode) / nregs_xmode)
       || nregs_xmode % nregs_ymode)
     abort ();
 #endif

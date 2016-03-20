@@ -25,8 +25,8 @@ Richard Henderson                               rth@redhat.com
 Geoffrey Keating				geoffk@geoffk.org
 Richard Kenner					kenner@nyu.edu
 Jeff Law					law@redhat.com
-Jason Merrill					jason@redhat.com
 Michael Meissner				meissner@redhat.com
+Jason Merrill					jason@redhat.com
 David S. Miller					davem@redhat.com
 Mark Mitchell					mark@codesourcery.com
 Bernd Schmidt					bernds@redhat.com
@@ -132,7 +132,7 @@ fixincludes		Bruce Korb		bkorb@gnu.org
 gcse.c 			Jeff Law		law@redhat.com
 global opt framework	Jeff Law		law@redhat.com
 jump.c			David S. Miller		davem@redhat.com
-web pages		Gerald Pfeifer		pfeifer@dbai.tuwien.ac.at
+web pages		Gerald Pfeifer		gerald@pfeifer.com
 web pages		Janis Johnson		janis187@us.ibm.com
 config.sub/config.guess	Ben Elliston		config-patches@gnu.org
 basic block reordering	Jason Eckhardt		jle@rice.edu
@@ -144,7 +144,7 @@ DJGPP			DJ Delorie		dj@delorie.com
 libiberty		DJ Delorie		dj@redhat.com
 build machinery (*.in)	DJ Delorie		dj@redhat.com
 build machinery (*.in)	Alexandre Oliva		aoliva@redhat.com
-docs co-maintainer	Gerald Pfeifer		pfeifer@dbai.tuwien.ac.at
+docs co-maintainer	Gerald Pfeifer		gerald@pfeifer.com
 docs co-maintainer	Joseph Myers		jsm28@cam.ac.uk
 Pico-Java port		Steve Chamberlain	sac@transmeta.com
 RTEMS Ports		Joel Sherrill		joel@oarcorp.com
@@ -185,10 +185,10 @@ Matthew Gingell					gingell@gnat.com
 Anthony Green					green@redhat.com
 Stu Grossman					grossman@redhat.com
 Laurent Guerby					guerby@acm.org
-Andrew Haley					aph@redhat.com
 Stuart Hastings					stuart@apple.com
 Matthew Hiller					hiller@redhat.com
 Manfred Hollstein				mhollstein@redhat.com
+Bernardo Innocenti				bernie@develer.com
 Andreas Jaeger					aj@suse.de
 Fariborz Jahanian				fjahanian@apple.com
 Dale Johannesen 				dalej@apple.com
@@ -202,8 +202,8 @@ Matt Kraai					kraai@alumni.cmu.edu
 Ziemowit Laski					zlaski@apple.com
 Marc Lehmann					pcg@goof.com
 Alan Lehotsky					apl@alum.mit.edu
-Warren Levy					warrenl@cruzio.com
 Kriang Lerdsuwanakij				lerdsuwa@users.sourceforge.net
+Warren Levy					warrenl@cruzio.com
 Don Lindsay					dlindsay@redhat.com
 Dave Love					d.love@dl.ac.uk
 Martin v. Löwis					loewis@informatik.hu-berlin.de
@@ -224,6 +224,7 @@ Rainer Orth					ro@TechFak.Uni-Bielefeld.DE
 Devang Patel					dpatel@apple.com
 Nicola Pero					n.pero@mi.flashnet.it
 Alexandre Petit-Bianco				apbianco@redhat.com
+Andrew Pinski					pinskia@physics.uc.edu
 Sebastian Pop                                   s.pop@laposte.net
 Clinton Popetz					cpopetz@cpopetz.com
 Ken Raeburn					raeburn@redhat.com

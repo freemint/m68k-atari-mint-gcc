@@ -473,7 +473,7 @@ case "${target}" in
   i[3456]86-*-sco3.2v5*)
     # The linker does not yet know about weak symbols in COFF,
     # and is not configured to handle mixed ELF and COFF.
-    noconfigdirs="$noconfigdirs ld target-libgloss ${libgcj}"
+    noconfigdirs="$noconfigdirs ld target-libgloss"
     ;;
   i[3456]86-*-sco*)
     noconfigdirs="$noconfigdirs gprof target-libgloss ${libgcj}"
@@ -1236,10 +1236,6 @@ esac
 # Default to using --with-stabs for certain targets.
 if test x${with_stabs} = x ; then
   case "${target}" in
-  mips*-*-irix6*o32)
-    with_stabs=yes;
-    withoptions="${withoptions} --with-stabs"
-    ;;
   mips*-*-irix6*)
     ;;
   mips*-*-* | alpha*-*-osf*)

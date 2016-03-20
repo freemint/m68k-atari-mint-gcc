@@ -141,14 +141,14 @@
 /* Define if you have the getgid function.  */
 #undef HAVE_GETGID
 
-/* Define if you have the getpagesize function.  */
-#undef HAVE_GETPAGESIZE
-
 /* Define if you have the getrlimit function.  */
 #undef HAVE_GETRLIMIT
 
 /* Define if you have the getrusage function.  */
 #undef HAVE_GETRUSAGE
+
+/* Define if you have the gettimeofday function.  */
+#undef HAVE_GETTIMEOFDAY
 
 /* Define if you have the getuid function.  */
 #undef HAVE_GETUID
@@ -161,6 +161,9 @@
 
 /* Define if you have the mempcpy function.  */
 #undef HAVE_MEMPCPY
+
+/* Define if you have the mmap function.  */
+#undef HAVE_MMAP
 
 /* Define if you have the munmap function.  */
 #undef HAVE_MUNMAP
@@ -251,6 +254,9 @@
 
 /* Define if you have the <sys/file.h> header file.  */
 #undef HAVE_SYS_FILE_H
+
+/* Define if you have the <sys/mman.h> header file.  */
+#undef HAVE_SYS_MMAN_H
 
 /* Define if you have the <sys/param.h> header file.  */
 #undef HAVE_SYS_PARAM_H
@@ -387,14 +393,14 @@
 /* Define if printf supports %p. */
 #undef HAVE_PRINTF_PTR
 
-/* Define if mmap can get us zeroed pages from /dev/zero. */
-#undef HAVE_MMAP_DEV_ZERO
-
-/* Define if mmap can get us zeroed pages using MAP_ANON(YMOUS). */
-#undef HAVE_MMAP_ANON
-
 /* Define if read-only mmap of a plain file works. */
 #undef HAVE_MMAP_FILE
+
+/* Define if mmap of /dev/zero works. */
+#undef HAVE_MMAP_DEV_ZERO
+
+/* Define if mmap with MAP_ANON(YMOUS) works. */
+#undef HAVE_MMAP_ANON
 
 /* Define if you have the iconv() function. */
 #undef HAVE_ICONV
@@ -495,6 +501,12 @@
 /* Define if host mkdir takes a single argument. */
 #undef MKDIR_TAKES_ONE_ARG
 
+/* Define 0/1 to force the choice for exception handling model. */
+#undef CONFIG_SJLJ_EXCEPTIONS
+
+/* Define if gcc should use -lunwind. */
+#undef USE_LIBUNWIND_EXCEPTIONS
+
 /* Define to the name of a file containing a list of extra machine modes
    for this architecture. */
 #undef EXTRA_MODES_FILE
@@ -576,6 +588,9 @@
 /* Define if your assembler supports offsetable %lo(). */
 #undef HAVE_AS_OFFSETABLE_LO10
 
+/* Define if your assembler supports the Sun syntax for cmov. */
+#undef HAVE_AS_IX86_CMOV_SUN_SYNTAX
+
 /* Define true if the assembler supports '.long foo@GOTOFF'. */
 #undef HAVE_AS_GOTOFF_IN_DATA
 
@@ -601,12 +616,6 @@
 
 /* Define if your MIPS libgloss linker scripts consistently include STARTUP directives. */
 #undef HAVE_MIPS_LIBGLOSS_STARTUP_DIRECTIVES
-
-/* Define 0/1 to force the choice for exception handling model. */
-#undef CONFIG_SJLJ_EXCEPTIONS
-
-/* Define if gcc should use -lunwind. */
-#undef USE_LIBUNWIND_EXCEPTIONS
 
 
 /* Bison unconditionally undefines `const' if neither `__STDC__' nor

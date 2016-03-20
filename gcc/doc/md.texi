@@ -1,5 +1,5 @@
-@c Copyright (C) 1988, 1989, 1992, 1993, 1994, 1996, 1998, 1999, 2000, 2001, 2002
-@c Free Software Foundation, Inc.
+@c Copyright (C) 1988, 1989, 1992, 1993, 1994, 1996, 1998, 1999, 2000, 2001,
+@c 2002, 2003 Free Software Foundation, Inc.
 @c This is part of the GCC manual.
 @c For copying conditions, see the file gcc.texi.
 
@@ -2024,10 +2024,27 @@ Constants in the range @minus{}8 to 2
 @item SPARC---@file{sparc.h}
 @table @code
 @item f
-Floating-point register that can hold 32- or 64-bit values.
+Floating-point register on the SPARC-V8 architecture and
+lower floating-point register on the SPARC-V9 architecture.
 
 @item e
-Floating-point register that can hold 64- or 128-bit values.
+Floating-point register. It is equivalent to @samp{f} on the
+SPARC-V8 architecture and contains both lower and upper
+floating-point registers on the SPARC-V9 architecture.
+
+@item c
+Floating-point condition code register.
+
+@item d
+Lower floating-point register. It is only valid on the SPARC-V9
+architecture when the Visual Instruction Set is available.
+
+@item b
+Floating-point register. It is only valid on the SPARC-V9 architecture
+when the Visual Instruction Set is available.
+
+@item h
+64-bit global or out register for the SPARC-V8+ architecture.
 
 @item I
 Signed 13-bit constant
@@ -2049,6 +2066,9 @@ A constant in the range supported by @code{movrcc} instructions
 Same as @samp{K}, except that it verifies that bits that are not in the
 lower 32-bit range are all zero.  Must be used instead of @samp{K} for
 modes wider than @code{SImode}
+
+@item O
+The constant 4096
 
 @item G
 Floating-point zero
@@ -2252,7 +2272,7 @@ A memory reference that is a stack push.
 A memory reference that is a stack pop.
 
 @item S
-A memory reference that refers to an constant address of known value.
+A memory reference that refers to a constant address of known value.
 
 @item T
 The register indicated by Rx (not implemented yet).
@@ -4194,7 +4214,7 @@ instruction is always valid, as compiler expect identical behavior of new
 jump.  When new sequence contains multiple jump instructions or new labels,
 more assistance is needed.  Splitter is required to create only unconditional
 jumps, or simple conditional jump instructions.  Additionally it must attach a
-@code{REG_BR_PROB} note to each conditional jump. An global variable
+@code{REG_BR_PROB} note to each conditional jump.  A global variable
 @code{split_branch_probability} hold the probability of original branch in case
 it was an simple conditional jump, @minus{}1 otherwise.  To simplify
 recomputing of edge frequencies, new sequence is required to have only
@@ -5494,8 +5514,8 @@ in such processors and suggestions for their representation.
 @cindex automaton based pipeline description
 
 This section describes constructions of the automaton based processor
-pipeline description.  The order of all mentioned below constructions
-in the machine description file is not important.
+pipeline description.  The order of constructions within the machine
+description file is not important.
 
 @findex define_automaton
 @cindex pipeline hazard recognizer
@@ -5503,7 +5523,7 @@ The following optional construction describes names of automata
 generated and used for the pipeline hazards recognition.  Sometimes
 the generated finite state automaton used by the pipeline hazard
 recognizer is large.  If we use more than one automaton and bind functional
-units to the automata, the summary size of the automata usually is
+units to the automata, the total size of the automata is usually 
 less than the size of the single automaton.  If there is no one such
 construction, only one finite state automaton is generated.
 
@@ -5513,12 +5533,12 @@ construction, only one finite state automaton is generated.
 
 @var{automata-names} is a string giving names of the automata.  The
 names are separated by commas.  All the automata should have unique names.
-The automaton name is used in construction @code{define_cpu_unit} and
+The automaton name is used in the constructions @code{define_cpu_unit} and
 @code{define_query_cpu_unit}.
 
 @findex define_cpu_unit
 @cindex processor functional units
-Each processor functional unit used in description of instruction
+Each processor functional unit used in the description of instruction
 reservations should be described by the following construction.
 
 @smallexample
@@ -5579,7 +5599,7 @@ is negative, the cost is considered to be zero).  You can always
 change the default costs for any description by using the target hook
 @code{TARGET_SCHED_ADJUST_COST} (@pxref{Scheduling}).
 
-@var{insn-names} is a string giving the internal name of the insn.  The
+@var{insn-name} is a string giving the internal name of the insn.  The
 internal names are used in constructions @code{define_bypass} and in
 the automaton description file generated for debugging.  The internal
 name has nothing in common with the names in @code{define_insn}.  It is a
@@ -5665,7 +5685,7 @@ the common part by the following construction
 @var{reservation-name} is a string giving name of @var{regexp}.
 Functional unit names and reservation names are in the same name
 space.  So the reservation names should be different from the
-functional unit names and can not be reserved name @samp{nothing}.
+functional unit names and can not be the reserved name @samp{nothing}.
 
 @findex define_bypass
 @cindex instruction latency time
@@ -5752,8 +5772,8 @@ code.  Currently there are the following options:
 @itemize @bullet
 @item
 @dfn{no-minimization} makes no minimization of the automaton.  This is
-only worth to do when we are going to query CPU functional unit
-reservations in an automaton state.
+only worth to do when we are debugging the description and need to
+look more accurately at reservations of states.
 
 @item
 @dfn{time} means printing additional time statistics about
@@ -5805,16 +5825,16 @@ incurred.  To describe all of this we could specify
 @smallexample
 (define_cpu_unit "div")
 
-(define_insn_reservation "simple" 2 (eq_attr "cpu" "int")
+(define_insn_reservation "simple" 2 (eq_attr "type" "int")
                          "(i0_pipeline | i1_pipeline), (port0 | port1)")
 
-(define_insn_reservation "mult" 4 (eq_attr "cpu" "mult")
+(define_insn_reservation "mult" 4 (eq_attr "type" "mult")
                          "i1_pipeline, nothing*2, (port0 | port1)")
 
-(define_insn_reservation "div" 8 (eq_attr "cpu" "div")
+(define_insn_reservation "div" 8 (eq_attr "type" "div")
                          "i1_pipeline, div*7, div + (port0 | port1)")
 
-(define_insn_reservation "float" 3 (eq_attr "cpu" "float")
+(define_insn_reservation "float" 3 (eq_attr "type" "float")
                          "f_pipeline, nothing, (port0 | port1))
 
 (define_bypass 4 "float" "simple,mult,div")
@@ -5830,7 +5850,7 @@ and use it in all @code{define_insn_reservation} as in the following
 construction
 
 @smallexample
-(define_insn_reservation "simple" 2 (eq_attr "cpu" "int")
+(define_insn_reservation "simple" 2 (eq_attr "type" "int")
                          "(i0_pipeline | i1_pipeline), finish")
 @end smallexample
 

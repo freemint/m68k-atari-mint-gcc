@@ -148,8 +148,12 @@
 	 (eq_attr "branch_type" "fcc")
 	   (if_then_else (match_operand 0 "fcc0_reg_operand" "")
 	     (if_then_else (eq_attr "empty_delay_slot" "true")
-	       (const_int 2)
-	       (const_int 1))
+	       (if_then_else (eq (symbol_ref "TARGET_V9") (const_int 0))
+		 (const_int 3)
+		 (const_int 2))
+	       (if_then_else (eq (symbol_ref "TARGET_V9") (const_int 0))
+		 (const_int 2)
+		 (const_int 1)))
 	     (if_then_else (lt (pc) (match_dup 2))
 	       (if_then_else (lt (minus (match_dup 2) (pc)) (const_int 260000))
 		 (if_then_else (eq_attr "empty_delay_slot" "true")
@@ -4748,13 +4752,11 @@
 ;;- arithmetic instructions
 
 (define_expand "adddi3"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(plus:DI (match_operand:DI 1 "arith_double_operand" "%r")
-		 (match_operand:DI 2 "arith_double_add_operand" "rHI")))]
+  [(set (match_operand:DI 0 "register_operand" "")
+	(plus:DI (match_operand:DI 1 "register_operand" "")
+		 (match_operand:DI 2 "arith_double_add_operand" "")))]
   ""
 {
-  HOST_WIDE_INT i;
-
   if (! TARGET_ARCH64)
     {
       emit_insn (gen_rtx_PARALLEL (VOIDmode, gen_rtvec (2,
@@ -4763,21 +4765,6 @@
 						 operands[2])),
 			  gen_rtx_CLOBBER (VOIDmode,
 				   gen_rtx_REG (CCmode, SPARC_ICC_REG)))));
-      DONE;
-    }
-  if (arith_double_4096_operand(operands[2], DImode))
-    {
-      switch (GET_CODE (operands[1]))
-	{
-	case CONST_INT: i = INTVAL (operands[1]); break;
-	case CONST_DOUBLE: i = CONST_DOUBLE_LOW (operands[1]); break;
-	default:
-	  emit_insn (gen_rtx_SET (VOIDmode, operands[0],
-				  gen_rtx_MINUS (DImode, operands[1],
-						 GEN_INT(-4096))));
-	  DONE;
-	}
-      emit_insn (gen_movdi (operands[0], GEN_INT (i + 4096)));
       DONE;
     }
 })
@@ -4945,40 +4932,24 @@
   [(set_attr "length" "2")])
 
 (define_insn "*adddi3_sp64"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(plus:DI (match_operand:DI 1 "arith_double_operand" "%r")
-		 (match_operand:DI 2 "arith_double_operand" "rHI")))]
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+	(plus:DI (match_operand:DI 1 "register_operand" "%r,r")
+		 (match_operand:DI 2 "arith_double_add_operand" "rHI,O")))]
   "TARGET_ARCH64"
-  "add\t%1, %2, %0")
+  "@
+   add\t%1, %2, %0
+   sub\t%1, -%2, %0")
 
-(define_expand "addsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,d")
-	(plus:SI (match_operand:SI 1 "arith_operand" "%r,d")
-		 (match_operand:SI 2 "arith_add_operand" "rI,d")))]
-  ""
-{
-  if (arith_4096_operand(operands[2], SImode))
-    {
-      if (GET_CODE (operands[1]) == CONST_INT)
-	emit_insn (gen_movsi (operands[0],
-			      GEN_INT (INTVAL (operands[1]) + 4096)));
-      else
-	emit_insn (gen_rtx_SET (VOIDmode, operands[0],
-				gen_rtx_MINUS (SImode, operands[1],
-					       GEN_INT(-4096))));
-      DONE;
-    }
-})
-
-(define_insn "*addsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,d")
-	(plus:SI (match_operand:SI 1 "arith_operand" "%r,d")
-		 (match_operand:SI 2 "arith_operand" "rI,d")))]
+(define_insn "addsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r,r,d")
+	(plus:SI (match_operand:SI 1 "register_operand" "%r,r,d")
+		 (match_operand:SI 2 "arith_add_operand" "rI,O,d")))]
   ""
   "@
    add\t%1, %2, %0
+   sub\t%1, -%2, %0
    fpadd32s\t%1, %2, %0"
-  [(set_attr "type" "*,fp")])
+  [(set_attr "type" "*,*,fp")])
 
 (define_insn "*cmp_cc_plus"
   [(set (reg:CC_NOOV 100)
@@ -5021,9 +4992,9 @@
   [(set_attr "type" "compare")])
 
 (define_expand "subdi3"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(minus:DI (match_operand:DI 1 "register_operand" "r")
-		  (match_operand:DI 2 "arith_double_add_operand" "rHI")))]
+  [(set (match_operand:DI 0 "register_operand" "")
+	(minus:DI (match_operand:DI 1 "register_operand" "")
+		  (match_operand:DI 2 "arith_double_add_operand" "")))]
   ""
 {
   if (! TARGET_ARCH64)
@@ -5034,13 +5005,6 @@
 						  operands[2])),
 			  gen_rtx_CLOBBER (VOIDmode,
 				   gen_rtx_REG (CCmode, SPARC_ICC_REG)))));
-      DONE;
-    }
-  if (arith_double_4096_operand(operands[2], DImode))
-    {
-      emit_insn (gen_rtx_SET (VOIDmode, operands[0],
-			      gen_rtx_PLUS (DImode, operands[1],
-					    GEN_INT(-4096))));
       DONE;
     }
 })
@@ -5124,36 +5088,24 @@
   [(set_attr "length" "2")])
 
 (define_insn "*subdi3_sp64"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(minus:DI (match_operand:DI 1 "register_operand" "r")
-		  (match_operand:DI 2 "arith_double_operand" "rHI")))]
+  [(set (match_operand:DI 0 "register_operand" "=r,r")
+	(minus:DI (match_operand:DI 1 "register_operand" "r,r")
+		  (match_operand:DI 2 "arith_double_add_operand" "rHI,O")))]
   "TARGET_ARCH64"
-  "sub\t%1, %2, %0")
+  "@
+   sub\t%1, %2, %0
+   add\t%1, -%2, %0")
 
-(define_expand "subsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,d")
-	(minus:SI (match_operand:SI 1 "register_operand" "r,d")
-		  (match_operand:SI 2 "arith_add_operand" "rI,d")))]
-  ""
-{
-  if (arith_4096_operand(operands[2], SImode))
-    {
-      emit_insn (gen_rtx_SET (VOIDmode, operands[0],
-			      gen_rtx_PLUS (SImode, operands[1],
-					    GEN_INT(-4096))));
-      DONE;
-    }
-})
-
-(define_insn "*subsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,d")
-	(minus:SI (match_operand:SI 1 "register_operand" "r,d")
-		  (match_operand:SI 2 "arith_operand" "rI,d")))]
+(define_insn "subsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r,r,d")
+	(minus:SI (match_operand:SI 1 "register_operand" "r,r,d")
+		  (match_operand:SI 2 "arith_add_operand" "rI,O,d")))]
   ""
   "@
    sub\t%1, %2, %0
+   add\t%1, -%2, %0
    fpsub32s\t%1, %2, %0"
-  [(set_attr "type" "*,fp")])
+  [(set_attr "type" "*,*,fp")])
 
 (define_insn "*cmp_minus_cc"
   [(set (reg:CC_NOOV 100)
@@ -6933,6 +6885,8 @@
 {
   if (operands[2] == const1_rtx)
     return "add\t%1, %1, %0";
+  if (GET_CODE (operands[2]) == CONST_INT)
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 0x1f);
   return "sll\t%1, %2, %0";
 }
   [(set (attr "type")
@@ -6962,6 +6916,8 @@
 {
   if (operands[2] == const1_rtx)
     return "add\t%1, %1, %0";
+  if (GET_CODE (operands[2]) == CONST_INT)
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 0x3f);
   return "sllx\t%1, %2, %0";
 }
   [(set (attr "type")
@@ -7021,7 +6977,11 @@
 	(ashiftrt:SI (match_operand:SI 1 "register_operand" "r")
 		     (match_operand:SI 2 "arith_operand" "rI")))]
   ""
-  "sra\t%1, %2, %0"
+  {
+     if (GET_CODE (operands[2]) == CONST_INT)
+       operands[2] = GEN_INT (INTVAL (operands[2]) & 0x1f);
+     return "sra\t%1, %2, %0";
+  }
   [(set_attr "type" "shift")])
 
 (define_insn "*ashrsi3_extend"
@@ -7068,12 +7028,17 @@
     }
 })
 
-(define_insn ""
+(define_insn "*ashrdi3_sp64"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(ashiftrt:DI (match_operand:DI 1 "register_operand" "r")
 		     (match_operand:SI 2 "arith_operand" "rI")))]
   "TARGET_ARCH64"
-  "srax\t%1, %2, %0"
+  
+  {
+    if (GET_CODE (operands[2]) == CONST_INT)
+      operands[2] = GEN_INT (INTVAL (operands[2]) & 0x3f);
+    return "srax\t%1, %2, %0";
+  }
   [(set_attr "type" "shift")])
 
 ;; XXX
@@ -7092,7 +7057,11 @@
 	(lshiftrt:SI (match_operand:SI 1 "register_operand" "r")
 		     (match_operand:SI 2 "arith_operand" "rI")))]
   ""
-  "srl\t%1, %2, %0"
+  {
+    if (GET_CODE (operands[2]) == CONST_INT)
+      operands[2] = GEN_INT (INTVAL (operands[2]) & 0x1f);
+    return "srl\t%1, %2, %0";
+  }
   [(set_attr "type" "shift")])
 
 ;; This handles the case where
@@ -7149,12 +7118,16 @@
     }
 })
 
-(define_insn ""
+(define_insn "*lshrdi3_sp64"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(lshiftrt:DI (match_operand:DI 1 "register_operand" "r")
 		     (match_operand:SI 2 "arith_operand" "rI")))]
   "TARGET_ARCH64"
-  "srlx\t%1, %2, %0"
+  {
+    if (GET_CODE (operands[2]) == CONST_INT)
+      operands[2] = GEN_INT (INTVAL (operands[2]) & 0x3f);
+    return "srlx\t%1, %2, %0";
+  }
   [(set_attr "type" "shift")])
 
 ;; XXX

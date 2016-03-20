@@ -792,9 +792,9 @@ unroll_loop (loop, insn_count, strength_reduce_p)
       /* We must limit the generic test to max_reg_before_loop, because only
 	 these pseudo registers have valid regno_first_uid info.  */
       for (r = FIRST_PSEUDO_REGISTER; r < max_reg_before_loop; ++r)
-	if (REGNO_FIRST_UID (r) > 0 && REGNO_FIRST_UID (r) <= max_uid_for_loop
+	if (REGNO_FIRST_UID (r) > 0 && REGNO_FIRST_UID (r) < max_uid_for_loop
 	    && REGNO_FIRST_LUID (r) >= copy_start_luid
-	    && REGNO_LAST_UID (r) > 0 && REGNO_LAST_UID (r) <= max_uid_for_loop
+	    && REGNO_LAST_UID (r) > 0 && REGNO_LAST_UID (r) < max_uid_for_loop
 	    && REGNO_LAST_LUID (r) <= copy_end_luid)
 	  {
 	    /* However, we must also check for loop-carried dependencies.
@@ -2478,7 +2478,13 @@ biv_total_increment (bl)
       if (v->always_computable && v->mult_val == const1_rtx
 	  && ! v->maybe_multiple
 	  && SCALAR_INT_MODE_P (v->mode))
-	result = fold_rtx_mult_add (result, const1_rtx, v->add_val, v->mode);
+	{
+	  /* If we have already counted it, skip it.  */
+	  if (v->same)
+	    continue;
+
+	  result = fold_rtx_mult_add (result, const1_rtx, v->add_val, v->mode);
+	}
       else
 	return 0;
     }
@@ -2947,9 +2953,13 @@ reg_dead_after_loop (loop, reg)
 	  code = GET_CODE (insn);
 	  if (GET_RTX_CLASS (code) == 'i')
 	    {
-	      rtx set;
+	      rtx set, note;
 
 	      if (reg_referenced_p (reg, PATTERN (insn)))
+		return 0;
+
+	      note = find_reg_equal_equiv_note (insn);
+	      if (note && reg_overlap_mentioned_p (reg, XEXP (note, 0)))
 		return 0;
 
 	      set = single_set (insn);
@@ -3535,6 +3545,10 @@ loop_iterations (loop)
 			return 0;
 		    }
 
+		  /* If we have already counted it, skip it.  */
+		  if (biv_inc->same)
+		    continue;
+
 		  offset -= INTVAL (biv_inc->add_val);
 		}
 	    }
@@ -3672,7 +3686,7 @@ loop_iterations (loop)
 
 	  if (find_common_reg_term (temp, reg2))
 	    initial_value = temp;
-	  else
+	  else if (loop_invariant_p (loop, reg2))
 	    {
 	      /* Find what reg2 is equivalent to.  Hopefully it will
 		 either be reg1 or reg1 plus a constant.  Let's ignore

@@ -137,6 +137,9 @@ Boston, MA 02111-1307, USA.  */
 #undef  LINK_SHLIB_SPEC
 #define LINK_SHLIB_SPEC "%{shared:-shared} %{!shared: %{static:-static}}"
 
+#define LINK_GCC_C_SEQUENCE_SPEC \
+  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
+
 #undef  LIB_DEFAULT_SPEC
 #define LIB_DEFAULT_SPEC "%(lib_linux)"
 
@@ -206,6 +209,18 @@ Boston, MA 02111-1307, USA.  */
 
 #undef  RS6000_MCOUNT
 #define RS6000_MCOUNT "_mcount"
+
+#ifdef __powerpc64__
+/* _init and _fini functions are built from bits spread across many
+   object files, each potentially with a different TOC pointer.  For
+   that reason, place a nop after the call so that the linker can
+   restore the TOC pointer if a TOC adjusting call stub is needed.  */
+#define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)	\
+  asm (SECTION_OP "\n"					\
+"	bl ." #FUNC "\n"				\
+"	nop\n"						\
+"	.previous");
+#endif
 
 /* FP save and restore routines.  */
 #undef  SAVE_FP_PREFIX

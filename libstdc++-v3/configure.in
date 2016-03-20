@@ -13,7 +13,7 @@ ORIGINAL_LD_FOR_MULTILIBS=$LD
 PACKAGE=libstdc++
 AC_SUBST(PACKAGE)
 # For libtool versioning info, format is CURRENT:REVISION:AGE
-libtool_VERSION=5:4:0
+libtool_VERSION=5:5:0
 AC_SUBST(libtool_VERSION)
 
 GLIBCPP_TOPREL_CONFIGURE
@@ -87,7 +87,7 @@ fi
 if test -n "$with_cross_host" || test x"$build" != x"$host"; then
 
   # We are being configured with some form of cross compiler.
-  GLIBCPP_IS_CROSS_COMPILING=1
+  GLIBCPP_IS_CROSS_COMPILING=true
 
   # This lets us hard-code the functionality we know we'll have in the cross
   # target environment.  "Let" is a sugar-coated word placed on an especially
@@ -413,7 +413,7 @@ else
   # We are being configured natively. We can do more elaborate tests
   # that include AC_TRY_COMPILE now, as the linker is assumed to be
   # working.
-  GLIBCPP_IS_CROSS_COMPILING=0
+  GLIBCPP_IS_CROSS_COMPILING=false
   CANADIAN=no
 
   # Check for available headers.
@@ -444,12 +444,13 @@ else
 
   AC_FUNC_MMAP
 
-  # Establish limits on memory usage during 'make check'
-  GLIBCPP_CONFIGURE_TESTSUITE
 fi
 
-# This depends on the possibly-skipped linker test above.
+# This depends on GLIBCPP_CHECK_LINKER_FEATURES, but without it assumes no.
 GLIBCPP_ENABLE_SYMVERS([yes])
+
+# This depends on GLIBCPP_ENABLE_SYMVERS and GLIBCPP_IS_CROSS_COMPILING.
+GLIBCPP_CONFIGURE_TESTSUITE
 
 # Propagate the target-specific source directories through the build chain.
 # (Nothing currently uses cpu_include_dir directly; only ATOMICITYH 
@@ -488,9 +489,9 @@ AC_SUBST(LIBSUPCXX_PICFLAGS)
 
 # Generate the various Makefiles, include files, and scripts.
 # NB: Multilibs need MULTISUBDIR defined correctly in src/Makefile.am
-# and libsupc++/Makefile.am so that multilib installs will end up
-# installed in the correct place. To work around this not being passed
-# down from config-ml.in -> top_srcdir/Makefile.am ->
+# libsupc++/Makefile.am and testsuite/Makefile.am so that multilib installs
+# will end up installed in the correct place. To work around this not being 
+# passed down from config-ml.in -> top_srcdir/Makefile.am ->
 # top_srcdir/{src,libsupc++}/Makefile.am, manually append it here.
 AC_OUTPUT(Makefile \
     include/Makefile src/Makefile \
@@ -501,6 +502,7 @@ AC_OUTPUT(Makefile \
   ac_file=Makefile . ${glibcpp_basedir}/../config-ml.in
   grep '^MULTISUBDIR =' Makefile >> src/Makefile
   grep '^MULTISUBDIR =' Makefile >> libsupc++/Makefile
+  grep '^MULTISUBDIR =' Makefile >> testsuite/Makefile
 fi
 chmod +x mkcheck
 chmod +x testsuite_flags
@@ -526,6 +528,7 @@ dnl  [if test -n "$CONFIG_FILES"; then
 dnl    ac_file=Makefile . ${glibcpp_basedir}/../config-ml.in
 dnl    grep '^MULTISUBDIR =' Makefile >> src/Makefile
 dnl    grep '^MULTISUBDIR =' Makefile >> libsupc++/Makefile
+dnl    grep '^MULTISUBDIR =' Makefile >> testsuite/Makefile
 dnl  fi
 dnl  chmod +x mkcheck
 dnl  chmod +x testsuite_flags

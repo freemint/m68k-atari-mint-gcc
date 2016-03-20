@@ -3393,7 +3393,7 @@ mem_min_alignment (mem, desired)
 
 
 /* Vectors to keep interesting information about registers where it can easily
-   be got.  We use to use the actual mode value as the bit number, but there
+   be got.  We used to use the actual mode value as the bit number, but there
    are more than 32 modes now.  Instead we use two tables: one indexed by
    hard register number, and one indexed by mode.  */
 
@@ -4037,11 +4037,19 @@ sparc_nonflat_function_epilogue (file, size, leaf_function)
 	 of a function were call foo; dslot; this can make the return
 	 PC of foo (ie. address of call instruction plus 8) point to
 	 the first instruction in the next function.  */
-      rtx insn;
-
-      fputs("\tnop\n", file);
+      rtx insn, last_real_insn;
 
       insn = get_last_insn ();
+
+      last_real_insn = prev_real_insn (insn);
+      if (last_real_insn
+	  && GET_CODE (last_real_insn) == INSN
+	  && GET_CODE (PATTERN (last_real_insn)) == SEQUENCE)
+	last_real_insn = XVECEXP (PATTERN (last_real_insn), 0, 0);
+
+      if (last_real_insn && GET_CODE (last_real_insn) == CALL_INSN)
+	fputs("\tnop\n", file);
+
       if (GET_CODE (insn) == NOTE)
 	      insn = prev_nonnote_insn (insn);
       if (insn && GET_CODE (insn) == BARRIER)
@@ -4522,10 +4530,13 @@ function_arg_slotno (cum, mode, type, named, incoming_p, pregno, ppadding)
 
 struct function_arg_record_value_parms
 {
-  rtx ret;
-  int slotno, named, regbase;
-  unsigned int nregs;
-  int intoffset;
+  rtx ret;		/* return expression being built.  */
+  int slotno;		/* slot number of the argument.  */
+  int named;		/* whether the argument is named.  */
+  int regbase;		/* regno of the base register.  */
+  int stack;		/* 1 if part of the argument is on the stack.  */
+  int intoffset;	/* offset of the pending integer field.  */
+  unsigned int nregs;	/* number of words passed in registers.  */
 };
 
 static void function_arg_record_value_3
@@ -4600,8 +4611,13 @@ function_arg_record_value_1 (type, startbitpos, parms)
 		  this_slotno = parms->slotno + parms->intoffset
 		    / BITS_PER_WORD;
 
-		  intslots = MIN (intslots, SPARC_INT_ARG_MAX - this_slotno);
-		  intslots = MAX (intslots, 0);
+		  if (intslots > 0 && intslots > SPARC_INT_ARG_MAX - this_slotno)
+		    {
+		      intslots = MAX (0, SPARC_INT_ARG_MAX - this_slotno);
+		      /* We need to pass this field on the stack.  */
+		      parms->stack = 1;
+		    }
+
 		  parms->nregs += intslots;
 		  parms->intoffset = -1;
 		}
@@ -4666,7 +4682,7 @@ function_arg_record_value_3 (bitpos, parms)
     {
       regno = parms->regbase + this_slotno;
       reg = gen_rtx_REG (mode, regno);
-      XVECEXP (parms->ret, 0, parms->nregs)
+      XVECEXP (parms->ret, 0, parms->stack + parms->nregs)
 	= gen_rtx_EXPR_LIST (VOIDmode, reg, GEN_INT (intoffset));
 
       this_slotno += 1;
@@ -4739,7 +4755,7 @@ function_arg_record_value_2 (type, startbitpos, parms)
 		default: break;
 		}
 	      reg = gen_rtx_REG (mode, regno);
-	      XVECEXP (parms->ret, 0, parms->nregs)
+	      XVECEXP (parms->ret, 0, parms->stack + parms->nregs)
 		= gen_rtx_EXPR_LIST (VOIDmode, reg,
 			   GEN_INT (bitpos / BITS_PER_UNIT));
 	      parms->nregs += 1;
@@ -4747,7 +4763,7 @@ function_arg_record_value_2 (type, startbitpos, parms)
 		{
 		  regno += GET_MODE_SIZE (mode) / 4;
 	  	  reg = gen_rtx_REG (mode, regno);
-		  XVECEXP (parms->ret, 0, parms->nregs)
+		  XVECEXP (parms->ret, 0, parms->stack + parms->nregs)
 		    = gen_rtx_EXPR_LIST (VOIDmode, reg,
 			GEN_INT ((bitpos + GET_MODE_BITSIZE (mode))
 				 / BITS_PER_UNIT));
@@ -4764,8 +4780,19 @@ function_arg_record_value_2 (type, startbitpos, parms)
 }
 
 /* Used by function_arg and function_value to implement the complex
-   SPARC64 structure calling conventions.  */
+   conventions of the 64-bit ABI for passing and returning structures.
+   Return an expression valid as a return value for the two macros
+   FUNCTION_ARG and FUNCTION_VALUE.
 
+   TYPE is the data type of the argument (as a tree).
+    This is null for libcalls where that information may
+    not be available.
+   MODE is the argument's machine mode.
+   SLOTNO is the index number of the argument's slot in the parameter array.
+   NAMED is nonzero if this argument is a named parameter
+    (otherwise it is an extra parameter matching an ellipsis).
+   REGBASE is the regno of the base register for the parameter array.  */
+   
 static rtx
 function_arg_record_value (type, mode, slotno, named, regbase)
      tree type;
@@ -4780,6 +4807,7 @@ function_arg_record_value (type, mode, slotno, named, regbase)
   parms.slotno = slotno;
   parms.named = named;
   parms.regbase = regbase;
+  parms.stack = 0;
 
   /* Compute how many registers we need.  */
   parms.nregs = 0;
@@ -4796,8 +4824,12 @@ function_arg_record_value (type, mode, slotno, named, regbase)
       intslots = (endbit - startbit) / BITS_PER_WORD;
       this_slotno = slotno + parms.intoffset / BITS_PER_WORD;
 
-      intslots = MIN (intslots, SPARC_INT_ARG_MAX - this_slotno);
-      intslots = MAX (intslots, 0);
+      if (intslots > 0 && intslots > SPARC_INT_ARG_MAX - this_slotno)
+        {
+	  intslots = MAX (0, SPARC_INT_ARG_MAX - this_slotno);
+	  /* We need to pass this field on the stack.  */
+	  parms.stack = 1;
+        }
 
       parms.nregs += intslots;
     }
@@ -4827,7 +4859,17 @@ function_arg_record_value (type, mode, slotno, named, regbase)
   if (nregs == 0)
     abort ();
 
-  parms.ret = gen_rtx_PARALLEL (mode, rtvec_alloc (nregs));
+  parms.ret = gen_rtx_PARALLEL (mode, rtvec_alloc (parms.stack + nregs));
+
+  /* If at least one field must be passed on the stack, generate
+     (parallel [(expr_list (nil) ...) ...]) so that all fields will
+     also be passed on the stack.  We can't do much better because the
+     semantics of FUNCTION_ARG_PARTIAL_NREGS doesn't handle the case
+     of structures for which the fields passed exclusively in registers
+     are not at the beginning of the structure.  */
+  if (parms.stack)
+    XVECEXP (parms.ret, 0, 0)
+      = gen_rtx_EXPR_LIST (VOIDmode, NULL_RTX, const0_rtx);
 
   /* Fill in the entries.  */
   parms.nregs = 0;
@@ -6473,7 +6515,10 @@ print_operand (file, x, code)
 	else if (GET_CODE(x) == CONST_DOUBLE)
 	  i = CONST_DOUBLE_LOW (x);
 	else
-	  output_operand_lossage ("invalid %%s operand");
+	  {
+	    output_operand_lossage ("invalid %%s operand");
+	    return;
+	  }
 	i = trunc_int_for_mode (i, SImode);
 	fprintf (file, HOST_WIDE_INT_PRINT_DEC, i);
 	return;
@@ -7968,6 +8013,8 @@ sparc_check_64 (x, insn)
   return 0;
 }
 
+/* Returns assembly code to perform a DImode shift using
+   a 64-bit global or out register on SPARC-V8+.  */
 char *
 sparc_v8plus_shift (operands, insn, opcode)
      rtx *operands;
@@ -7976,8 +8023,15 @@ sparc_v8plus_shift (operands, insn, opcode)
 {
   static char asm_code[60];
 
-  if (GET_CODE (operands[3]) == SCRATCH)
+  /* The scratch register is only required when the destination
+     register is not a 64-bit global or out register.  */
+  if (which_alternative != 2)
     operands[3] = operands[0];
+
+  /* We can only shift by constants <= 63. */
+  if (GET_CODE (operands[2]) == CONST_INT)
+    operands[2] = GEN_INT (INTVAL (operands[2]) & 0x3f);
+
   if (GET_CODE (operands[1]) == CONST_INT)
     {
       output_asm_insn ("mov\t%1, %3", operands);
@@ -7991,6 +8045,7 @@ sparc_v8plus_shift (operands, insn, opcode)
     }
 
   strcpy(asm_code, opcode);
+
   if (which_alternative != 2)
     return strcat (asm_code, "\t%0, %2, %L0\n\tsrlx\t%L0, 32, %H0");
   else

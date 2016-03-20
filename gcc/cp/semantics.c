@@ -1273,7 +1273,8 @@ finish_call_expr (tree fn, tree args, bool disallow_virtual)
 	  && DERIVED_FROM_P (BINFO_TYPE (BASELINK_ACCESS_BINFO (fn)),
 			     current_class_type)
 	  && current_class_ref)
-	object = current_class_ref;
+	object = maybe_dummy_object (BINFO_TYPE (BASELINK_ACCESS_BINFO (fn)),
+				     NULL);
       else
 	{
 	  tree representative_fn;
@@ -1755,7 +1756,7 @@ begin_class_definition (t)
 	  TYPE_FIELDS (t) = NULL_TREE;
 	  TYPE_METHODS (t) = NULL_TREE;
 	  CLASSTYPE_DECL_LIST (t) = NULL_TREE;
-	  CLASSTYPE_TAGS (t) = NULL_TREE;
+	  CLASSTYPE_NESTED_UDTS (t) = NULL;
 	  CLASSTYPE_VBASECLASSES (t) = NULL_TREE;
 	  TYPE_SIZE (t) = NULL_TREE;
 	}
@@ -1836,8 +1837,6 @@ finish_member_declaration (decl)
   if (DECL_LANG_SPECIFIC (decl) && DECL_LANGUAGE (decl) == lang_c)
     SET_DECL_LANGUAGE (decl, lang_cplusplus);
 
-  maybe_add_class_template_decl_list (current_class_type, decl, /*friend_p=*/0);
-
   /* Put functions on the TYPE_METHODS list and everything else on the
      TYPE_FIELDS list.  Note that these are built up in reverse order.
      We reverse them (to obtain declaration order) in finish_struct.  */
@@ -1850,8 +1849,12 @@ finish_member_declaration (decl)
 
       TREE_CHAIN (decl) = TYPE_METHODS (current_class_type);
       TYPE_METHODS (current_class_type) = decl;
+
+      maybe_add_class_template_decl_list (current_class_type, decl, 
+					  /*friend_p=*/0);
     }
-  else
+  /* Enter the DECL into the scope of the class.  */
+  else if (TREE_CODE (decl) == USING_DECL || pushdecl_class_level (decl))
     {
       /* All TYPE_DECLs go at the end of TYPE_FIELDS.  Ordinary fields
 	 go at the beginning.  The reason is that lookup_field_1
@@ -1879,9 +1882,8 @@ finish_member_declaration (decl)
 	  TYPE_FIELDS (current_class_type) = decl;
 	}
 
-      /* Enter the DECL into the scope of the class.  */
-      if (TREE_CODE (decl) != USING_DECL)
-	pushdecl_class_level (decl);
+      maybe_add_class_template_decl_list (current_class_type, decl, 
+					  /*friend_p=*/0);
     }
 }
 

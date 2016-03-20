@@ -1,3 +1,67 @@
+2003-10-16  Release Manager
+
+	* GCC 3.3.2 Released.
+
+2003-09-09  Alan Modra  <amodra@bigpond.net.au>
+
+	* libtool.m4 (LD): Correct powerpc64 host match.
+
+2003-08-30  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* MAINTAINERS: Update my e-mail address.
+
+2003-08-20  Bernardo Innocenti  <bernie@develer.com>
+
+	* MAINTAINERS (Write After Approval): Add myself.
+
+2003-08-15  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* MAINTAINERS (Write After Approval): Add myself.
+
+2003-08-08  Kean Johnston  <jkj@sco.com>
+
+	* configure.in (sco3.2v5*): Enable building of libgcj
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-03  Richard Stallman  <rms@gnu.org>
+            Eben Moglen  <moglen@columbia.edu>
+
+	* README.SCO: New file.
+
+2003-07-13  Kazu Hirata  <kazu@cs.umass.edu>
+
+	* MAINTAINERS: Alphabetize.
+
+2003-07-04  H.J. Lu <hongjiu.lu@intel.com>
+
+	* Makefile.tpl: Fix typos in the last change.
+	* Makefile.in: Regenerated.
+
+2003-07-04  H.J. Lu <hongjiu.lu@intel.com>
+
+	* config-ml.in: Replace PWD with PWD_COMMAND.
+	* Makefile.tpl: Likewise.
+	* Makefile.in: Regenerated.
+
+2003-06-27  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* configure.in: Don't pass --with-stabs for mips*-sgi-irix6*o32.
+
+2003-06-17  Kazu Hirata  <kazu@cs.umass.edu>
+
+	* MAINTAINERS (Write After Approval): Remove Andrew Haley.
+
+2003-05-14  Eric Botcazou  <ebotcazou@libertysurf.fr>
+
+	* config-ml.in: Propagate INSTALL variables.
+
 2003-05-13  Release Manager
 
 	* GCC 3.3 Released.

@@ -50,11 +50,13 @@
 #include "config.h"
 #include "system.h"
 #include "tree.h"
+#include "tm_p.h"
 #include "cp-tree.h"
 #include "real.h"
 #include "obstack.h"
 #include "toplev.h"
 #include "varray.h"
+#include "ggc.h"
 
 /* Debugging support.  */
 
@@ -98,11 +100,6 @@ static struct globals
 
   /* The entity that is being mangled.  */
   tree entity;
-
-  /* We are mangling an internal symbol. It is important to keep those
-     involving template parmeters distinct by distinguishing their level
-     and, for non-type parms, their type.  */
-  bool internal_mangling_p;
 
   /* True if the mangling will be different in a future version of the
      ABI.  */
@@ -172,6 +169,7 @@ static int hwint_to_ascii PARAMS ((unsigned HOST_WIDE_INT, unsigned int, char *,
 static void write_number PARAMS ((unsigned HOST_WIDE_INT, int,
 				  unsigned int));
 static void write_integer_cst PARAMS ((tree));
+static void write_real_cst PARAMS ((tree));
 static void write_identifier PARAMS ((const char *));
 static void write_special_name_constructor PARAMS ((tree));
 static void write_special_name_destructor PARAMS ((tree));
@@ -1015,7 +1013,7 @@ write_unqualified_name (decl)
 	  type = TREE_TYPE (fn_type);
 	}
       else
-	type = TREE_TYPE (DECL_NAME (decl));
+	type = DECL_CONV_FN_TYPE (decl);
       write_conversion_operator_name (type);
     }
   else if (DECL_OVERLOADED_OPERATOR_P (decl))
@@ -1186,6 +1184,72 @@ write_integer_cst (cst)
 	  low = -low;
 	}
       write_unsigned_number (low);
+    }
+}
+
+/* Write out a floating-point literal.  
+    
+    "Floating-point literals are encoded using the bit pattern of the
+    target processor's internal representation of that number, as a
+    fixed-length lowercase hexadecimal string, high-order bytes first
+    (even if the target processor would store low-order bytes first).
+    The "n" prefix is not used for floating-point literals; the sign
+    bit is encoded with the rest of the number.
+
+    Here are some examples, assuming the IEEE standard representation
+    for floating point numbers.  (Spaces are for readability, not
+    part of the encoding.)
+
+        1.0f                    Lf 3f80 0000 E
+       -1.0f                    Lf bf80 0000 E
+        1.17549435e-38f         Lf 0080 0000 E
+        1.40129846e-45f         Lf 0000 0001 E
+        0.0f                    Lf 0000 0000 E"
+
+   Caller is responsible for the Lx and the E.  */
+static void
+write_real_cst (value)
+     tree value;
+{
+  if (abi_version_at_least (2))
+    {
+      long target_real[4];  /* largest supported float */
+      char buffer[9];       /* eight hex digits in a 32-bit number */
+      int i, limit, dir;
+
+      tree type = TREE_TYPE (value);
+      int words = GET_MODE_BITSIZE (TYPE_MODE (type)) / 32;
+
+      real_to_target (target_real, &TREE_REAL_CST (value),
+		      TYPE_MODE (type));
+
+      /* The value in target_real is in the target word order,
+         so we must write it out backward if that happens to be
+	 little-endian.  write_number cannot be used, it will
+	 produce uppercase.  */
+      if (FLOAT_WORDS_BIG_ENDIAN)
+	i = 0, limit = words, dir = 1;
+      else
+	i = words - 1, limit = -1, dir = -1;
+
+      for (; i != limit; i += dir)
+	{
+	  sprintf (buffer, "%08lx", target_real[i]);
+	  write_chars (buffer, 8);
+	}
+    }
+  else
+    {
+      /* In G++ 3.3 and before the REAL_VALUE_TYPE was written out
+	 literally.  Note that compatibility with 3.2 is impossible,
+	 because the old floating-point emulator used a different
+	 format for REAL_VALUE_TYPE.  */
+      size_t i;
+      for (i = 0; i < sizeof (TREE_REAL_CST (value)); ++i)
+	write_number (((unsigned char *) &TREE_REAL_CST (value))[i], 
+		      /*unsigned_p*/ 1,
+		      /*base*/ 16);
+      G.need_abi_warning = 1;
     }
 }
 
@@ -1983,6 +2047,10 @@ write_expression (expr)
 
       switch (code)
 	{
+        case CALL_EXPR:
+          sorry ("call_expr cannot be mangled due to a defect in the C++ ABI");
+          break;
+
 	case CAST_EXPR:
 	  write_type (TREE_TYPE (expr));
 	  write_expression (TREE_VALUE (TREE_OPERAND (expr, 0)));
@@ -2021,11 +2089,7 @@ write_expression (expr)
      "Literal arguments, e.g. "A<42L>", are encoded with their type
      and value. Negative integer values are preceded with "n"; for
      example, "A<-42L>" becomes "1AILln42EE". The bool value false is
-     encoded as 0, true as 1. If floating-point arguments are accepted
-     as an extension, their values should be encoded using a
-     fixed-length lowercase hexadecimal string corresponding to the
-     internal representation (IEEE on IA-64), high-order bytes first,
-     without leading zeroes. For example: "Lfbff000000E" is -1.0f."  */
+     encoded as 0, true as 1."  */
 
 static void
 write_template_arg_literal (value)
@@ -2052,24 +2116,7 @@ write_template_arg_literal (value)
 	write_integer_cst (value);
     }
   else if (TREE_CODE (value) == REAL_CST)
-    {
-#ifdef CROSS_COMPILE
-      static int explained;
-
-      if (!explained) 
-	{
-	  sorry ("real-valued template parameters when cross-compiling");
-	  explained = 1;
-	}
-#else
-      size_t i;
-      for (i = 0; i < sizeof (TREE_REAL_CST (value)); ++i)
-	write_number (((unsigned char *) 
-		       &TREE_REAL_CST (value))[i], 
-		      /*unsigned_p=*/1,
-		      16);
-#endif
-    }
+    write_real_cst (value);
   else
     abort ();
 
@@ -2247,15 +2294,6 @@ write_template_param (parm)
   if (parm_index > 0)
     write_unsigned_number (parm_index - 1);
   write_char ('_');
-  if (G.internal_mangling_p)
-    {
-      if (parm_level > 0)
-	write_unsigned_number (parm_level - 1);
-      write_char ('_');
-      if (parm_type)
-	write_type (parm_type);
-      write_char ('_');
-    }
 }
 
 /*  <template-template-param>
@@ -2582,41 +2620,52 @@ mangle_thunk (fn_decl, offset, vcall_offset)
   return get_identifier (result);
 }
 
+/* This hash table maps TYPEs to the IDENTIFIER for a conversion
+   operator to TYPE.  The nodes are TREE_LISTs whose TREE_PURPOSE is
+   the TYPE and whose TREE_VALUE is the IDENTIFIER.  */
+
+static GTY ((param_is (union tree_node))) htab_t conv_type_names;
+
+/* Hash a node (VAL1) in the table.  */
+
+static hashval_t
+hash_type (const void *val)
+{
+  return htab_hash_pointer (TREE_PURPOSE ((tree) val));
+}
+
+/* Compare VAL1 (a node in the table) with VAL2 (a TYPE).  */
+
+static int
+compare_type (const void *val1, const void *val2)
+{
+  return TREE_PURPOSE ((tree) val1) == (tree) val2;
+}
+
 /* Return an identifier for the mangled unqualified name for a
    conversion operator to TYPE.  This mangling is not specified by the
    ABI spec; it is only used internally.  */
-
-tree
-mangle_conv_op_name_for_type (type)
-     tree type;
-{
-  tree identifier;
-  const char *mangled_type;
-  char *op_name;
-
-  /* Build the internal mangling for TYPE.  */
-  G.internal_mangling_p = true;
-  mangled_type = mangle_type_string (type);
-  G.internal_mangling_p = false;
   
-  /* Allocate a temporary buffer for the complete name.  */
-  op_name = concat ("operator ", mangled_type, NULL);
-  /* Find or create an identifier.  */
-  identifier = get_identifier (op_name);
-  /* Done with the temporary buffer.  */
-  free (op_name);
+tree
+mangle_conv_op_name_for_type (const tree type)
+{
+  void **slot;
+  tree identifier;
+  char buffer[64];
+  
+  if (conv_type_names == NULL) 
+    conv_type_names = htab_create_ggc (31, &hash_type, &compare_type, NULL);
 
-  /* It had better be a unique mangling for the type.  */
-  if (IDENTIFIER_TYPENAME_P (identifier)
-      && !same_type_p (type, TREE_TYPE (identifier)))
-    {
-      /* In G++ 3.2, the name mangling scheme was ambiguous.  In later
-	 versions of the ABI, this problem has been fixed.  */
-      if (abi_version_at_least (2))
-	abort ();
-      error ("due to a defect in the G++ 3.2 ABI, G++ has assigned the "
-	     "same mangled name to two different types");
-    }
+  slot = htab_find_slot_with_hash (conv_type_names, type, 
+				   htab_hash_pointer (type), INSERT);
+  if (*slot)
+    return TREE_VALUE ((tree) *slot);
+
+  /* Create a unique name corresponding to TYPE.  */
+  sprintf (buffer, "operator %lu", 
+	   (unsigned long) htab_elements (conv_type_names));
+  identifier = get_identifier (buffer);
+  *slot = build_tree_list (type, identifier);
   
   /* Set bits on the identifier so we know later it's a conversion.  */
   IDENTIFIER_OPNAME_P (identifier) = 1;
@@ -2685,3 +2734,4 @@ write_java_integer_type_codes (type)
     abort ();
 }
 
+#include "gt-cp-mangle.h"

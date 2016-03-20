@@ -95,7 +95,7 @@ static void pop_access_scope PARAMS ((tree));
 static int resolve_overloaded_unification PARAMS ((tree, tree, tree, tree,
 						   unification_kind_t, int));
 static int try_one_overload PARAMS ((tree, tree, tree, tree, tree,
-				     unification_kind_t, int));
+				     unification_kind_t, int, bool));
 static int unify PARAMS ((tree, tree, tree, tree, int));
 static void add_pending_template PARAMS ((tree));
 static void reopen_tinst_level PARAMS ((tree));
@@ -128,7 +128,7 @@ static tree retrieve_specialization PARAMS ((tree, tree));
 static tree retrieve_local_specialization PARAMS ((tree));
 static tree register_specialization PARAMS ((tree, tree, tree));
 static void register_local_specialization PARAMS ((tree, tree));
-static int unregister_specialization PARAMS ((tree, tree));
+static int reregister_specialization PARAMS ((tree, tree, tree));
 static tree reduce_template_parm_level PARAMS ((tree, tree, int));
 static tree build_template_decl PARAMS ((tree, tree));
 static int mark_template_parm PARAMS ((tree, void *));
@@ -1041,13 +1041,11 @@ register_specialization (spec, tmpl, args)
 }
 
 /* Unregister the specialization SPEC as a specialization of TMPL.
-   Returns nonzero if the SPEC was listed as a specialization of
-   TMPL.  */
+   Replace it with NEW_SPEC, if NEW_SPEC is non-NULL.  Returns true
+   if the SPEC was listed as a specialization of TMPL.  */
 
 static int
-unregister_specialization (spec, tmpl)
-     tree spec;
-     tree tmpl;
+reregister_specialization (tree spec, tree tmpl, tree new_spec)
 {
   tree* s;
 
@@ -1056,7 +1054,10 @@ unregister_specialization (spec, tmpl)
        s = &TREE_CHAIN (*s))
     if (TREE_VALUE (*s) == spec)
       {
-	*s = TREE_CHAIN (*s);
+	if (!new_spec)
+	  *s = TREE_CHAIN (*s);
+	else
+	  TREE_VALUE (*s) = new_spec;
 	return 1;
       }
 
@@ -1811,6 +1812,18 @@ check_explicit_specialization (declarator, decl, template_count, flags)
 	      return instantiate_template (tmpl, targs);
 	    }
 
+	  /* If we thought that the DECL was a member function, but it
+	     turns out to be specializing a static member function,
+	     make DECL a static member function as well.  We also have
+	     to adjust last_function_parms to avoid confusing
+	     start_function later.  */
+	  if (DECL_STATIC_FUNCTION_P (tmpl)
+	      && DECL_NONSTATIC_MEMBER_FUNCTION_P (decl))
+	    {
+	      revert_static_member_fn (decl);
+	      last_function_parms = TREE_CHAIN (last_function_parms);
+	    }
+
 	  /* If this is a specialization of a member template of a
 	     template class.  In we want to return the TEMPLATE_DECL,
 	     not the specialization of it.  */
@@ -1819,16 +1832,6 @@ check_explicit_specialization (declarator, decl, template_count, flags)
 	      SET_DECL_TEMPLATE_SPECIALIZATION (tmpl);
 	      DECL_INITIAL (DECL_TEMPLATE_RESULT (tmpl)) = NULL_TREE;
 	      return tmpl;
-	    }
-
-	  /* If we thought that the DECL was a member function, but it
-	     turns out to be specializing a static member function,
-	     make DECL a static member function as well.  */
-	  if (DECL_STATIC_FUNCTION_P (tmpl)
-	      && DECL_NONSTATIC_MEMBER_FUNCTION_P (decl))
-	    {
-	      revert_static_member_fn (decl);
-	      last_function_parms = TREE_CHAIN (last_function_parms);
 	    }
 
 	  /* Set up the DECL_TEMPLATE_INFO for DECL.  */
@@ -3988,7 +3991,8 @@ lookup_template_function (fns, arglist)
   if (fns == error_mark_node || arglist == error_mark_node)
     return error_mark_node;
 
-  if (fns == NULL_TREE)
+  if (fns == NULL_TREE
+      || TREE_CODE (fns) == FUNCTION_DECL)
     {
       error ("non-template used as template");
       return error_mark_node;
@@ -4084,10 +4088,20 @@ lookup_template_class (d1, arglist, in_decl, context, entering_scope, complain)
 	}
       if (template)
 	context = DECL_CONTEXT (template);
+      if (template
+	  && TREE_CODE (template) == TYPE_DECL
+	  && IS_AGGR_TYPE (TREE_TYPE (template))
+	  && TREE_CODE (TREE_TYPE (template)) != TEMPLATE_TYPE_PARM)
+	{
+	  d1 = template;
+	  goto type_decl;
+	}
     }
   else if (TREE_CODE (d1) == TYPE_DECL && IS_AGGR_TYPE (TREE_TYPE (d1)))
     {
-      tree type = TREE_TYPE (d1);
+      tree type;
+    type_decl:
+      type = TREE_TYPE (d1);
 
       /* If we are declaring a constructor, say A<T>::A<T>, we will get
 	 an implicit typename for the second A.  Deal with it.  */
@@ -4995,8 +5009,9 @@ tsubst_friend_function (decl, args)
 	      DECL_TEMPLATE_INFO (old_decl) = new_friend_template_info;
 
 	      if (TREE_CODE (old_decl) != TEMPLATE_DECL)
-		/* duplicate_decls will take care of this case.  */
-		;
+		reregister_specialization (new_friend,
+					   most_general_template (old_decl),
+					   old_decl);
 	      else 
 		{
 		  tree t;
@@ -5266,7 +5281,7 @@ instantiate_class_template (type)
       TYPE_FIELDS (type) = TYPE_FIELDS (pattern);
       TYPE_METHODS (type) = TYPE_METHODS (pattern);
       CLASSTYPE_DECL_LIST (type) = CLASSTYPE_DECL_LIST (pattern);
-      CLASSTYPE_TAGS (type) = CLASSTYPE_TAGS (pattern);
+      CLASSTYPE_NESTED_UDTS (type) = CLASSTYPE_NESTED_UDTS (pattern);
       CLASSTYPE_VBASECLASSES (type) = CLASSTYPE_VBASECLASSES (pattern);
       
       /* Pretend that the type is complete, so that we will look
@@ -5360,6 +5375,10 @@ instantiate_class_template (type)
   if (ANON_AGGR_TYPE_P (pattern))
     SET_ANON_AGGR_TYPE_P (type);
 
+  if (DECL_CLASS_SCOPE_P (TYPE_MAIN_DECL (pattern)))
+    /* First instantiate our enclosing class.  */
+    complete_type (TYPE_CONTEXT (type));
+
   if (TYPE_BINFO_BASETYPES (pattern))
     {
       tree base_list = NULL_TREE;
@@ -5428,7 +5447,7 @@ instantiate_class_template (type)
 	{
 	  if (TYPE_P (t))
 	    {
-	      /* Build new CLASSTYPE_TAGS.  */
+	      /* Build new CLASSTYPE_NESTED_UDTS.  */
 
 	      tree tag = t;
 	      tree name = TYPE_IDENTIFIER (tag);
@@ -5521,10 +5540,10 @@ instantiate_class_template (type)
 		  /* If it is a TYPE_DECL for a class-scoped ENUMERAL_TYPE,
 		     such a thing will already have been added to the field
 		     list by tsubst_enum in finish_member_declaration in the
-		     CLASSTYPE_TAGS case above.  */
+		     CLASSTYPE_NESTED_UDTS case above.  */
 		  if (!(TREE_CODE (r) == TYPE_DECL
 			&& TREE_CODE (TREE_TYPE (r)) == ENUMERAL_TYPE
-			&& TYPE_CONTEXT (TREE_TYPE (r)) == type))
+			&& DECL_ARTIFICIAL (r)))
 		    {
 		      set_current_access_from_decl (r);
 		      finish_member_declaration (r);
@@ -6031,6 +6050,10 @@ tsubst_decl (t, args, type, complain)
 	  {
 	    tree spec;
 
+	    /* If T is not dependent, just return it.  */
+	    if (!uses_template_parms (DECL_TI_ARGS (t)))
+	      return t;
+
 	    /* Calculate the most general template of which R is a
 	       specialization, and the complete set of arguments used to
 	       specialize R.  */
@@ -6330,6 +6353,8 @@ tsubst_decl (t, args, type, complain)
 	r = copy_decl (t);
 	if (TREE_CODE (r) == VAR_DECL)
 	  type = complete_type (type);
+	else if (DECL_SELF_REFERENCE_P (t))
+	  SET_DECL_SELF_REFERENCE_P (r);
 	TREE_TYPE (r) = type;
 	c_apply_type_quals_to_decl (cp_type_quals (type), r);
 	DECL_CONTEXT (r) = ctx;
@@ -7178,7 +7203,10 @@ tsubst (t, args, complain, in_decl)
 	if (e1 == error_mark_node)
 	  return error_mark_node;
 
-	return TREE_TYPE (e1); 
+	return cp_build_qualified_type_real (TREE_TYPE (e1),
+					     cp_type_quals (t)
+					     | cp_type_quals (TREE_TYPE (e1)),
+					     complain);
       }
 
     default:
@@ -8410,9 +8438,15 @@ resolve_overloaded_unification (tparms, targs, parm, arg, strict,
 {
   tree tempargs = copy_node (targs);
   int good = 0;
+  bool addr_p;
 
   if (TREE_CODE (arg) == ADDR_EXPR)
-    arg = TREE_OPERAND (arg, 0);
+    {
+      arg = TREE_OPERAND (arg, 0);
+      addr_p = true;
+    }
+  else
+    addr_p = false;
 
   if (TREE_CODE (arg) == COMPONENT_REF)
     /* Handle `&x' where `x' is some static or non-static member
@@ -8448,10 +8482,8 @@ resolve_overloaded_unification (tparms, targs, parm, arg, strict,
 	  if (subargs)
 	    {
 	      elem = tsubst (TREE_TYPE (fn), subargs, tf_none, NULL_TREE);
-	      if (TREE_CODE (elem) == METHOD_TYPE)
-		elem = build_ptrmemfunc_type (build_pointer_type (elem));
-	      good += try_one_overload (tparms, targs, tempargs, parm, elem,
-					strict, sub_strict);
+	      good += try_one_overload (tparms, targs, tempargs, parm, 
+					elem, strict, sub_strict, addr_p);
 	    }
 	}
     }
@@ -8459,14 +8491,9 @@ resolve_overloaded_unification (tparms, targs, parm, arg, strict,
 	   || TREE_CODE (arg) == FUNCTION_DECL)
     {
       for (; arg; arg = OVL_NEXT (arg))
-	{
-	  tree type = TREE_TYPE (OVL_CURRENT (arg));
-	  if (TREE_CODE (type) == METHOD_TYPE)
-	    type = build_ptrmemfunc_type (build_pointer_type (type));
-	  good += try_one_overload (tparms, targs, tempargs, parm,
-				    type,
-				    strict, sub_strict);
-	}
+	good += try_one_overload (tparms, targs, tempargs, parm,
+				  TREE_TYPE (OVL_CURRENT (arg)),
+				  strict, sub_strict, addr_p);
     }
   else
     abort ();
@@ -8495,14 +8522,20 @@ resolve_overloaded_unification (tparms, targs, parm, arg, strict,
 /* Subroutine of resolve_overloaded_unification; does deduction for a single
    overload.  Fills TARGS with any deduced arguments, or error_mark_node if
    different overloads deduce different arguments for a given parm.
+   ADDR_P is true if the expression for which deduction is being
+   performed was of the form "& fn" rather than simply "fn".
+
    Returns 1 on success.  */
 
 static int
-try_one_overload (tparms, orig_targs, targs, parm, arg, strict,
-		  sub_strict)
-     tree tparms, orig_targs, targs, parm, arg;
-     unification_kind_t strict;
-     int sub_strict;
+try_one_overload (tree tparms,
+		  tree orig_targs,
+		  tree targs, 
+		  tree parm, 
+		  tree arg, 
+		  unification_kind_t strict,
+		  int sub_strict,
+		  bool addr_p)
 {
   int nargs;
   tree tempargs;
@@ -8517,6 +8550,11 @@ try_one_overload (tparms, orig_targs, targs, parm, arg, strict,
 
   if (uses_template_parms (arg))
     return 1;
+
+  if (TREE_CODE (arg) == METHOD_TYPE)
+    arg = build_ptrmemfunc_type (build_pointer_type (arg));
+  else if (addr_p)
+    arg = build_pointer_type (arg);
 
   sub_strict |= maybe_adjust_types_for_deduction (strict, &parm, &arg);
 
@@ -8606,7 +8644,8 @@ try_class_unification (tparms, targs, parm, arg)
   tree copy_of_targs;
 
   if (!CLASSTYPE_TEMPLATE_INFO (arg)
-      || CLASSTYPE_TI_TEMPLATE (arg) != CLASSTYPE_TI_TEMPLATE (parm))
+      || (most_general_template (CLASSTYPE_TI_TEMPLATE (arg)) 
+	  != most_general_template (CLASSTYPE_TI_TEMPLATE (parm))))
     return NULL_TREE;
 
   /* We need to make a new template argument vector for the call to
@@ -9379,6 +9418,9 @@ mark_decl_instantiated (result, extern_p)
        set correctly by tsubst.  */
     TREE_PUBLIC (result) = 1;
 
+  /* This might have been set by an earlier implicit instantiation.  */
+  DECL_COMDAT (result) = 0;
+
   if (! extern_p)
     {
       DECL_INTERFACE_KNOWN (result) = 1;
@@ -9433,22 +9475,25 @@ more_specialized (pat1, pat2, deduce, len)
 
    1 if PAT1 is more specialized than PAT2 as described in [temp.class.order].
    -1 if PAT2 is more specialized than PAT1.
-   0 if neither is more specialized.  */
+   0 if neither is more specialized.
+
+   FULL_ARGS is the full set of template arguments that triggers this
+   partial ordering.  */
    
 int
-more_specialized_class (pat1, pat2)
-     tree pat1, pat2;
+more_specialized_class (pat1, pat2, full_args)
+     tree pat1, pat2, full_args;
 {
   tree targs;
   int winner = 0;
 
   targs = get_class_bindings (TREE_VALUE (pat1), TREE_PURPOSE (pat1),
-			      TREE_PURPOSE (pat2));
+			      add_outermost_template_args (full_args, TREE_PURPOSE (pat2)));
   if (targs)
     --winner;
 
   targs = get_class_bindings (TREE_VALUE (pat2), TREE_PURPOSE (pat2),
-			      TREE_PURPOSE (pat1));
+			      add_outermost_template_args (full_args, TREE_PURPOSE (pat1)));
   if (targs)
     ++winner;
 
@@ -9734,7 +9779,7 @@ most_specialized_class (tmpl, args)
   t = TREE_CHAIN (t);
   for (; t; t = TREE_CHAIN (t))
     {
-      fate = more_specialized_class (champ, t);
+      fate = more_specialized_class (champ, t, args);
       if (fate == 1)
 	;
       else
@@ -9751,7 +9796,7 @@ most_specialized_class (tmpl, args)
 
   for (t = list; t && t != champ; t = TREE_CHAIN (t))
     {
-      fate = more_specialized_class (champ, t);
+      fate = more_specialized_class (champ, t, args);
       if (fate != 1)
 	return error_mark_node;
     }
@@ -9886,6 +9931,18 @@ mark_class_instantiated (t, extern_p)
       rest_of_type_compilation (t, 1);
     }
 }     
+
+/* Called from do_type_instantiation through binding_table_foreach to
+   do recursive instantiation for the type bound in ENTRY.   */
+static void
+bt_instantiate_type_proc (binding_entry entry, void *data)
+{
+  tree storage = *(tree *) data;
+
+  if (IS_AGGR_TYPE (entry->type)
+      && !uses_template_parms (CLASSTYPE_TI_ARGS (entry->type)))
+    do_type_instantiation (TYPE_MAIN_DECL (entry->type), storage, 0);
+}
 
 /* Perform an explicit instantiation of template class T.  STORAGE, if
    non-null, is the RID for extern, inline or static.  COMPLAIN is
@@ -10027,10 +10084,9 @@ do_type_instantiation (t, storage, complain)
 	    instantiate_decl (tmp, /*defer_ok=*/1);
 	}
 
-    for (tmp = CLASSTYPE_TAGS (t); tmp; tmp = TREE_CHAIN (tmp))
-      if (IS_AGGR_TYPE (TREE_VALUE (tmp))
-	  && !uses_template_parms (CLASSTYPE_TI_ARGS (TREE_VALUE (tmp))))
-	do_type_instantiation (TYPE_MAIN_DECL (TREE_VALUE (tmp)), storage, 0);
+    if (CLASSTYPE_NESTED_UDTS (t))
+      binding_table_foreach (CLASSTYPE_NESTED_UDTS (t),
+                             bt_instantiate_type_proc, &storage);
   }
 }
 
@@ -10078,7 +10134,7 @@ regenerate_decl_from_template (decl, tmpl)
      instantiation.  */
   gen_tmpl = most_general_template (tmpl);
   push_access_scope_real (gen_tmpl, args, DECL_CONTEXT (decl));
-  unregistered = unregister_specialization (decl, gen_tmpl);
+  unregistered = reregister_specialization (decl, gen_tmpl, NULL_TREE);
 
   /* If the DECL was not unregistered then something peculiar is
      happening: we created a specialization but did not call
@@ -10237,10 +10293,11 @@ instantiate_decl (d, defer_ok)
 
   code_pattern = DECL_TEMPLATE_RESULT (td);
 
-  if (DECL_NAMESPACE_SCOPE_P (d) && !DECL_INITIALIZED_IN_CLASS_P (d))
+  if ((DECL_NAMESPACE_SCOPE_P (d) && !DECL_INITIALIZED_IN_CLASS_P (d))
+      || DECL_TEMPLATE_SPECIALIZATION (td))
     /* In the case of a friend template whose definition is provided
        outside the class, we may have too many arguments.  Drop the
-       ones we don't need.  */
+       ones we don't need.  The same is true for specializations.  */
     args = get_innermost_template_args
       (gen_args, TMPL_PARMS_DEPTH  (DECL_TEMPLATE_PARMS (td)));
   else

@@ -2878,11 +2878,12 @@ rs6000_emit_move (dest, source, mode)
    so we never return a PARALLEL.  */
 
 void
-init_cumulative_args (cum, fntype, libname, incoming)
+init_cumulative_args (cum, fntype, libname, incoming, libcall)
      CUMULATIVE_ARGS *cum;
      tree fntype;
      rtx libname ATTRIBUTE_UNUSED;
      int incoming;
+     int libcall;
 {
   static CUMULATIVE_ARGS zero_cumulative;
 
@@ -2891,7 +2892,8 @@ init_cumulative_args (cum, fntype, libname, incoming)
   cum->fregno = FP_ARG_MIN_REG;
   cum->vregno = ALTIVEC_ARG_MIN_REG;
   cum->prototype = (fntype && TYPE_ARG_TYPES (fntype));
-  cum->call_cookie = CALL_NORMAL;
+  cum->call_cookie = ((DEFAULT_ABI == ABI_V4 && libcall)
+		      ? CALL_LIBCALL : CALL_NORMAL);
   cum->sysv_gregno = GP_ARG_MIN_REG;
 
   if (incoming)
@@ -3099,7 +3101,7 @@ function_arg_advance (cum, mode, type, named)
 
    If this is floating-point and no prototype is specified, we use
    both an FP and integer register (or possibly FP reg and stack).  Library
-   functions (when TYPE is zero) always have the proper types for args,
+   functions (when CALL_LIBCALL is set) always have the proper types for args,
    so we can pass the FP value just in one register.  emit_library_function
    doesn't support PARALLEL anyway.  */
 
@@ -3120,7 +3122,8 @@ function_arg (cum, mode, type, named)
     {
       if (abi == ABI_V4
 	  && cum->nargs_prototype < 0
-	  && type && (cum->prototype || TARGET_NO_PROTOTYPE))
+	  && (cum->call_cookie & CALL_LIBCALL) == 0
+	  && (cum->prototype || TARGET_NO_PROTOTYPE))
 	{
 	  /* For the SPE, we need to crxor CR6 always.  */
 	  if (TARGET_SPE_ABI)
@@ -3307,7 +3310,7 @@ function_arg_pass_by_reference (cum, mode, type, named)
 
       return 1;
     }
-  return type && int_size_in_bytes (type) <= 0;
+  return type && int_size_in_bytes (type) < 0;
 }
 
 /* Perform any needed actions needed for a function that is receiving a
@@ -3548,7 +3551,7 @@ rs6000_va_arg (valist, type)
   if (DEFAULT_ABI != ABI_V4)
     {
       /* Variable sized types are passed by reference.  */
-      if (int_size_in_bytes (type) <= 0)
+      if (int_size_in_bytes (type) < 0)
 	{
 	  u = build_pointer_type (type);
 
@@ -9299,7 +9302,6 @@ rs6000_stack_info ()
 					 + ehrd_size
 					 + info_ptr->cr_size
 					 + info_ptr->lr_size
-					 + info_ptr->vrsave_size
 					 + info_ptr->toc_size,
 					 (TARGET_ALTIVEC_ABI || ABI_DARWIN)
 					 ? 16 : 8);
@@ -11107,6 +11109,23 @@ rs6000_output_function_epilogue (file, size)
 	  end_sequence ();
 	}
     }
+
+#if TARGET_OBJECT_FORMAT == OBJECT_MACHO
+  /* Mach-O doesn't support labels at the end of objects, so if
+     it looks like we might want one, insert a NOP.  */
+  {
+    rtx insn = get_last_insn ();
+    while (insn
+	   && NOTE_P (insn)
+	   && NOTE_LINE_NUMBER (insn) != NOTE_INSN_DELETED_LABEL)
+      insn = PREV_INSN (insn);
+    if (insn 
+	&& (LABEL_P (insn) 
+	    || (NOTE_P (insn)
+		&& NOTE_LINE_NUMBER (insn) == NOTE_INSN_DELETED_LABEL)))
+      fputs ("\tnop\n", file);
+  }
+#endif
 
   /* Output a traceback table here.  See /usr/include/sys/debug.h for info
      on its format.

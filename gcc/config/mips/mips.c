@@ -644,8 +644,10 @@ const struct mips_cpu_info mips_cpu_info_table[] = {
 #define TARGET_ASM_UNALIGNED_HI_OP "\t.align 0\n\t.half\t"
 #undef TARGET_ASM_UNALIGNED_SI_OP
 #define TARGET_ASM_UNALIGNED_SI_OP "\t.align 0\n\t.word\t"
+/* The IRIX 6 O32 assembler gives an error for `align 0; .dword', contrary
+   to the documentation, so disable it.  */
 #undef TARGET_ASM_UNALIGNED_DI_OP
-#define TARGET_ASM_UNALIGNED_DI_OP "\t.align 0\n\t.dword\t"
+#define TARGET_ASM_UNALIGNED_DI_OP NULL
 #endif
 
 #undef TARGET_ASM_FUNCTION_PROLOGUE
@@ -7455,20 +7457,7 @@ mips_expand_prologue ()
 	      break;
 	    }
 	  else
-	    {
-	      int words;
-
-	      if (GET_CODE (entry_parm) != REG)
-	        abort ();
-
-	      /* passed in a register, so will get homed automatically */
-	      if (GET_MODE (entry_parm) == BLKmode)
-		words = (int_size_in_bytes (passed_type) + 3) / 4;
-	      else
-		words = (GET_MODE_SIZE (GET_MODE (entry_parm)) + 3) / 4;
-
-	      regno = REGNO (entry_parm) + words - 1;
-	    }
+	    regno = GP_ARG_FIRST + args_so_far.num_gprs;
 	}
       else
 	{

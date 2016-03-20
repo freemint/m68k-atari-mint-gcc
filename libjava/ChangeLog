@@ -1,3 +1,114 @@
+2003-10-16  Release Manager
+
+	* GCC 3.3.2 Released.
+
+2003-09-09  Alan Modra  <amodra@bigpond.net.au>
+
+	* configure: Regenerate.
+
+2003-08-20  Andrew Haley  <aph@redhat.com>
+
+	* prims.cc (unblock_signal): New function.
+	(catch_segv): Use it.
+	(catch_fpe): Likewise.
+
+	* include/i386-signal.h (RESTORE): New.
+	(INIT_SEGV): Set restorer.
+	(INIT_FPE): Likewise.
+
+2003-08-08  Kean Johnston  <jkj@sco.com>
+
+	* java/io/natFilePosix.cc: HAVE_READDIR_R is broken on SCO. Undefine.
+	  If MAXPATHLEN is not defined by the system, define it.
+	* java/io/natFileDescriptorPosix.cc: Ditto.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-07-11  Michael Koch  <konqueror@gmx.de>
+
+	* gnu/gcj/convert/natIconv.cc
+	(iconv_init): Fixed possible memory leak by releasing allocated iconv
+	handle.
+
+2003-07-11  Jeff Sturm  <jsturm@one-point.com>
+
+	PR libgcj/10886:
+	* gnu/java/rmi/server/UnicastRemoteCall.java (returnValue):
+	Test for empty vector.
+
+2003-07-11 Jeff Sturm  <jsturm@one-point.com>
+
+	PR libgcj/10838:
+	* java/io/ObjectInputStream (enableResolveObject):
+	Fixed spelling of permission name.
+
+2003-07-11  Matt Kraai  <kraii@alumni.cmu.edu>
+
+	* gnu/gcj/runtime/SharedLibLoader.java: Fix misspelling.
+	* gnu/gcj/runtime/natSharedLibLoader.cc: Likewise.
+	* java/awt/im/InputContext.java: Remove a redundant
+	partial line.
+
+2003-07-11  Jeff Sturm  <jsturm@one-point.com>
+
+	* gnu/gcj/runtime/FirstThread.java (KinputASCII, KoutputASCII):
+	Create dummy references for static linking.
+
+2003-07-07  Adam Megacz <adam@xwt.org>
+
+	* posix.cc: added #include<stdio.h>
+
+2003-06-30  Gary Benson  <gbenson@redhat.com>
+
+	For PR libgcj/11349:
+	* javax/naming/spi/NamingManager.java (getURLContext): Use
+	correct name for factory class.
+
+2003-06-17  Franz Sirl  <Franz.Sirl-kernel@lauterbach.com>
+
+	* include/powerpc-signal.h: New File.
+	* configure.in: Use it.
+	* configure: Regenerated.
+
+2003-06-10  Andrew Haley  <aph@redhat.com>
+
+        * include/x86_64-signal.h (MAKE_THROW_FRAME): Mark sigcontext on
+        stack volatile to prevent optimization from removing it.
+
+2003-06-06  Mark Wielaard  <mark@klomp.org>
+
+	* java/security/Security.java (secprops): Initialize.
+	(loadProviders): Return boolean.
+	(static): Check result of loadProvider calls. If necessary
+	display WARNING and fallback to Gnu provider.
+
+2002-06-06  James Clark  <jjc@jclark.com>
+
+	Fix for PR libgcj/8738:
+	* gnu/gcj/convert/UnicodeToBytes.java (havePendingBytes): New method.
+	* gnu/gcj/convert/Output_SJIS.java (havePendingBytes): Likewise.
+	* gnu/gcj/convert/Output_EUCJIS.java (havePendingBytes): Likewise.
+	* gnu/gcj/convert/Output_UTF8.java (havePendingBytes): Likewise.
+	(write): Always decrease avail when count is increased.
+	* java/lang/natString.cc (getBytes): Check converter havePendingBytes()
+	and whether output buffer is full before increasing size.
+
+2002-06-06  Mark Wielaard  <mark@klomp dot org>
+
+	* java/io/PrintStream.java (writeChars(char[],int, int)):
+	Check converter.havePendingBytes().
+	(writeChars(String,int,int)): Likewise.
+	* java/io/OutputStreamWriter.java (writeChars(char[], int, int)):
+	Check converter.havePendingBytes() and flush buffer when stalled.
+
+	* mauve-libgcj: Don't ignore java.lang.String.surrogate.
+
 2003-05-13  Release Manager
 
 	* GCC 3.3 Released.

@@ -29,7 +29,7 @@ SUBDIRS = include libio libmath libsupc++ src po testsuite
 
 mkinstalldirs = $(SHELL) $(toplevel_srcdir)/mkinstalldirs
 
-PWD = $${PWDCMD-pwd}
+PWD_COMMAND = $${PWDCMD-pwd}
 
 # These two special 'check-script' rules use the bash script 'mkcheck'
 # to do testing. This script is not as portable as the dejagnu test
@@ -46,42 +46,22 @@ check-script-install: $(top_builddir)/mkcheck
 	  cd testsuite; \
 	  @glibcpp_builddir@/mkcheck 1)
 
-# Use 'new-abi-baseline' to create an initial symbol file.  Then run
-# 'check-abi' to test for changes against that file.
-baseline_file = @baseline_file@
-check-abi: $(top_builddir)/testsuite/abi_check
-	-@(cd testsuite; \
-	  @glibcpp_srcdir@/config/abi/extract_symvers \
-	     ../src/.libs/libstdc++.so \
-	     ./current_symbols.txt && \
-	  ./abi_check --check ./current_symbols.txt ${baseline_file})
-
-new-abi-baseline:
-	-@(output=${baseline_file}; \
-	  if test -f $${output}; then \
-	    output=$${output}.new; \
-	    t=`echo $${output} | sed 's=.*config/abi/=='`; \
-	    echo "Baseline file already exists, writing to $${t} instead."; \
-	  fi; \
-	  @glibcpp_srcdir@/config/abi/extract_symvers \
-	     src/.libs/libstdc++.so $${output})
-
 # These rules are messy, but are hella worth it.
 doxygen:
-	-(srcdir=`cd ${top_srcdir}; ${PWD}`; \
-	  builddir=`${PWD}`; \
+	-(srcdir=`cd ${top_srcdir}; ${PWD_COMMAND}`; \
+	  builddir=`${PWD_COMMAND}`; \
 	  /bin/sh ${srcdir}/docs/doxygen/run_doxygen \
 	            --mode=user $${srcdir} $${builddir})
 
 doxygen-maint:
-	-(srcdir=`cd ${top_srcdir}; ${PWD}`; \
-	  builddir=`${PWD}`; \
+	-(srcdir=`cd ${top_srcdir}; ${PWD_COMMAND}`; \
+	  builddir=`${PWD_COMMAND}`; \
 	  /bin/sh ${srcdir}/docs/doxygen/run_doxygen \
 	            --mode=maint $${srcdir} $${builddir})
 
 doxygen-man:
-	-(srcdir=`cd ${top_srcdir}; ${PWD}`; \
-	  builddir=`${PWD}`; \
+	-(srcdir=`cd ${top_srcdir}; ${PWD_COMMAND}`; \
+	  builddir=`${PWD_COMMAND}`; \
 	  /bin/sh ${srcdir}/docs/doxygen/run_doxygen \
 	            --mode=man $${srcdir} $${builddir})
 

@@ -1,3 +1,26 @@
+2003-10-16  Release Manager
+
+	* GCC 3.3.2 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-07-04  H.J. Lu <hongjiu.lu@intel.com>
+
+	* Make-lang.in: Replace PWD with PWD_COMMAND.
+	* Makefile.adalib: Likewise.
+	* Makefile.in: Likewise.
+
+2003-05-22   Geert Bosch <bosch@gnat.com>
+
+        PR ada/6399
+	* gnat_rm.texi : Remove reference to Ada Core Technologies.
+
 2003-05-13  Release Manager
 
 	* GCC 3.3 Released.

@@ -1,3 +1,50 @@
+2003-10-16  Release Manager
+
+	* GCC 3.3.2 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-06-19  Dara Hazeghi  <dhazeghi@yahoo.com>
+
+	* configure.in: Add check for malloc.h needed by
+	m68k for function free().
+	* configure: Regenerated.
+	* config.in: Add HAVE_MALLOC_H.
+	* hashtab.c: include malloc.h were available for
+	free().
+
+2003-06-09  Albert Chin-A-Young  <china@thewrittenword.com>
+	
+	PR bootstrap/10974
+	* physmem.c: Update comment.
+	* configure.in: Modify test for _system_configuration for older
+	AIX systems.
+
+	* config.in, configure: Regenerated.
+	
+2003-06-05  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR other/10810
+	* test-demangle.c (getline): Fix fence-post error.
+
+2003-05-23  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	Backport from mainline:
+	2003-04-15  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+	
+	* vsprintf.c: Include "ansidecl.h" earlier, rely on
+	ANSI_PROTOTYPES and possibly include <stdarg.h>.
+
+2003-05-14  Carlo Wood  <carlo@alinoe.com>
+
+	* cp-demangle.c: Fix typo in "char_traints" string-literal.
+
 2003-05-13  Release Manager
 
 	* GCC 3.3 Released.

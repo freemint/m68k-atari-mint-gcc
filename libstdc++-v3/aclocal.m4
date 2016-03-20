@@ -755,7 +755,7 @@ dnl GLIBCPP_CHECK_STDLIB_SUPPORT
 AC_DEFUN(GLIBCPP_CHECK_STDLIB_SUPPORT, [
   ac_test_CXXFLAGS="${CXXFLAGS+set}"
   ac_save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS='-fno-builtins -D_GNU_SOURCE'
+  CXXFLAGS='-fno-builtin -D_GNU_SOURCE'
 
   GLIBCPP_CHECK_STDLIB_DECL_AND_LINKAGE_2(strtold)
   GLIBCPP_CHECK_STDLIB_DECL_AND_LINKAGE_2(strtof)
@@ -797,7 +797,7 @@ dnl GLIBCPP_CHECK_MATH_SUPPORT
 AC_DEFUN(GLIBCPP_CHECK_MATH_SUPPORT, [
   ac_test_CXXFLAGS="${CXXFLAGS+set}"
   ac_save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS='-fno-builtins -D_GNU_SOURCE'
+  CXXFLAGS='-fno-builtin -D_GNU_SOURCE'
 
   dnl Check libm
   AC_CHECK_LIB(m, sin, libm="-lm")
@@ -2131,18 +2131,32 @@ dnl the testsuite_hooks.h header.
 dnl
 dnl GLIBCPP_CONFIGURE_TESTSUITE  [no args]
 AC_DEFUN(GLIBCPP_CONFIGURE_TESTSUITE, [
-  GLIBCPP_CHECK_SETRLIMIT
+  if test  x"$GLIBCPP_IS_CROSS_COMPILING" = xfalse; then
+    # Do checks for memory limit functions.
+    GLIBCPP_CHECK_SETRLIMIT
 
-  # Look for setenv, so that extended locale tests can be performed.
-  GLIBCPP_CHECK_STDLIB_DECL_AND_LINKAGE_3(setenv)
+    # Look for setenv, so that extended locale tests can be performed.
+    GLIBCPP_CHECK_STDLIB_DECL_AND_LINKAGE_3(setenv)
+  fi
 
   # Export file names for ABI checking.
-  baseline_file="${glibcpp_srcdir}/config/abi/${abi_baseline_triplet}/baseline_symbols.txt"
-  AC_SUBST(baseline_file)
+  baseline_dir="${glibcpp_srcdir}/config/abi/${abi_baseline_pair}\$(MULTISUBDIR)"
+  AC_SUBST(baseline_dir)
 
-  # Don't do ABI checking unless native.
-  AM_CONDITIONAL(GLIBCPP_BUILD_ABI_CHECK,
-                 test x"$build" = x"$host" && test -z "$with_cross_host")
+  # Determine if checking the ABI is desirable.
+  # Only build this as native, since automake does not understand
+  # CXX_FOR_BUILD.
+  if test x"$GLIBCPP_IS_CROSS_COMPILING" = xtrue || test x$enable_symvers = xno; then
+    enable_abi_check=no
+  else
+    case "$host" in
+      *-*-cygwin*) 
+        enable_abi_check=no ;;
+      *) 
+        enable_abi_check=yes ;;
+    esac
+  fi
+  AM_CONDITIONAL(GLIBCPP_TEST_ABI, test "$enable_abi_check" = yes)
 ])
 
 

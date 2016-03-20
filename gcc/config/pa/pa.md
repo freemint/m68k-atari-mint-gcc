@@ -2264,9 +2264,9 @@
 
 (define_insn ""
   [(set (match_operand:SI 0 "reg_or_nonsymb_mem_operand"
-				"=r,r,r,r,r,r,Q,*q,!f,f,*TR")
+				"=r,r,r,r,r,r,Q,!*q,!f,f,*TR")
 	(match_operand:SI 1 "move_operand"
-				"A,r,J,N,K,RQ,rM,rM,!fM,*RT,f"))]
+				"A,r,J,N,K,RQ,rM,!rM,!fM,*RT,f"))]
   "(register_operand (operands[0], SImode)
     || reg_or_0_operand (operands[1], SImode))
    && ! TARGET_SOFT_FLOAT"
@@ -2288,9 +2288,9 @@
 
 (define_insn ""
   [(set (match_operand:SI 0 "reg_or_nonsymb_mem_operand"
-				"=r,r,r,r,r,r,Q,*q")
+				"=r,r,r,r,r,r,Q,!*q")
 	(match_operand:SI 1 "move_operand"
-				"A,r,J,N,K,RQ,rM,rM"))]
+				"A,r,J,N,K,RQ,rM,!rM"))]
   "(register_operand (operands[0], SImode)
     || reg_or_0_operand (operands[1], SImode))
    && TARGET_SOFT_FLOAT"
@@ -2699,8 +2699,8 @@
 }")
 
 (define_insn ""
-  [(set (match_operand:HI 0 "reg_or_nonsymb_mem_operand" "=r,r,r,r,r,Q,*q,!*f")
-	(match_operand:HI 1 "move_operand" "r,J,N,K,RQ,rM,rM,!*fM"))]
+  [(set (match_operand:HI 0 "reg_or_nonsymb_mem_operand" "=r,r,r,r,r,Q,!*q,!*f")
+	(match_operand:HI 1 "move_operand" "r,J,N,K,RQ,rM,!rM,!*fM"))]
   "register_operand (operands[0], HImode)
    || reg_or_0_operand (operands[1], HImode)"
   "@
@@ -2814,8 +2814,8 @@
 }")
 
 (define_insn ""
-  [(set (match_operand:QI 0 "reg_or_nonsymb_mem_operand" "=r,r,r,r,r,Q,*q,!*f")
-	(match_operand:QI 1 "move_operand" "r,J,N,K,RQ,rM,rM,!*fM"))]
+  [(set (match_operand:QI 0 "reg_or_nonsymb_mem_operand" "=r,r,r,r,r,Q,!*q,!*f")
+	(match_operand:QI 1 "move_operand" "r,J,N,K,RQ,rM,!rM,!*fM"))]
   "register_operand (operands[0], QImode)
    || reg_or_0_operand (operands[1], QImode)"
   "@
@@ -3137,9 +3137,9 @@
 
 (define_insn ""
   [(set (match_operand:DF 0 "reg_or_nonsymb_mem_operand"
-				"=r,r,r,r,r,Q,*q,!f,f,*TR")
+				"=r,r,r,r,r,Q,!*q,!f,f,*TR")
 	(match_operand:DF 1 "move_operand"
-				"r,J,N,K,RQ,rM,rM,!fM,*RT,f"))]
+				"r,J,N,K,RQ,rM,!rM,!fM,*RT,f"))]
   "(register_operand (operands[0], DFmode)
     || reg_or_0_operand (operands[1], DFmode))
    && ! TARGET_SOFT_FLOAT && TARGET_64BIT"
@@ -3296,9 +3296,9 @@
 
 (define_insn ""
   [(set (match_operand:DI 0 "reg_or_nonsymb_mem_operand"
-				"=r,r,r,r,r,r,Q,*q,!f,f,*TR")
+				"=r,r,r,r,r,r,Q,!*q,!f,f,*TR")
 	(match_operand:DI 1 "move_operand"
-				"A,r,J,N,K,RQ,rM,rM,!fM,*RT,f"))]
+				"A,r,J,N,K,RQ,rM,!rM,!fM,*RT,f"))]
   "(register_operand (operands[0], DImode)
     || reg_or_0_operand (operands[1], DImode))
    && ! TARGET_SOFT_FLOAT && TARGET_64BIT"
@@ -3992,9 +3992,9 @@
   (set_attr "length" "8")])
 
 (define_insn ""
-  [(set (match_operand:DI 0 "register_operand" "=r,r,q")
-	(minus:DI (match_operand:DI 1 "arith11_operand" "r,I,U")
-		  (match_operand:DI 2 "register_operand" "r,r,r")))]
+  [(set (match_operand:DI 0 "register_operand" "=r,r,!q")
+	(minus:DI (match_operand:DI 1 "arith11_operand" "r,I,!U")
+		  (match_operand:DI 2 "register_operand" "r,r,!r")))]
   "TARGET_64BIT"
   "@
    sub %1,%2,%0
@@ -4022,9 +4022,9 @@
    (set_attr "length" "4,4")])
 
 (define_insn ""
-  [(set (match_operand:SI 0 "register_operand" "=r,r,q")
-	(minus:SI (match_operand:SI 1 "arith11_operand" "r,I,S")
-		  (match_operand:SI 2 "register_operand" "r,r,r")))]
+  [(set (match_operand:SI 0 "register_operand" "=r,r,!q")
+	(minus:SI (match_operand:SI 1 "arith11_operand" "r,I,!S")
+		  (match_operand:SI 2 "register_operand" "r,r,!r")))]
   "TARGET_PA_20"
   "@
    sub %1,%2,%0

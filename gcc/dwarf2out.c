@@ -432,6 +432,15 @@ expand_builtin_init_dwarf_reg_sizes (address)
 
 	emit_move_insn (adjust_address (mem, mode, offset), GEN_INT (size));
       }
+
+#ifdef DWARF_ALT_FRAME_RETURN_COLUMN
+  {
+    enum machine_mode save_mode = Pmode;
+    HOST_WIDE_INT offset = DWARF_ALT_FRAME_RETURN_COLUMN * GET_MODE_SIZE (mode);
+    HOST_WIDE_INT size = GET_MODE_SIZE (save_mode);
+    emit_move_insn (adjust_address (mem, mode, offset), GEN_INT (size));
+  }
+#endif
 }
 
 /* Convert a DWARF call frame info. operation to its string name */
@@ -10383,14 +10392,15 @@ gen_enumeration_type_die (type, context_die)
 	  add_name_attribute (enum_die,
 			      IDENTIFIER_POINTER (TREE_PURPOSE (link)));
 
-	  if (host_integerp (TREE_VALUE (link), 0))
+	  if (host_integerp (TREE_VALUE (link), 
+			     TREE_UNSIGNED (TREE_TYPE (TREE_VALUE (link)))))
 	    {
 	      if (tree_int_cst_sgn (TREE_VALUE (link)) < 0)
 		add_AT_int (enum_die, DW_AT_const_value,
 			    tree_low_cst (TREE_VALUE (link), 0));
 	      else
 		add_AT_unsigned (enum_die, DW_AT_const_value,
-				 tree_low_cst (TREE_VALUE (link), 0));
+				 tree_low_cst (TREE_VALUE (link), 1));
 	    }
 	}
     }
@@ -11050,15 +11060,19 @@ gen_inlined_subroutine_die (stmt, context_die, depth)
      dw_die_ref context_die;
      int depth;
 {
+  tree decl = block_ultimate_origin (stmt);
+
+  /* Emit info for the abstract instance first, if we haven't yet.  We
+     must emit this even if the block is abstract, otherwise when we
+     emit the block below (or elsewhere), we may end up trying to emit
+     a die whose origin die hasn't been emitted, and crashing.  */
+  dwarf2out_abstract_function (decl);
+
   if (! BLOCK_ABSTRACT (stmt))
     {
       dw_die_ref subr_die
 	= new_die (DW_TAG_inlined_subroutine, context_die, stmt);
-      tree decl = block_ultimate_origin (stmt);
       char label[MAX_ARTIFICIAL_LABEL_BYTES];
-
-      /* Emit info for the abstract instance first, if we haven't yet.  */
-      dwarf2out_abstract_function (decl);
 
       add_abstract_origin_attribute (subr_die, decl);
       ASM_GENERATE_INTERNAL_LABEL (label, BLOCK_BEGIN_LABEL,
@@ -11093,8 +11107,12 @@ gen_field_die (decl, context_die)
      tree decl;
      dw_die_ref context_die;
 {
-  dw_die_ref decl_die = new_die (DW_TAG_member, context_die, decl);
+  dw_die_ref decl_die;
 
+  if (TREE_TYPE (decl) == error_mark_node)
+    return;
+    
+  decl_die = new_die (DW_TAG_member, context_die, decl);
   add_name_and_src_coords_attributes (decl_die, decl);
   add_type_attribute (decl_die, member_declared_type (decl),
 		      TREE_READONLY (decl), TREE_THIS_VOLATILE (decl),

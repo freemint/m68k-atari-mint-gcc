@@ -1471,8 +1471,11 @@ initialize_uninitialized_subregs ()
 	      for_each_rtx (&i, find_regno_partial, &param);
 	      if (param.retval != NULL_RTX)
 		{
-		  insn = gen_move_insn (param.retval,
-				        CONST0_RTX (GET_MODE (param.retval)));
+		  start_sequence ();
+		  emit_move_insn (param.retval,
+				  CONST0_RTX (GET_MODE (param.retval)));
+		  insn = get_insns ();
+		  end_sequence ();
 		  insert_insn_on_edge (insn, e);
 		  did_something = 1;
 		}
@@ -1754,8 +1757,10 @@ propagate_one_insn (pbi, insn)
 
       if (GET_CODE (insn) == CALL_INSN)
 	{
-	  int i;
+	  regset live_at_end;
+	  bool sibcall_p;
 	  rtx note, cond;
+	  int i;
 
 	  cond = NULL_RTX;
 	  if (GET_CODE (PATTERN (insn)) == COND_EXEC)
@@ -1780,9 +1785,19 @@ propagate_one_insn (pbi, insn)
 	      mark_set_1 (pbi, CLOBBER, XEXP (XEXP (note, 0), 0),
 			  cond, insn, pbi->flags);
 
-	  /* Calls change all call-used and global registers.  */
+	  /* Calls change all call-used and global registers; sibcalls do not
+	     clobber anything that must be preserved at end-of-function,
+	     except for return values.  */
+
+	  sibcall_p = SIBLING_CALL_P (insn);
+	  live_at_end = EXIT_BLOCK_PTR->global_live_at_start;
 	  for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-	    if (TEST_HARD_REG_BIT (regs_invalidated_by_call, i))
+	    if (TEST_HARD_REG_BIT (regs_invalidated_by_call, i)
+		&& ! (sibcall_p
+		      && REGNO_REG_SET_P (live_at_end, i)
+		      && ! refers_to_regno_p (i, i+1,
+					      current_function_return_rtx,
+					      (rtx *) 0)))
 	      {
 		/* We do not want REG_UNUSED notes for these registers.  */
 		mark_set_1 (pbi, CLOBBER, regno_reg_rtx[i], cond, insn,

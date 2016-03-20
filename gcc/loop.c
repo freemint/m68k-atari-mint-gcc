@@ -6275,7 +6275,7 @@ basic_induction_var (loop, x, mode, dest_reg, p, inc_val, mult_val, location)
 {
   enum rtx_code code;
   rtx *argp, arg;
-  rtx insn, set = 0;
+  rtx insn, set = 0, last, inc;
 
   code = GET_CODE (x);
   *location = NULL;
@@ -6303,7 +6303,26 @@ basic_induction_var (loop, x, mode, dest_reg, p, inc_val, mult_val, location)
       if (loop_invariant_p (loop, arg) != 1)
 	return 0;
 
-      *inc_val = convert_modes (GET_MODE (dest_reg), GET_MODE (x), arg, 0);
+      /* convert_modes can emit new instructions, e.g. when arg is a loop
+	 invariant MEM and dest_reg has a different mode.
+	 These instructions would be emitted after the end of the function
+	 and then *inc_val would be an unitialized pseudo.
+	 Detect this and bail in this case.
+	 Other alternatives to solve this can be introducing a convert_modes
+	 variant which is allowed to fail but not allowed to emit new
+	 instructions, emit these instructions before loop start and let
+	 it be garbage collected if *inc_val is never used or saving the
+	 *inc_val initialization sequence generated here and when *inc_val
+	 is going to be actually used, emit it at some suitable place.  */
+      last = get_last_insn ();
+      inc = convert_modes (GET_MODE (dest_reg), GET_MODE (x), arg, 0);
+      if (get_last_insn () != last)
+	{
+	  delete_insns_since (last);
+	  return 0;
+	}
+
+      *inc_val = inc;
       *mult_val = const1_rtx;
       *location = argp;
       return 1;
@@ -6384,7 +6403,15 @@ basic_induction_var (loop, x, mode, dest_reg, p, inc_val, mult_val, location)
 	  && GET_MODE_CLASS (mode) != MODE_CC)
 	{
 	  /* Possible bug here?  Perhaps we don't know the mode of X.  */
-	  *inc_val = convert_modes (GET_MODE (dest_reg), mode, x, 0);
+	  last = get_last_insn ();
+	  inc = convert_modes (GET_MODE (dest_reg), mode, x, 0);
+	  if (get_last_insn () != last)
+	    {
+	      delete_insns_since (last);
+	      return 0;
+	    }
+
+	  *inc_val = inc;
 	  *mult_val = const0_rtx;
 	  return 1;
 	}
@@ -7865,11 +7892,12 @@ loop_iv_add_mult_emit_before (loop, b, m, a, reg, before_bb, before_insn)
   update_reg_last_use (b, before_insn);
   update_reg_last_use (m, before_insn);
 
-  loop_insn_emit_before (loop, before_bb, before_insn, seq);
-
   /* It is possible that the expansion created lots of new registers.
-     Iterate over the sequence we just created and record them all.  */
+     Iterate over the sequence we just created and record them all.  We
+     must do this before inserting the sequence.  */
   loop_regs_update (loop, seq);
+
+  loop_insn_emit_before (loop, before_bb, before_insn, seq);
 }
 
 
@@ -7894,11 +7922,12 @@ loop_iv_add_mult_sink (loop, b, m, a, reg)
   update_reg_last_use (b, loop->sink);
   update_reg_last_use (m, loop->sink);
 
-  loop_insn_sink (loop, seq);
-
   /* It is possible that the expansion created lots of new registers.
-     Iterate over the sequence we just created and record them all.  */
+     Iterate over the sequence we just created and record them all.  We
+     must do this before inserting the sequence.  */
   loop_regs_update (loop, seq);
+
+  loop_insn_sink (loop, seq);
 }
 
 
@@ -7917,11 +7946,12 @@ loop_iv_add_mult_hoist (loop, b, m, a, reg)
   /* Use copy_rtx to prevent unexpected sharing of these rtx.  */
   seq = gen_add_mult (copy_rtx (b), copy_rtx (m), copy_rtx (a), reg);
 
-  loop_insn_hoist (loop, seq);
-
   /* It is possible that the expansion created lots of new registers.
-     Iterate over the sequence we just created and record them all.  */
+     Iterate over the sequence we just created and record them all.  We
+     must do this before inserting the sequence.  */
   loop_regs_update (loop, seq);
+
+  loop_insn_hoist (loop, seq);
 }
 
 

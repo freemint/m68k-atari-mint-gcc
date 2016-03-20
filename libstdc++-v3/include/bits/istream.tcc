@@ -757,8 +757,12 @@ namespace std
       sentry __cerb(*this, true);
       if (__cerb)
 	{
-	  try 
-	    { __c = this->rdbuf()->sgetc(); }
+	  try
+	    {
+	      __c = this->rdbuf()->sgetc();
+	      if (traits_type::eq_int_type(__c, traits_type::eof()))
+		this->setstate(ios_base::eofbit);
+	    }
 	  catch(...)
 	    {
 	      // 27.6.1.3 paragraph 1
@@ -1034,7 +1038,7 @@ namespace std
 	    {
 	      // Figure out how many characters to extract.
 	      streamsize __num = __in.width();
-	      if (__num == 0)
+	      if (__num <= 0)
 		__num = numeric_limits<streamsize>::max();
 	      
 	      const __ctype_type& __ctype = use_facet<__ctype_type>(__in.getloc());

@@ -174,7 +174,7 @@ struct tree_common GTY(())
        TREE_STATIC in
            VAR_DECL, FUNCTION_DECL, CONSTRUCTOR, ADDR_EXPR
        TREE_NO_UNUSED_WARNING in
-           CONVERT_EXPR, NOP_EXPR, COMPOUND_EXPR
+           CONVERT_EXPR, NOP_EXPR, COMPOUND_EXPR, NON_LVALUE_EXPR
        TREE_VIA_VIRTUAL in
            TREE_LIST or TREE_VEC
        TREE_CONSTANT_OVERFLOW in
@@ -798,6 +798,8 @@ struct tree_vector GTY(())
   (IDENTIFIER_NODE_CHECK (NODE)->identifier.id.len)
 #define IDENTIFIER_POINTER(NODE) \
   ((const char *) IDENTIFIER_NODE_CHECK (NODE)->identifier.id.str)
+#define IDENTIFIER_HASH_VALUE(NODE) \
+  (IDENTIFIER_NODE_CHECK (NODE)->identifier.id.hash_value)
 
 /* Translate a hash table identifier pointer to a tree_identifier
    pointer, and vice versa.  */
@@ -3096,6 +3098,7 @@ extern tree case_index_expr_type	PARAMS ((void));
 extern HOST_WIDE_INT all_cases_count	PARAMS ((tree, int *));
 extern void check_for_full_enumeration_handling PARAMS ((tree));
 extern void declare_nonlocal_label	PARAMS ((tree));
+extern void default_flag_random_seed	PARAMS ((void));
 
 /* If KIND=='I', return a suitable global initializer (constructor) name.
    If KIND=='D', return a suitable global clean-up (destructor) name.  */

@@ -84,14 +84,23 @@ namespace std
 typedef long int __padding_type;
 #endif
 
+// GCC on IA64 HP-UX uses the HP-UX system unwind library,
+// it does not have the _Unwind_Resume_or_Rethrow entry point
+// because that is not part of the standard IA64 Unwind ABI.
+#if defined (__ia64__)
+#define _LIBUNWIND_STD_ABI 1
+#endif
+
 /* We need explicit instantiation of the atomicity lock on HPPA if
    there is no weak support.  */
 #if !defined(_GLIBCPP_SUPPORTS_WEAK) && defined (__hppa__)
 #define _GLIBCPP_INST_ATOMICITY_LOCK 1
 #endif
 
-/* Don't use pragma weak in gthread headers.  */
-#ifdef __hppa__
+/* Don't use pragma weak in gthread headers.  HP-UX rejects programs
+   with unsatisfied external references even if all of those references
+   are weak; gthread relies on such unsatisfied references being resolved
+   to null pointers when weak symbol support is on.  */
 #define _GLIBCPP_GTHREAD_USE_WEAK 0
-#endif
+
 #endif

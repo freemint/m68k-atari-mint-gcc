@@ -1,14 +1,668 @@
-2003-05-13  Release Manager
+2003-10-16  Release Manager
 
-	* GCC 3.3 Released.
+	* GCC 3.3.2 Released.
 
-2003-05-13  Release Manager
+2003-10-15  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
 
-	* GCC 3.3 Released.
+	PR c++/12369
+	* decl.c (grokdeclarator): Handle TEMPLATE_ID_EXPR if friend
+	is a member of other class.
+	* friend.c (do_friend): Don't build TEMPLATE_DECL if friend
+	is a specialization of function template.
 
-2003-05-13  Release Manager
+2003-10-15  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
 
-	* GCC 3.3 Released.
+	PR c++/7939
+	* typeck.c (comptypes): Don't ICE when its first argument is
+	error_mark_node.
+	(compparms): Reverse the arguments of same_type_p.
+
+2003-10-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/11878
+	* tree.c (build_target_expr_with_type): Call force_rvalue for
+	classes with non-trivial copy ctors.
+
+	PR c++/11063
+	* typeck.c (build_modify_expr): Call convert rather than abort.
+
+2003-10-06  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10147
+	* call.c (initialize_reference): Tweak error message.
+
+	PR c++/12337
+	* init.c (build_new_1): Make sure that the expression returned is
+	not an lvalue.
+
+	PR c++/12344, c++/12236, c++/8656
+	* decl.c (start_function): Do not ignore attributes embedded in a
+	function declarator.
+
+2003-10-04  Roger Sayle  <roger@eyesopen.com>
+
+	PR c++/11409
+	* class.c (resolve_address_of_overloaded_function): When building
+	list of matching non-template function decls, ignore anticipated
+	declarations of undeclared or shadowed GCC builtins.
+
+2003-10-02  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/12486
+	* typeck.c (finish_class_member_access_expr): Issue diagnostic
+	on erroneous use of qualified name.
+
+2003-07-09  Mark Mitchell  <mark@codesourcery.com>
+
+	* cp-tree.h (break_out_calls): Remove declaration.
+	* tree.c (break_out_calls): Remove.
+	* typeck.c (build_modify_expr): Avoid invalid sharing of trees.
+
+2003-09-18  Mark Mitchell  <mark@codesourcery.com>
+
+	* class.c (resolve_address_of_overloaded_function): Replace
+	complain parameter with flags parameter.
+	(instantiate_type): Adjust accordingly.
+
+2003-09-17  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11991
+	* typeck2.c (incomplete_type_diagnostic): Robustify.
+
+	PR c++/12266
+	* cp-tree.h (tsubst_flags_t): Add tf_conv.
+	* class.c (standard_conversion): Pass tf_conv to
+	instantiate_type.
+	(resolve_address_of_overloaded_function): Do not call mark_used
+	when just checking conversions.
+
+2003-09-14  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/3907
+	* cp-tree.h (innermost_scope_is_class_p): New function.
+	* class.c (maybe_note_name_used_in_class): Refine test for whether
+	or not we are in a class scope.
+	* decl.c (innermost_scope_is_class_p): Define.
+
+2003-09-14  Mark Mitchell  <mark@codesourcery.com>
+
+	* class.c (layout_class_type): Make DECL_MODE match TYPE_MODE for
+	an bit-field whose width exceeds that of its type.
+
+2003-09-09  Steven Bosscher  <steven@gcc.gnu.org>
+
+	PR c++/11595
+	* decl.c (define_label): Remove unreachable timevar pop.
+	Always return the decl, even if the definition is invalid.
+
+2003-09-08  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11786
+	* decl2.c (add_function): Do not complain about seeing the same
+	non-function twice.
+
+2003-09-08  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/5296
+	* pt.c (try_one_overload): Add addr_p parameter.
+	(resolve_overloaded_unification): Pass it.
+
+2003-09-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/12181
+	* typeck.c (build_modify_expr): Don't always stabilize the lhs and
+	rhs.  Do stabilize the lhs of a MODIFY_EXPR used on the lhs.
+
+2003-09-06  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11867
+	* call.c (standard_conversion): Improve comments.
+	(perform_direct_initialization): Make sure we return an expression
+	of the correct type.
+	* typeck.c (build_static_cast): Check for ambiguity and
+	accessibility when performing conversions.
+
+2003-09-05  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/12163
+	* call.c (perform_direct_initialization): Correct logic for
+	direct-initialization of a class type.
+
+	PR c++/12146
+	* pt.c (lookup_template_function): Robustify.
+
+2003-09-04  Mark Mitchell  <mark@codesourcery.com>
+
+	Revert this patch:
+	* class.c (include_empty_classes): Correct logic for ABI version 1.
+
+2003-09-03  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/12053
+	* class.c (include_empty_classes): Correct logic for ABI version 1.
+
+2003-09-01  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/12114
+	* cp-tree.h (initialize_reference): Change prototype.
+	* call.c (initialize_reference): Add cleanup parameter.
+	* decl.c (grok_reference_init): Likewise.
+	(check_initializer): Likewise.
+	(cp_finish_decl): Insert a CLEANUP_STMT if necessary.
+	(duplicate_decls): When replacing an anticipated builtin, do not
+	honor TREE_NOTHROW.
+	* typeck.c (convert_for_initialization): Correct call to
+	initialize_reference.
+
+2003-08-29  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11928
+	* search.c (add_conversions): Avoid adding two conversion
+	operators for the same type.
+
+2003-08-20  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* cp-tree.h (build_function_call_real): Remove unused parameter.
+	* typeck.c (build_function_call_real): Likewise.  Caller changed.
+	* decl.c (binding_table_reverse_maybe_remap): Initialize variable.
+
+2003-08-19  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	PR c++/5293
+	* call.c (initialize_reference): Improve diagnostic.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11713
+	* search.c (setup_class_bindings): Handle conversion operators
+	specially.
+
+2003-07-24  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR c++/10796
+	* decl.c (finish_enum): Make sure the underlying integer type has
+	the same precision as some full integer type.  Reverts part
+	2003-06-27's patch that didn't play any role in fixing the PR.
+
+2003-07-24  Mark Mitchell  <mark@codesourcery.com>
+
+	* cp-tree.h (convert_to_base_statically): Declare.
+	* call.c (build_special_member_call): Convert INSTANCE to the base
+	type.
+	* class.c (convert_to_base_statically): New method.
+	* init.c (construct_virtual_base): Use it.
+	* method.c (do_build_assign_ref): Fix typo in comment.
+
+2003-07-24  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/11513
+	* cp-tree.h (PROCESSING_REAL_TEMPLATE_DECL_P): Use current_scope.
+
+2003-07-23  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11645
+	* cp-tree.h (accessible_base_p): Declare.
+	* call.c (build_over_call): Use it.
+	* search.c (accessible_base_p): New function, split out from ...
+	(lookup_base): ... here.
+
+2003-07-23  Nathan Sidwell  <nathan@codesourcery.com>
+
+	PR c++/11282
+	* decl.c: (reshape_init): Always advance *INITP.
+
+2003-07-19  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11546
+	* pt.c (lookup_template_class): Treat TYPE_DECLs as TEMPLATE_DECLs
+	where appropriate.
+
+2003-07-14  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/7053
+	* pt.c (unregister_specialization): Rename to ...
+	(reregister_specialization): ... this.
+	(tsubst_friend_function): Use it.
+	(regenerate_decl_from_template): Likewise.
+
+2003-07-14  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/11154
+	* pt.c (more_specialized_class): Add full_args parameter.
+	(most_specialized_class): Adjust calls to more_specialized_class.
+	* cp-tree.h (more_specialized_class): Adjust declaration.
+
+2003-07-13  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11503
+	* cp-tree.h (DECL_SELF_REFERENCE_P): New macro.
+	(SET_DECL_SELF_REFERENCE_P): Likewise.
+	* class.c (build_self_reference): Use SET_DECL_SELF_REFERENCE_P.
+	* pt.c (tsubst_decl): Copy it.
+	* search.c (lookup_base): Use DECL_SELF_REFERENCE_P.
+
+2003-07-11  Danny Smith  <dannysmith@users.sourceforge.net>
+
+	Backport from mainline.
+
+	2003-05-21  Danny Smith  <dannysmith@users.sourceforge.net>
+
+	PR c++/9738
+	* decl.c (duplicate_decls): Re-invoke make_decl_rtl
+	if the old decl had instantiated DECL_RTL.
+	(Based on Richard Henderson 2003-05-13 patch to c-decl.c).
+
+2003-07-11  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/8164
+	* decl.c (duplicate_decls): Avoid mangling names unnecessarily.
+
+2003-07-10  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10558
+	* parse.y (class_template_ok_as_expr): New variable.
+	(template_arg_1): New non-terminal.
+	(primary): Issue errors about uses of class templates as
+	expressions.
+
+2003-07-09  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10032
+	* decl.c (cxx_init_decl_processing): With -pedantic, pedwarns are
+	still errors.
+
+	PR c++/10527
+	* error.c (decl_to_string): Do not print default argument
+	expressions.
+
+2003-07-10  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/10849
+	* decl2.c (handle_class_head_apparent_template): New function.
+	* cp-tree.h (handle_class_head_apparent_template): Add declaration.
+	* parse.y (class_head_defn): Use it.
+	* search.c (type_access_control): Revert my 2003-05-25 change.
+
+2003-07-06  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11236
+	* cvt.c (convert_to_void): Treat an overloaded function like
+	"((void) 0)" after issuing a diagnostic.
+
+	PR c++/11345
+	* search.c (lookup_base_r): Remove is_non_public and
+	within_current_scope parameters.  Remove other dead code.
+	(lookup_base): Adjust call to lookup_base_r.
+	(adjust_result_of_qualified_name_lookup): Improve comment.
+	* semantics.c (finish_call_expr): Use maybe_dummy_object.
+
+2003-07-05  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11431
+	* typeck.c (build_static_cast): Check for reference conversions
+	earlier.
+
+2003-07-01  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/6949
+	* decl2.c (grokfield): Create TEMPLATE_DECLs for methods in local
+	classes.
+
+2003-07-01  Mark Mitchell  <mark@codesourcery.com>
+
+	* call.c (resolve_scoped_fn_name): Return error_mark_node for
+	erroneous cases.
+
+	PR c++/11137
+	* decl2.c (generate_ctor_or_dtor_function): Tolerate a
+	non-existant ssdf_decls array.
+	(finish_file): Call generator_ctor_or_dtor_function when there are
+	static constructors or destructors and no other static
+	initializations.
+
+	PR c++/11149
+	* call.c (resolve_scoped_fn_name): Check that the qualifying scope
+	is a class type.
+
+2003-07-01  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/9559
+	* decl2.c (grokfield): Do not build NOP_EXPRs around the
+	error_mark_node.
+
+2003-06-30  Giovanni Bajo  <giovannibajo@libero.it>
+
+        * mangle.c (write_expression): Exit gracefully when trying to
+        mangle a CALL_EXPR.
+
+2003-06-30  Giovanni Bajo <giovannibajo@libero.it>
+
+        PR c++/11106
+        * error.c (dump_decl): Call dump_decl to dump the DECL_NAME for a
+        USING_DECL, instead of print_tree_identifier.
+
+2003-06-27  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10468
+	* pt.c (tsubst): Handle qualified TYPEOF_TYPEs correctly.
+
+	PR c++/10796
+	* decl.c (finish_enum): Implement DR377.
+
+	* decl.c (cp_finish_decl): Don't make variables with reference
+	type readonly while they are being initialized.
+
+2003-06-26  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11332
+	* typeck.c (build_static_cast): Avoid returning expressions with
+	reference type.
+
+2003-06-25  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10990
+	* search.c (lookup_base_r): Rely on accessible_p, rather than
+	trying to emulate that logic here.
+
+	PR c++/10931
+	* call.c (convert_like): Pass issue_conversion_warnings.
+	(convert_like_with_context): Likewise.
+	(convert_like_real): Add issue_conversion_warnings parameter.
+	(perform_direct_initialization_if_possible): New function.
+	* cp-tree.h (perform_direct_initialization_if_possible): Declare it.
+	* typeck.c (check_for_casting_away_constness): New function.
+	(build_static_cast): Rewrite.
+	
+2003-06-23  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/5754
+	* parse.y (structsp): Improve error handling of invalid nested
+	template classes.
+
+2003-06-23  Jakub Jelinek  <jakub@redhat.com>
+
+	* mangle.c: Include ggc.h, gt-cp-mangle.h.
+	(mangle_conv_op_name_for_type): Use htab_create_ggc instead of
+	htab_create.
+	* config-lang.in (gtfiles): Add cp/mangle.c.
+	* Make-lang.in (gt-cp-mangle.h): Depend on s-gtype.
+	(cp/mangle.o): Depend on gt-cp-mangle.h.
+
+2003-06-23  Jakub Jelinek  <jakub@redhat.com>
+
+	* mangle.c (hash_type): val is the TREE_LIST itself, not a pointer
+	to it.
+
+2003-06-21  Gabriel Dos Reis <gdr@integrable-solutions.net>
+
+        PR c++/10784
+        * call.c (joust): Warn about choosing conversion sequence only if
+        -Wconversion.
+	
+2003-06-21  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	PR c++/10864
+	* call.c (op_error): Tidy.
+	* error.c (dump_expr): Properly format 'T()' when T is an
+	aggregate type.
+
+2003-06-21  Gabriel Dos Reis <gdr@integrable-solutions.net>
+
+	PR c++/10915
+	* decl.c (grok_op_properties): Warn possible confusing conversion
+	only if -Wconversion.
+
+2003-06-20  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10845
+	* pt.c (try_class_unification): Correct handling of member class
+	templates.
+
+2003-06-19  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10939
+	* Make-lang.in (decl.o): Depend on input.h.
+	* decl.c (input.h): Include it.
+	(cp_finish_decl): Revert previous change: 
+	  2003-06-19  Mark Mitchell  <mark@codesourcery.com>
+	  * decl.c (cp_finish_decl): Remove support for RESULT_DECLs.
+	  Don't check building_stmt_tree.
+	* pt.c (tsubst_decl): Do not try to substitute into non-dependent
+	functions.
+
+	PR c++/9649
+	* cp-tree.h (pushdecl_class_level): Change prototype.
+	(push_class_level_binding): Likewise.
+	* decl.c (add_binding): Reject duplicate static data members.
+	(pushdecl_class_level): Return a value indicating whether or not
+	the binding was valid.
+	(push_class_level_binding): Likewise.
+	* semantics.c (finish_member_declaration): Don't keep invalid
+	declarations.
+
+2003-06-19  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/11041
+	* call.c (initialize_reference): Do not use cp_finish_decl to emit
+	temporary variables.
+	* cp-tree.h (static_aggregates): Declare.
+	(pushdecl_top_level_and_finish): Likewise.
+	* decl.c (pushdecl_top_level_1): New function.
+	(pushdecl_top_level): Use it.
+	(pushdecl_top_level_and_finish): New function.
+	(initialize_local_var): Remove redundant code.
+	(cp_finish_decl): Remove support for RESULT_DECLs.  Don't check
+	building_stmt_tree.
+	* decl.h (static_aggregates): Remove.
+	* decl2.c (get_guard): Use pushdecl_top_level_and_finish.
+	* rtti.c (get_tinfo_decl): Use pushdecl_top_level_and_finish.
+	(tinfo_base_init): Likewise.
+
+2003-06-19  Matt Austern  <austern@apple.com>
+
+	PR c++/11228
+	* init.c (build_zero_init): Assert that number of array elements
+	is an integer constant.
+	(build_default_init) Don't use build_zero_init for arrays with
+	variable number of elements.
+	
+2003-06-17  Mark Mitchell  <mark@codesourcery.com>
+
+	* mangle.c (mangle_conv_op_name_for_type): Correct sprintf format
+	string again.
+
+2003-06-17  Mark Mitchell  <mark@codesourcery.com>
+
+	* mangle.c (mangle_conv_op_name_for_type): Correct sprintf format
+	string.
+
+2003-06-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/10929
+	* decl.c (grokfndecl): Don't mark a function inline for
+	-finline-functions if it isn't defined.
+
+2003-06-17  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10712
+	* class.c (handle_using_decl): Robustify.
+
+	PR c++/11105
+	* cp-tree.h (DECL_CONV_FN_TYPE): New method.
+	* decl.c (lookup_name_real): Backport conversion operator code
+	from mainline.
+	* mangle.c (struct globals): Remove internal_mangling_p.
+	(write_unqualified_name): Use DECL_CONV_FN_TYPE.
+	(write_template_parm): Don't write out the level number.
+	(conv_type_names): New variable.
+	(hash_type): New function.
+	(compare_type): Likewise.
+	(mangle_conv_op_name_for_type): Don't try to mangle conversion
+	operator names.
+	* search.c (lookup_conversion_operator): New function.
+	(lookup_fnfields_1): Use it.
+
+2003-06-12  Mark Mitchell  <mark@codesourcery.com>
+
+	PR c++/10635
+	* typeck.c (build_c_cast): Check that the destination type is
+	complete.
+
+2003-06-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/10968
+	* pt.c (mark_decl_instantiated): Clear DECL_COMDAT.
+
+2003-06-09  Zack Weinberg  <zack@codesourcery.com>
+
+	PR 8861
+	* mangle.c (write_real_cst): New function.  Implement
+	ABI-compliant mangling of floating-point literals when
+	-fabi-version>=2; provide backward compatibility with 3.3 when
+	-fabi-version=1 (with warning).  Clarify commentary.
+	(write_template_arg_literal): Use write_real_cst.
+
+2003-06-08  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/11039
+	* decl2.c (handle_class_head): Remove implicitness in typename
+	appeared as elaborated type specifier in declaration.
+
+2003-06-03  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/10940
+	* pt.c (check_explicit_specialization): Check for 'static'
+	earlier.
+
+2003-05-31  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/10956
+	* pt.c (instantiate_decl): Don't use full template arguments if
+	we are dealing with specializations.
+
+2003-05-29  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	* decl.c (ENABLE_CHECKING_SCOPES): New macro.
+	(binding_depth): Unconditionally define.
+	(is_class_level): Likewise.
+	(indent): Likewise.  Take an indenting parameter.
+	(push_binding_level): Remove conditional definittion.
+	(pop_binding_level): Likewise.
+	(suspend_binding_level): Likewise.
+	(resume_binding_level): Likewise.
+	(pushlevel): Likewise.
+	(pushlevel_class): Likewise.
+	(poplevel_class): Likewise.
+	(pop_everything): Likewise.
+
+2003-05-27  Gabriel Dos Reis <gdr@integrable-solutions.net>
+
+	* decl.c (global_scope_p): New macro.
+	(pop_binding_level): Use it.
+	(suspend_binding_level): Likewise.
+	(global_bindings_p): Likewise.
+	(print_other_binding_stack): Likewise.
+	(print_binding_stack): Likewise.
+	(maybe_push_to_top_level): Likewise.
+	(pushdecl_namespace_level): Likewise.
+	(start_decl): Likewise.
+	(cp_finish_decl): Likewise.
+	(start_function): Likewise.
+	(cxx_init_decl_processing): Don't refer to global_binding_level.
+	(global_binding_level): Remove.
+
+2003-05-25  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/10849
+	* search.c (type_access_control): Don't check access when
+	processing_specialization.
+
+2003-05-23  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
+
+	PR c++/10682
+	* pt.c (instantiate_class_template): Use DECL_ARTIFICIAL to
+	check for implicitly created typedef to an enum.
+
+2003-05-20  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	* decl.c (free_binding_entry):  Fix thinko.
+
+2003-05-19  Gabriel Dos Reis <gdr@integrable-solutions.net>
+
+	* cp-tree.h (struct binding_entry_s): New datatype.
+	(binding_table): Declare.
+	(binding_entry): Likewise.
+	(bt_foreach_proc): Likewise.
+	(binding_table_foreach): Likewise.
+	(binding_table_find): Likewise.
+	(cxx_remember_type_decls): Likewise.
+	(CLASSTYPE_TAGS): Remove.
+	(CLASSTYPE_NESTED_UDTS): New macro.
+	(struct lang_type_class):  Remove tags field.  Add nested_types.
+	* decl.c (ENTRY_INDEX): New macro.
+	(free_binding_entry):  New free list.
+	(binding_entry_make): New function.
+	(binding_entry_free): Likewise.
+	(struct binding_table_s): New datatype.
+	(SCOPE_DEFAULT_HT_SIZE): New macro.
+	(CLASS_SCOPE_HT_SIZE): Likewise.
+	(NAMESPACE_ORDINARY_HT_SIZE): Likewise.
+	(NAMESPACE_STD_HT_SIZE): Likewise.
+	(GLOBAL_SCOPE_HT_SIZE): Likewise.
+	(binding_table_construct): New function.
+	(binding_table_free): Likewise.
+	(binding_table_new): Likewise.
+	(binding_table_expand): Likewise.
+	(binding_table_insert): Likewise.
+	(binding_table_find): Likewise.
+	(binding_table_find_anon_type): Likewise.
+	(binding_table_reverse_maybe_remap): Likewise.
+	(binding_table_remove_anonymous_types): Likewise.
+	(binding_table_foreach): Likewise.
+	(struct cp_binding_level): Remove tags field.  Add type_decls.
+	(pop_binding_level): Free binding_entries if possible.
+	(kept_level_p): Tidy.
+	(poplevel): Remove unused variable tags.
+	(bt_print_entry): New function.
+	(print_binding_level): Use it.
+	(push_namespace): Construct binding table.
+	(maybe_process_template_type_declaration): Tidy.
+	(pushtag): Likewise.
+	(clear_anon_tags): Likewise.
+	(cxx_remember_type_decls): New function.
+	(lookup_tag): Tidy.
+	(lookup_tag_reverse): Likewise.
+	(cxx_init_decl_processing): Construct binding_table for the global
+	scope.
+	(store_parm_decls): Remove pointless code.
+	(gettags): Remove.
+	(storetags): Likewise.
+	* class.c (unreverse_member_declarations): Don't touch
+	CLASSTYPE_TAGS.
+	(pushclass): Remember CLASSTYPE_NESTED_UTDS.
+	* pt.c (instantiate_class_template): Remove reference to
+	CLASSTYPE_TAGS. Remeber CLASSTYPE_NESTED_UTDS.
+	(bt_instantiate_type_proc): New function.
+	(do_type_instantiation): Use it.
+	* search.c (lookup_field_r): Use binding_table_find.
+	* semantics.c (begin_class_definition): Remove reference to
+	CLASSTYPE_TAGS.  Nullify CLASSTYPE_NESTED_UTDS.
+
+2003-05-15  Jason Merrill  <jason@redhat.com>
+
+	PR c++/5388
+	* call.c (conditional_conversion): Don't consider implicit
+	conversions if T2 is a base of T1.
+	* cp-tree.h (DERIVED_FROM_P, UNIQUELY_DERIVED_FROM_P): Make boolean.
+	(ACCESSIBLY_UNIQUELY_DERIVED_P, PUBLICLY_UNIQUELY_DERIVED_P): Likewise.
+
+	PR c++/10661
+	* pt.c (instantiate_class_template): Also instantiate our
+	enclosing class.
 
 2003-05-13  Release Manager
 
@@ -17,9 +671,9 @@
 2003-05-02  Richard Henderson  <rth@redhat.com>
 
 	PR c++/10570
-        * cfns.gperf: Comment out POSIX thread cancellation points,
-        plus abort and raise.
-        * cfns.h: Regenerate.
+	* cfns.gperf: Comment out POSIX thread cancellation points,
+	plus abort and raise.
+	* cfns.h: Regenerate.
 
 2003-05-01  Mark Mitchell  <mark@codesourcery.com>
 
@@ -185,7 +839,7 @@
 	* cp-tree.h: Declare it.
 
 2003-03-28  Nathan Sidwell  <nathan@codesourcery.com>
-	
+
 	PR c++/10047
 	* decl2.c (finish_file): Don't warn about explicitly instantiated
 	inline decls.
@@ -215,7 +869,7 @@
 	* semantics.c (genrtl_named_return_value): Adjust calls to
 	put_var_into_stack.
 	* typeck.c (cxx_mark_addressable): Likewise.
-	
+
 2003-03-20  Mark Mitchell  <mark@codesourcery.com>
 
 	PR c++/6412
@@ -238,7 +892,7 @@
 2003-03-17  Jason Merrill  <jason@redhat.com>
 
 	PR c++/10091
-	* typeck.c (build_class_member_access_expr): Compare 
+	* typeck.c (build_class_member_access_expr): Compare
 	TYPE_MAIN_VARIANTs.
 
 	* decl.c (finish_function): Don't skip a block.
@@ -310,7 +964,7 @@
 2003-03-11  Jason Merrill  <jason@redhat.com>
 
 	PR c++/9820
-	* search.c (lookup_member): Fix handling of functions in a class 
+	* search.c (lookup_member): Fix handling of functions in a class
 	being defined.
 
 2003-03-11  Mark Mitchell  <mark@codesourcery.com>
@@ -321,14 +975,14 @@
 2003-03-11  Jason Merrill  <jason@redhat.com>
 
 	PR c++/8660
-	* decl2.c (check_classfn): A member template only matches a 
+	* decl2.c (check_classfn): A member template only matches a
 	member template.
 
 2003-03-10  Devang Patel  <dpatel@apple.com>
 
 	PR c++/9394
 	* g++spec.c (lang_specific_driver): Use DEFAULT_WORD_SWITCH_TAKES_ARG.
-	
+
 2003-03-10  Jason Merrill  <jason@redhat.com>
 
 	PR c++/9798
@@ -393,9 +1047,9 @@
 	(poplevel_class): Likewise.
 	(free_bindings):  Adjust type.
 	(find_binding): Adjust return type, add a third parameter. Remove
-	non-useful assertion now that we use static typing.  
+	non-useful assertion now that we use static typing.
 	(cxx_scope_find_binding_for_name): New function.
-	(binding_for_name): Use it.  Adjust local variable type. Simplify. 
+	(binding_for_name): Use it.  Adjust local variable type. Simplify.
 	(namespace_binding):  Simplify.
 	(set_namespace_binding): Likewise.
 	(set_identifier_type_value_with_scope): Adjust local variable type.
@@ -421,7 +1075,7 @@
 	* ptree.c (cxx_print_cxx_binding): New function.
 	(cxx_print_identifier): Use it.
 	(cxx_print_xnode): Delete CPLUS_BINDING case label.
-	
+
 2003-03-09  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
 
 	PR c++/9970
@@ -443,7 +1097,7 @@
  	(finish_file): iterate only through keyed_classes list when
  	deciding whether to emit vtables, remove class from its list after
  	we do the emission.
-	
+
 2003-03-08  Mark Mitchell  <mark@codesourcery.com>
 
 	PR c++/9809
@@ -463,7 +1117,7 @@
 	* cvt.c (build_up_reference): Adjust use of
 	make_temporary_var_for_ref_to_temp.
 	* tree.c (real_non_cast_lvalue_p): New method.
-	 
+
 2003-03-06  Mark Mitchell  <mark@codesourcery.com>
 
 	* call.c (merge_conversion_sequences): New function.
@@ -500,7 +1154,7 @@
 	(push_namespace): Initialize static_decls for ordinary namespaces.
 	(cxx_init_decl_processing): Initialize static_decls for global
 	namespace.
-	
+
 2003-03-05  Mark Mitchell  <mark@codesourcery.com>
 
 	* class.c (end_of_class): Correct thinko.
@@ -512,7 +1166,7 @@
 	* decl.c (cxx_saved_binding_make): New macro.
 	(struct cxx_saved_binding): Define.
 	(store_bindings): Adjust prototype.  Use cxx_saved_binding to save
-	C++ bindings. 
+	C++ bindings.
 	(maybe_push_to_top_level): Adjust local variable type.
 	(pop_from_top_level): Likewise.
 
@@ -595,14 +1249,14 @@
 
 2003-02-27  Devang Patel  <dpatel@apple.com>
 
-        * decl.c (finish_enum): Merge two 'for' loops. Copy value node if required.
+	* decl.c (finish_enum): Merge two 'for' loops. Copy value node if required.
 	Postpone enum setting for template decls.
 	(build_enumerator): Delay copying value node until finish_enum (). Remove
 	#if 0'ed code.
 	* pt.c (tsubst_enum): Set TREE_TYPE and copy value node.
 	(tsubst_copy): Add check for enum type.
 
-	
+
 2003-02-25  Mark Mitchell  <mark@codesourcery.com>
 
 	PR c++/9829
@@ -657,12 +1311,12 @@
 	trailing bit fields when computing CLASSTYPE_SIZE_UNIT.
 
 2003-02-18  Matt Austern <austern@apple.com>
-	
+
 	* cp/cp-lang.c: Change lang hooks so that final_write_globals does
 	nothing for C++.
 	* cp/decl.c (wrapup_globals_for_namespace): Remove special
 	handling of global namespace.
-	
+
 2003-02-18  Jason Merrill  <jason@redhat.com>
 
 	PR c++/9623
@@ -682,8 +1336,8 @@
 
 2003-02-13  Andrew Pinski <pinskia@physics.uc.edu>
 
-        * decl.c: (define_label): Fix warning for return 0 instead of NULL.
-	
+	* decl.c: (define_label): Fix warning for return 0 instead of NULL.
+
 2003-02-13  Gabriel Dos Reis <gdr@integrable-solutions.net>
 
 	* Make-lang.in (cp/decl2.o): Add dependency on timevar.h
@@ -760,7 +1414,7 @@
 	(pop_access_scope): Call pop_from_top_level for function in
 	namespace scope.
 	(regenerate_decl_from_template): Use push_access_scope_real.
-	
+
 2003-01-29  Nathan Sidwell  <nathan@codesourcery.com>
 
 	PR c++/9437
@@ -895,7 +1549,7 @@
 	PR c++/9053
 	* decl.c (duplicate_decls): Templates may be disambiguated by
 	return type.
-	
+
 	PR c++/8702
 	* decl2.c (check_classfn): Use lookup_fnfield_1. List all
 	conversion operators on failure.
@@ -947,7 +1601,7 @@
 2002-12-13  Gabriel Dos Reis  <gdr@integrable-solutions.net>
 
 	PR C++/8031
-	* cvt.c (convert_to_pointer_force): Don't try comparing against 
+	* cvt.c (convert_to_pointer_force): Don't try comparing against
 	erronous type.
 
 2002-12-13  Geoffrey Keating  <geoffk@apple.com>
@@ -963,10 +1617,10 @@
 2002-12-10  Matt Austern   <austern@apple.com>
 
 	* cp-tree.h: get rid of needs_virtual_reinit bit.
-	
+
 2002-12-09  Mark Mitchell  <mark@codesourcery.com>
 
-	* NEWS: Document removal of in-class initialization extension for 
+	* NEWS: Document removal of in-class initialization extension for
 	static data members of non-arithmetic, non-enumeration type.
 	* decl.c (check_static_variable_definition): Do not allow that
 	extension.
@@ -986,7 +1640,7 @@
 
 	PR C++/8799
 	* error.c (dump_expr): Don't ever try to dump a non-existent
-	expression. 
+	expression.
 
 2002-12-03  Jason Merrill  <jason@redhat.com>
 
@@ -997,7 +1651,7 @@
 	PR c++/8461, c++/8625
 	* call.c (convert_for_arg_passing): Don't mess with error_mark_node.
 	(cp_convert_parm_for_inlining): Remove.
-	* cp-lang.c (LANG_HOOKS_TREE_INLINING_CONVERT_PARM_FOR_INLINING): 
+	* cp-lang.c (LANG_HOOKS_TREE_INLINING_CONVERT_PARM_FOR_INLINING):
 	Remove.
 	* cp-tree.h (ADDR_IS_INVISIREF): Remove.
 	* except.c (stabilize_throw_expr): Remove ADDR_IS_INVISIREF code.
@@ -1019,7 +1673,7 @@
 	PR c++/8615
 	* error.c (dump_expr): Handle character constants with
 	TREE_OVERFLOW set.
-	
+
 2002-12-02  Kriang Lerdsuwanakij  <lerdsuwa@users.sourceforge.net>
 
 	DR 180
@@ -1031,7 +1685,7 @@
 	PR c++/5919
 	* pt.c (unify): Use variably_modified_type_p to test validity of
 	template argument types.
-	
+
 	PR c++/8727
 	* cp-tree.h (lang_type_class): Add typeinfo_var.
 	(CLASSTYPE_TYPEINFO_VAR): New macro.
@@ -1057,7 +1711,7 @@
 	(check_initializer): Validate the type of the initialized
 	variable, even if the initializer is absent.
 	* typeck.c (cp_type_quals): Deal gracefully with erroneous types.
-	
+
 	PR c++/8214
 	* typeck.c (convert_for_assignment): Do not use
 	decl_constant_value on the operand.
@@ -1070,7 +1724,7 @@
 
 	* parse.y (class_head_defn): Set CLASSTYPE_DECLARED_CLASS for
 	anonymous structs.
-	
+
 2002-11-29  Mark Mitchell  <mark@codesourcery.com>
 
 	* class.c (walk_subobject_offsets): Recur on binfos as well as on
@@ -1079,7 +1733,7 @@
 	base class.
 	(layout_empty_base): Likewise.
 	(build_base_field): Likewise.
-	
+
 2002-11-27  Mark Mitchell  <mark@codesourcery.com>
 
 	* class.c (build_base_field): Make sure we get the canonical base
@@ -1104,7 +1758,7 @@
 	(build_base_field): Record offsets of empty bases in primary
 	virtual bases.
 	(layout_class_type): Record offsets of empty bases in fields.
-	
+
 	* search.c (is_subobject_of_p_1): Fix thinko.
 	(lookup_field_queue_p): Likewise.
 

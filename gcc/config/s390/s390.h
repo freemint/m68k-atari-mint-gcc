@@ -420,6 +420,11 @@ extern const enum reg_class regclass_map[FIRST_PSEUDO_REGISTER];
 #define SECONDARY_INPUT_RELOAD_CLASS(CLASS, MODE, IN)	\
   s390_secondary_input_reload_class ((CLASS), (MODE), (IN))
 
+/* We need a secondary reload when storing a double-word
+   to a non-offsettable memory address.  */
+#define SECONDARY_OUTPUT_RELOAD_CLASS(CLASS, MODE, OUT)	\
+  s390_secondary_output_reload_class ((CLASS), (MODE), (OUT))
+
 /* We need secondary memory to move data between GPRs and FPRs.  */
 #define SECONDARY_MEMORY_NEEDED(CLASS1, CLASS2, MODE) \
  ((CLASS1) != (CLASS2) && ((CLASS1) == FP_REGS || (CLASS2) == FP_REGS))
@@ -510,7 +515,6 @@ extern int current_function_outgoing_args_size;
 
 /* Describe how we implement __builtin_eh_return.  */
 #define EH_RETURN_DATA_REGNO(N) ((N) < 4 ? (N) + 6 : INVALID_REGNUM)
-#define EH_RETURN_STACKADJ_RTX  gen_rtx_REG (Pmode, 10)
 #define EH_RETURN_HANDLER_RTX \
   gen_rtx_MEM (Pmode, plus_constant (arg_pointer_rtx, \
                                      TARGET_64BIT? -48 : -40))

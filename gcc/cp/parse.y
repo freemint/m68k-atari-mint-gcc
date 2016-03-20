@@ -56,6 +56,7 @@ Boston, MA 02111-1307, USA.  */
 
 static short *malloced_yyss;
 static void *malloced_yyvs;
+static int class_template_ok_as_expr;
 
 #define yyoverflow(MSG, SS, SSSIZE, VS, VSSIZE, YYSSZ)			\
 do {									\
@@ -449,7 +450,7 @@ check_class_key (key, aggr)
 %type <code>  template_close_bracket
 %type <ttype> apparent_template_type
 %type <ttype> template_type template_arg_list template_arg_list_opt
-%type <ttype> template_arg
+%type <ttype> template_arg template_arg_1
 %type <ttype> condition xcond paren_cond_or_null
 %type <ttype> type_name nested_name_specifier nested_type ptr_to_mem
 %type <ttype> complete_type_name notype_identifier nonnested_type
@@ -1121,7 +1122,7 @@ template_close_bracket:
 template_arg_list_opt:
          /* empty */
                  { $$ = NULL_TREE; }
-       | template_arg_list
+       | template_arg_list 
        ;
 
 template_arg_list:
@@ -1132,6 +1133,15 @@ template_arg_list:
 	;
 
 template_arg:
+                { ++class_template_ok_as_expr; }
+        template_arg_1 
+                { 
+		  --class_template_ok_as_expr; 
+		  $$ = $2; 
+		}
+        ;
+
+template_arg_1:
 	  type_id
 		{ $$ = groktypename ($1.t); }
 	| PTYPENAME
@@ -1704,7 +1714,14 @@ primary:
 		    $$ = $2;
 		}
 	| overqualified_id  %prec HYPERUNARY
-		{ $$ = build_offset_ref (OP0 ($$), OP1 ($$)); }
+		{ $$ = build_offset_ref (OP0 ($$), OP1 ($$));
+		  if (!class_template_ok_as_expr 
+		      && DECL_CLASS_TEMPLATE_P ($$))
+		    {
+		      error ("invalid use of template `%D'", $$); 
+		      $$ = error_mark_node;
+		    }
+                }
 	| overqualified_id '(' nonnull_exprlist ')'
                 { $$ = parse_finish_call_expr ($1, $3, 0); }
 	| overqualified_id LEFT_RIGHT
@@ -2328,10 +2345,18 @@ structsp:
 		      tree type = TREE_TYPE ($1.t);
 
 		      if (TREE_CODE (type) == TYPENAME_TYPE)
-			/* In a definition of a member class template,
-                           we will get here with an implicit typename,
-                           a TYPENAME_TYPE with a type. */
-			type = TREE_TYPE (type);
+			{
+			  if (IMPLICIT_TYPENAME_P (type))
+			    /* In a definition of a member class template,
+			       we will get here with an implicit typename,
+			       a TYPENAME_TYPE with a type. */
+			    type = TREE_TYPE (type);
+			  else
+			    {
+			      error ("qualified name does not name a class");
+			      type = error_mark_node;
+			    }
+			}
 		      maybe_process_partial_specialization (type);
 		      xref_basetypes (type, $2);
 		    }
@@ -2483,24 +2508,14 @@ class_head_defn:
 	| class_head_apparent_template '{'
 		{
 		  yyungetc ('{', 1);
-		  $$.t = $1;
-		  $$.new_type_flag = 0;
-		  if (TREE_CODE (TREE_TYPE ($1)) == RECORD_TYPE)
-		    /* We might be specializing a template with a different
-		       class-key.  */
-		    CLASSTYPE_DECLARED_CLASS (TREE_TYPE ($1))
-		      = (current_aggr == class_type_node);
+		  $$.t = handle_class_head_apparent_template
+			   ($1, &$$.new_type_flag);
 		}
 	| class_head_apparent_template ':'
 		{
 		  yyungetc (':', 1);
-		  $$.t = $1;
-		  $$.new_type_flag = 0;
-		  if (TREE_CODE (TREE_TYPE ($1)) == RECORD_TYPE)
-		    /* We might be specializing a template with a different
-		       class-key.  */
-		    CLASSTYPE_DECLARED_CLASS (TREE_TYPE ($1))
-		      = (current_aggr == class_type_node);
+		  $$.t = handle_class_head_apparent_template
+			   ($1, &$$.new_type_flag);
 		}
 	| aggr identifier_defn '{'
 		{

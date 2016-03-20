@@ -67,8 +67,6 @@ X::operator int ()
   printf ("__FUNCTION__ %s\n", function);
   printf ("__PRETTY_FUNCTION__ %s\n", pretty);
   
-  if (strcmp (function, "operator i"))
-    bad = true;
   if (strcmp (pretty, "X::operator int()"))
     bad = true;
   return 0;

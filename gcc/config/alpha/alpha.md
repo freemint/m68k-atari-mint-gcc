@@ -2876,7 +2876,7 @@ fadd,fmul,fcpys,fdiv,fsqrt,misc,mvi,ftoi,itof,multi,none"
   [(set (match_operand:DF 0 "register_operand" "=f")
 	(sqrt:DF (match_operand:DF 1 "reg_or_0_operand" "fG")))]
   "TARGET_FP && TARGET_FIX"
-  "sqrt%-%/ %1,%0"
+  "sqrt%-%/ %R1,%0"
   [(set_attr "type" "fsqrt")
    (set_attr "trap" "yes")
    (set_attr "round_suffix" "normal")
@@ -5399,7 +5399,7 @@ fadd,fmul,fcpys,fdiv,fsqrt,misc,mvi,ftoi,itof,multi,none"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(unspec:DI [(match_operand:DI 1 "symbolic_operand" "")]
 		   UNSPEC_SYMBOL))]
-  "TARGET_EXPLICIT_RELOCS && flag_inline_functions"
+  "TARGET_EXPLICIT_RELOCS"
   "#"
   ""
   [(set (match_dup 0) (match_dup 1))]

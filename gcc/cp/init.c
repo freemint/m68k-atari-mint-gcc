@@ -188,6 +188,9 @@ build_zero_init (tree type, tree nelts, bool static_storage_p)
 
      -- if T is a reference type, no initialization is performed.  */
 
+  my_friendly_assert (nelts == NULL_TREE || TREE_CODE (nelts) == INTEGER_CST,
+		      20030618);
+
   if (type == error_mark_node)
     ;
   else if (static_storage_p && zero_init_p (type))
@@ -240,6 +243,8 @@ build_zero_init (tree type, tree nelts, bool static_storage_p)
       /* Iterate over the array elements, building initializations.  */
       inits = NULL_TREE;
       max_index = nelts ? nelts : array_type_nelts (type);
+      my_friendly_assert (TREE_CODE (max_index) == INTEGER_CST, 20030618);
+
       for (index = size_zero_node;
 	   !tree_int_cst_lt (max_index, index);
 	   index = size_binop (PLUS_EXPR, index, size_one_node))
@@ -301,7 +306,8 @@ build_default_init (type, nelts)
      standard says we should have generated would be precisely the
      same as that obtained by calling build_zero_init below, so things
      work out OK.  */
-  if (TYPE_NEEDS_CONSTRUCTING (type))
+  if (TYPE_NEEDS_CONSTRUCTING (type)
+      || (nelts && TREE_CODE (nelts) != INTEGER_CST))
     return NULL_TREE;
       
   /* At this point, TYPE is either a POD class type, an array of POD
@@ -874,18 +880,10 @@ construct_virtual_base (tree vbase, tree arguments)
      constructing virtual bases, then we must be the most derived
      class.  Therefore, we don't have to look up the virtual base;
      we already know where it is.  */
-  exp = build (PLUS_EXPR,
-	       TREE_TYPE (current_class_ptr),
-	       current_class_ptr,
-	       fold (build1 (NOP_EXPR, TREE_TYPE (current_class_ptr),
-			     BINFO_OFFSET (vbase))));
-  exp = build1 (NOP_EXPR, 
-		build_pointer_type (BINFO_TYPE (vbase)), 
-		exp);
-  exp = build1 (INDIRECT_REF, BINFO_TYPE (vbase), exp);
+  exp = convert_to_base_statically (current_class_ref, vbase);
 
-  expand_aggr_init_1 (vbase, current_class_ref, exp,
-		      arguments, LOOKUP_COMPLAIN);
+  expand_aggr_init_1 (vbase, current_class_ref, exp, arguments, 
+		      LOOKUP_COMPLAIN);
   finish_compound_stmt (/*has_no_scope=*/1, compound_stmt);
   finish_then_clause (inner_if_stmt);
   finish_if_stmt ();
@@ -2518,6 +2516,10 @@ build_new_1 (exp)
   /* Now strip the outer ARRAY_TYPE, so we return a pointer to the first
      element.  */
   rval = convert (build_pointer_type (type), rval);
+
+  /* A new-expression is never an lvalue.  */
+  if (real_lvalue_p (rval))
+    rval = build1 (NON_LVALUE_EXPR, TREE_TYPE (rval), rval);
 
   return rval;
 }

@@ -1,10 +1,47 @@
-2003-05-13  Release Manager
+2003-10-16  Release Manager
 
-	* GCC 3.3 Released.
+	* GCC 3.3.2 Released.
 
-2003-05-13  Release Manager
+2003-08-08  Mark Mitchell  <mark@codesourcery.com>
 
-	* GCC 3.3 Released.
+	* gcc_release: Correct logic for updating version.c.  Put
+	prereleases into a subdirectory.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-06-29  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Command "all" now creates .bz2 files only for
+	releases and pre-releases.
+
+2003-06-27  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_sources): Do not include gnats.html any longer.
+	Make an error message more descriptive.
+	
+2003-06-18  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Do not update gcc_latest_snapshot tag any longer.
+
+2003-06-02  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_diffs): Add diagnostics in case we cannot
+	generate a specific diff file.
+
+2003-05-20  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (upload_files): Put diff files into a "diffs"
+	subdirectory.
+
+2003-05-18  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* gcc_release: GNU CC -> GCC.
 
 2003-05-13  Release Manager
 

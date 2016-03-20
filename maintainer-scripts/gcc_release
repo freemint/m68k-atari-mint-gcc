@@ -11,20 +11,20 @@
 #
 # Copyright (c) 2001, 2002 Free Software Foundation.
 #
-# This file is part of GNU CC.
+# This file is part of GCC.
 #
-# GNU CC is free software; you can redistribute it and/or modify
+# GCC is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2, or (at your option)
 # any later version.
 #
-# GNU CC is distributed in the hope that it will be useful,
+# GCC is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with GNU CC; see the file COPYING.  If not, write to
+# along with GCC; see the file COPYING.  If not, write to
 # the Free Software Foundation, 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 #
@@ -130,7 +130,7 @@ EOF
     for x in gcc/version.c; do 
       y=`basename ${x}`
       (changedir `dirname ${SOURCE_DIRECTORY}/${x}` && \
-          sed -e 's|= \".*\"|= \"'${RELEASE}'\"|g' < ${y} > ${y}.new && \
+          sed -e 's|version_string\[\] = \".*\"|version_string\[\] = \"'${RELEASE}'\"|g' < ${y} > ${y}.new && \
 	  mv ${y}.new ${y} && \
           ${CVS} ci -m 'Update version' ${y}) || \
 	  error "Could not update ${x}"
@@ -164,7 +164,7 @@ EOF
   # Obtain some documentation files from the wwwdocs module.
   inform "Retrieving HTML documentation"
   changedir "${WORKING_DIRECTORY}"
-  for x in bugs gnats faq; do
+  for x in bugs faq; do
     (${CVS} export -r HEAD wwwdocs/htdocs/${x}.html && \
      cp ${WORKING_DIRECTORY}/wwwdocs/htdocs/${x}.html \
         ${SOURCE_DIRECTORY}) || \
@@ -178,7 +178,7 @@ EOF
     (${ENV} TERM=vt100 lynx -dump $file \
        | sed -e "s#file://localhost`/bin/pwd`\(.*\)#http://gcc.gnu.org\1#g" \
        > $newfile) || \
-     error "Could not regenerate documentation"
+     error "Could not generate text-only version of ${file}"
   done
 
   # For a prerelease or real release, we need to generate additional
@@ -292,7 +292,11 @@ build_diffs() {
   for f in gcc gcc-ada gcc-g++ gcc-g77 gcc-java gcc-objc gcc-testsuite gcc-core; do
     old_tar=${old_dir}/${f}-${old_vers}.tar.gz
     new_tar=${WORKING_DIRECTORY}/${f}-${RELEASE}.tar.gz
-    if [ -e $old_tar ] && [ -e $new_tar ]; then
+    if [ ! -e $old_tar ]; then
+      inform "$old_tar not found; not generating diff file"
+    elif [ ! -e $new_tar ]; then
+      inform "$new_tar not found; not generating diff file"
+    else
       build_diff $old_tar gcc-${old_vers} $new_tar gcc-${RELEASE} \
         ${f}-${old_vers}-${RELEASE}.diff.gz
     fi
@@ -326,20 +330,30 @@ upload_files() {
 
   # Make sure the directory exists on the server.
   if [ $LOCAL -eq 0 ]; then
-    ${SSH} -l ${GCC_USERNAME} ${GCC_HOSTNAME} mkdir ${FTP_PATH}
+    ${SSH} -l ${GCC_USERNAME} ${GCC_HOSTNAME} \
+      mkdir -p "${FTP_PATH}/diffs"
     UPLOAD_PATH="${GCC_USERNAME}@${GCC_HOSTNAME}:${FTP_PATH}"
   else
-    mkdir -p "${FTP_PATH}" \
+    mkdir -p "${FTP_PATH}/diffs" \
       || error "Could not create \`${FTP_PATH}'"
     UPLOAD_PATH=${FTP_PATH}
   fi
 
+  # Then copy files to their respective (sub)directories.
   for x in gcc*.gz gcc*.bz2; do
     if [ -e ${x} ]; then
       # Make sure the file will be readable on the server.
       chmod a+r ${x}
       # Copy it.
-      ${SCP} ${x} ${UPLOAD_PATH} || error "Could not upload ${x}"
+      case ${x} in
+        *.diff.*)
+          SUBDIR="diffs/";
+          ;;
+        *)
+          SUBDIR="";
+      esac
+      ${SCP} ${x} ${UPLOAD_PATH}/${SUBDIR} \
+        || error "Could not upload ${x}"
     fi
   done
 }
@@ -501,7 +515,7 @@ if [ $SNAPSHOT -eq 0 ]; then
   # If this is not a final release, set various parameters acordingly.
   if [ ${FINAL} -ne 1 ]; then
     RELEASE="${RELEASE}-${DATE}"
-    FTP_PATH="${FTP_PATH}/snapshots/"
+    FTP_PATH="${FTP_PATH}/prerelease-${RELEASE}/"
   else
     FTP_PATH="${FTP_PATH}/releases/gcc-${RELEASE}/"
   fi
@@ -560,7 +574,12 @@ while [ $# -ne 0 ]; do
     sources)  MODE_SOURCES=1;;
     tarfiles) MODE_TARFILES=1;;
     upload)   MODE_UPLOAD=1;;
-    all)      MODE_SOURCES=1; MODE_TARFILES=1; MODE_DIFFS=1; MODE_BZIP2=1; MODE_UPLOAD=1;;
+    all)      MODE_SOURCES=1; MODE_TARFILES=1; MODE_DIFFS=1; MODE_UPLOAD=1;
+              if [ $SNAPSHOT -ne 1 ]; then
+                # Only for releases and pre-releases.
+                MODE_BZIP2=1;
+              fi
+              ;;
     *)        error "Unknown mode $1";;
     esac
     shift
@@ -619,10 +638,6 @@ if [ $MODE_UPLOAD -ne 0 ]; then
     # Update snapshot date file.
     changedir ~
     echo $DATE >.snapshot_date
-
-    # Update gcc_latest_snapshot tag.
-    ${CVS} rtag -d gcc_latest_snapshot gcc
-    ${CVS} rtag -rgcc_ss_${DATE} gcc_latest_snapshot gcc
 
     # Announce the snapshot.
     export QMAILHOST=gcc.gnu.org

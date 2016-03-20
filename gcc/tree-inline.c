@@ -1003,7 +1003,8 @@ inlinable_function_p (fn, id)
   /* In case we don't disregard the inlining limits and we basically
      can inline this function, investigate further.  */
   if (! (*lang_hooks.tree_inlining.disregard_inline_limits) (fn)
-      && inlinable)
+      && inlinable
+      && currfn_insns > MIN_INLINE_INSNS)
     {
       int sum_insns = (id ? id->inlined_stmts : 0) * INSNS_PER_STMT
 		     + currfn_insns;
@@ -1016,8 +1017,7 @@ inlinable_function_p (fn, id)
          with slope -1/MAX_INLINE_SLOPE to exceedingly decrease the
          allowable size. We always allow a size of MIN_INLINE_INSNS
          though.  */
-      else if ((sum_insns > MAX_INLINE_INSNS)
-	       && (currfn_insns > MIN_INLINE_INSNS))
+      else if (sum_insns > MAX_INLINE_INSNS)
 	{
 	  int max_curr = MAX_INLINE_INSNS_SINGLE
 			- (sum_insns - MAX_INLINE_INSNS) / MAX_INLINE_SLOPE;
@@ -1171,7 +1171,8 @@ expand_call_inline (tp, walk_subtrees, data)
      inlining.  */
   if (!inlinable_function_p (fn, id))
     {
-      if (warn_inline && DECL_INLINE (fn))
+      if (warn_inline && DECL_INLINE (fn) && !DID_INLINE_FUNC (fn)
+	  && !DECL_IN_SYSTEM_HEADER (fn))
 	{
 	  warning_with_decl (fn, "inlining failed in call to `%s'");
 	  warning ("called from here");

@@ -125,6 +125,8 @@ try_simplify_condjump (cbranch_block)
   basic_block jump_block, jump_dest_block, cbranch_dest_block;
   edge cbranch_jump_edge, cbranch_fallthru_edge;
   rtx cbranch_insn;
+  rtx insn, next;
+  rtx end;
 
   /* Verify that there are exactly two successors.  */
   if (!cbranch_block->succ
@@ -177,6 +179,26 @@ try_simplify_condjump (cbranch_block)
   cbranch_fallthru_edge->flags &= ~EDGE_FALLTHRU;
   update_br_prob_note (cbranch_block);
 
+  end = jump_block->end;
+  /* Deleting a block may produce unreachable code warning even when we are
+     not deleting anything live.  Supress it by moving all the line number
+     notes out of the block.  */
+  for (insn = jump_block->head; insn != NEXT_INSN (jump_block->end);
+       insn = next)
+    {
+      next = NEXT_INSN (insn);
+      if (GET_CODE (insn) == NOTE && NOTE_LINE_NUMBER (insn) > 0)
+	{
+	  if (insn == jump_block->end)
+	    {
+	      jump_block->end = PREV_INSN (insn);
+	      if (insn == end)
+	        break;
+	    }
+	  reorder_insns_nobb (insn, insn, end);
+	  end = insn;
+	}
+    }
   /* Delete the block with the unconditional jump, and clean up the mess.  */
   flow_delete_block (jump_block);
   tidy_fallthru_edge (cbranch_jump_edge, cbranch_block, cbranch_dest_block);
@@ -1028,10 +1050,10 @@ flow_find_cross_jump (mode, bb1, bb2, f1, f2)
   while (true)
     {
       /* Ignore notes.  */
-      while (!active_insn_p (i1) && i1 != bb1->head)
+      while (!INSN_P (i1) && i1 != bb1->head)
 	i1 = PREV_INSN (i1);
 
-      while (!active_insn_p (i2) && i2 != bb2->head)
+      while (!INSN_P (i2) && i2 != bb2->head)
 	i2 = PREV_INSN (i2);
 
       if (i1 == bb1->head || i2 == bb2->head)
@@ -1040,8 +1062,8 @@ flow_find_cross_jump (mode, bb1, bb2, f1, f2)
       if (!insns_match_p (mode, i1, i2))
 	break;
 
-      /* Don't begin a cross-jump with a USE or CLOBBER insn.  */
-      if (active_insn_p (i1))
+      /* Don't begin a cross-jump with a NOTE insn.  */
+      if (INSN_P (i1))
 	{
 	  /* If the merged insns have different REG_EQUAL notes, then
 	     remove them.  */
@@ -1080,13 +1102,13 @@ flow_find_cross_jump (mode, bb1, bb2, f1, f2)
      Two, it keeps line number notes as matched as may be.  */
   if (ninsns)
     {
-      while (last1 != bb1->head && !active_insn_p (PREV_INSN (last1)))
+      while (last1 != bb1->head && !INSN_P (PREV_INSN (last1)))
 	last1 = PREV_INSN (last1);
 
       if (last1 != bb1->head && GET_CODE (PREV_INSN (last1)) == CODE_LABEL)
 	last1 = PREV_INSN (last1);
 
-      while (last2 != bb2->head && !active_insn_p (PREV_INSN (last2)))
+      while (last2 != bb2->head && !INSN_P (PREV_INSN (last2)))
 	last2 = PREV_INSN (last2);
 
       if (last2 != bb2->head && GET_CODE (PREV_INSN (last2)) == CODE_LABEL)

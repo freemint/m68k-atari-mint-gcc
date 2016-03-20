@@ -1,3 +1,33 @@
+2003-10-16  Release Manager
+
+	* GCC 3.3.2 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Release Manager
+
+	* GCC 3.3.1 Released.
+
+2003-08-04  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc.pot: Regenerated.
+	* be.po: Update to latest version.
+	* el.po: Likewise.
+	* es.po: Likewise.
+	* fr.po: Likewise.
+	* ja.po: Likewise.
+	* nl.po: Likewise.
+	* sv.po: Likewise.
+
+2003-06-03  Philipp Thomas  <pthomas@suse.de>
+
+	* da.po: Update to latest version.
+	* es.po: Likewise.
+	* tr.po: Likewise.
+	* de.po: Likewise.
+
 2003-05-13  Release Manager
 
 	* GCC 3.3 Released.

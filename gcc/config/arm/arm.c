@@ -67,7 +67,6 @@ static void      arm_add_gc_roots 		PARAMS ((void));
 static int       arm_gen_constant		PARAMS ((enum rtx_code, Mmode, Hint, rtx, rtx, int, int));
 static unsigned  bit_count 			PARAMS ((Ulong));
 static int       const_ok_for_op 		PARAMS ((Hint, enum rtx_code));
-static int       eliminate_lr2ip		PARAMS ((rtx *));
 static rtx	 emit_multi_reg_push		PARAMS ((int));
 static rtx	 emit_sfm			PARAMS ((int, int));
 #ifndef AOF_ASSEMBLER
@@ -920,6 +919,10 @@ use_return_insn (iscond)
   /* Naked functions and volatile functions need special
      consideration.  */
   if (func_type & (ARM_FT_VOLATILE | ARM_FT_NAKED))
+    return 0;
+
+  /* So do interrupt functions that use the frame pointer.  */
+  if (IS_INTERRUPT (func_type) && frame_pointer_needed)
     return 0;
   
   /* As do variadic functions.  */
@@ -6426,56 +6429,26 @@ output_call (operands)
   return "";
 }
 
-static int
-eliminate_lr2ip (x)
-     rtx * x;
-{
-  int something_changed = 0;
-  rtx x0 = * x;
-  int code = GET_CODE (x0);
-  int i, j;
-  const char * fmt;
-  
-  switch (code)
-    {
-    case REG:
-      if (REGNO (x0) == LR_REGNUM)
-        {
-	  *x = gen_rtx_REG (SImode, IP_REGNUM);
-	  return 1;
-        }
-      return 0;
-    default:
-      /* Scan through the sub-elements and change any references there.  */
-      fmt = GET_RTX_FORMAT (code);
-      
-      for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
-	if (fmt[i] == 'e')
-	  something_changed |= eliminate_lr2ip (&XEXP (x0, i));
-	else if (fmt[i] == 'E')
-	  for (j = 0; j < XVECLEN (x0, i); j++)
-	    something_changed |= eliminate_lr2ip (&XVECEXP (x0, i, j));
-      
-      return something_changed;
-    }
-}
-  
 /* Output a 'call' insn that is a reference in memory.  */
 
 const char *
 output_call_mem (operands)
      rtx * operands;
 {
-  operands[0] = copy_rtx (operands[0]); /* Be ultra careful.  */
-  /* Handle calls using lr by using ip (which may be clobbered in subr anyway).  */
-  if (eliminate_lr2ip (&operands[0]))
-    output_asm_insn ("mov%?\t%|ip, %|lr", operands);
-
   if (TARGET_INTERWORK)
     {
       output_asm_insn ("ldr%?\t%|ip, %0", operands);
       output_asm_insn ("mov%?\t%|lr, %|pc", operands);
       output_asm_insn ("bx%?\t%|ip", operands);
+    }
+  else if (regno_use_in (LR_REGNUM, operands[0]))
+    {
+      /* LR is used in the memory address.  We load the address in the
+	 first instruction.  It's safe to use IP as the target of the
+	 load since the call will kill it anyway.  */
+      output_asm_insn ("ldr%?\t%|ip, %0", operands);
+      output_asm_insn ("mov%?\t%|lr, %|pc", operands);
+      output_asm_insn ("mov%?\t%|pc, %|ip", operands);
     }
   else
     {
@@ -6770,7 +6743,7 @@ output_move_double (operands)
                 }
               else
                 {
-		  otherops[1] = adjust_address (operands[1], VOIDmode, 4);
+		  otherops[1] = adjust_address (operands[1], SImode, 4);
 		  /* Take care of overlapping base/data reg.  */
 		  if (reg_mentioned_p (operands[0], operands[1]))
 		    {
@@ -6836,7 +6809,7 @@ output_move_double (operands)
 	  /* Fall through */
 
         default:
-	  otherops[0] = adjust_address (operands[0], VOIDmode, 4);
+	  otherops[0] = adjust_address (operands[0], SImode, 4);
 	  otherops[1] = gen_rtx_REG (SImode, 1 + REGNO (operands[1]));
 	  output_asm_insn ("str%?\t%1, %0", operands);
 	  output_asm_insn ("str%?\t%1, %0", otherops);
@@ -7717,7 +7690,7 @@ arm_output_epilogue (really_return)
       if (IS_INTERRUPT (func_type))
 	/* Interrupt handlers will have pushed the
 	   IP onto the stack, so restore it now.  */
-	print_multi_reg (f, "ldmfd\t%r", SP_REGNUM, 1 << IP_REGNUM);
+	print_multi_reg (f, "ldmfd\t%r!", SP_REGNUM, 1 << IP_REGNUM);
     }
   else
     {
@@ -7848,7 +7821,7 @@ arm_output_epilogue (really_return)
 
     default:
       if (frame_pointer_needed)
-	/* If we used the frame pointer then the return adddress
+	/* If we used the frame pointer then the return address
 	   will have been loaded off the stack directly into the
 	   PC, so there is no need to issue a MOV instruction
 	   here.  */
@@ -8467,18 +8440,19 @@ arm_expand_prologue ()
       RTX_FRAME_RELATED_P (insn) = 1;
     }
 
-  /* If this is an interrupt service routine, and the link register is
-     going to be pushed, subtracting four now will mean that the
-     function return can be done with a single instruction.  */
+  /* If this is an interrupt service routine, and the link register
+     is going to be pushed, and we are not creating a stack frame,
+     (which would involve an extra push of IP and a pop in the epilogue)
+     subtracting four from LR now will mean that the function return
+     can be done with a single instruction.  */
   if ((func_type == ARM_FT_ISR || func_type == ARM_FT_FIQ)
-      && (live_regs_mask & (1 << LR_REGNUM)) != 0)
-    {
-      emit_insn (gen_rtx_SET (SImode, 
-			      gen_rtx_REG (SImode, LR_REGNUM),
-			      gen_rtx_PLUS (SImode,
-				    gen_rtx_REG (SImode, LR_REGNUM),
-				    GEN_INT (-4))));
-    }
+      && (live_regs_mask & (1 << LR_REGNUM)) != 0
+      && ! frame_pointer_needed)
+    emit_insn (gen_rtx_SET (SImode, 
+			    gen_rtx_REG (SImode, LR_REGNUM),
+			    gen_rtx_PLUS (SImode,
+					  gen_rtx_REG (SImode, LR_REGNUM),
+					  GEN_INT (-4))));
 
   if (live_regs_mask)
     {

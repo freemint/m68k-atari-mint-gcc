@@ -1154,6 +1154,7 @@ ia64_expand_move (op0, op1)
       if ((tls_kind = tls_symbolic_operand (op1, Pmode)))
 	{
 	  rtx tga_op1, tga_op2, tga_ret, tga_eqv, tmp, insns;
+	  rtx orig_op0 = op0;
 
 	  switch (tls_kind)
 	    {
@@ -1177,8 +1178,10 @@ ia64_expand_move (op0, op1)
 	      insns = get_insns ();
 	      end_sequence ();
 
+	      if (GET_MODE (op0) != Pmode)
+		op0 = tga_ret;
 	      emit_libcall_block (insns, op0, tga_ret, op1);
-	      return NULL_RTX;
+	      break;
 
 	    case TLS_MODEL_LOCAL_DYNAMIC:
 	      /* ??? This isn't the completely proper way to do local-dynamic
@@ -1206,20 +1209,15 @@ ia64_expand_move (op0, op1)
 	      tmp = gen_reg_rtx (Pmode);
 	      emit_libcall_block (insns, tmp, tga_ret, tga_eqv);
 
-	      if (register_operand (op0, Pmode))
-		tga_ret = op0;
-	      else
-		tga_ret = gen_reg_rtx (Pmode);
+	      if (!register_operand (op0, Pmode))
+		op0 = gen_reg_rtx (Pmode);
 	      if (TARGET_TLS64)
 		{
-		  emit_insn (gen_load_dtprel (tga_ret, op1));
-		  emit_insn (gen_adddi3 (tga_ret, tmp, tga_ret));
+		  emit_insn (gen_load_dtprel (op0, op1));
+		  emit_insn (gen_adddi3 (op0, tmp, op0));
 		}
 	      else
-		emit_insn (gen_add_dtprel (tga_ret, tmp, op1));
-	      if (tga_ret == op0)
-		return NULL_RTX;
-	      op1 = tga_ret;
+		emit_insn (gen_add_dtprel (op0, tmp, op1));
 	      break;
 
 	    case TLS_MODEL_INITIAL_EXEC:
@@ -1229,35 +1227,32 @@ ia64_expand_move (op0, op1)
 	      RTX_UNCHANGING_P (tmp) = 1;
 	      tmp = force_reg (Pmode, tmp);
 
-	      if (register_operand (op0, Pmode))
-		op1 = op0;
-	      else
-		op1 = gen_reg_rtx (Pmode);
-	      emit_insn (gen_adddi3 (op1, tmp, gen_thread_pointer ()));
-	      if (op1 == op0)
-		return NULL_RTX;
+	      if (!register_operand (op0, Pmode))
+		op0 = gen_reg_rtx (Pmode);
+	      emit_insn (gen_adddi3 (op0, tmp, gen_thread_pointer ()));
 	      break;
 
 	    case TLS_MODEL_LOCAL_EXEC:
-	      if (register_operand (op0, Pmode))
-		tmp = op0;
-	      else
-		tmp = gen_reg_rtx (Pmode);
+	      if (!register_operand (op0, Pmode))
+		op0 = gen_reg_rtx (Pmode);
 	      if (TARGET_TLS64)
 		{
-		  emit_insn (gen_load_tprel (tmp, op1));
-		  emit_insn (gen_adddi3 (tmp, gen_thread_pointer (), tmp));
+		  emit_insn (gen_load_tprel (op0, op1));
+		  emit_insn (gen_adddi3 (op0, gen_thread_pointer (), op0));
 		}
 	      else
-		emit_insn (gen_add_tprel (tmp, gen_thread_pointer (), op1));
-	      if (tmp == op0)
-		return NULL_RTX;
-	      op1 = tmp;
+		emit_insn (gen_add_tprel (op0, gen_thread_pointer (), op1));
 	      break;
 
 	    default:
 	      abort ();
 	    }
+
+	  if (orig_op0 == op0)
+	    return NULL_RTX;
+	  if (GET_MODE (orig_op0) == Pmode)
+	    return op0;
+	  return gen_lowpart (GET_MODE (orig_op0), op0);
 	}
       else if (!TARGET_NO_PIC &&
 	       (symbolic_operand (op1, Pmode) ||
@@ -1467,11 +1462,7 @@ ia64_expand_call (retval, addr, nextarg, sibcall_p)
     }
 
   if (sibcall_p)
-    {
-      use_reg (&CALL_INSN_FUNCTION_USAGE (insn), b0);
-      use_reg (&CALL_INSN_FUNCTION_USAGE (insn),
-	       gen_rtx_REG (DImode, AR_PFS_REGNUM));
-    }
+    use_reg (&CALL_INSN_FUNCTION_USAGE (insn), b0);
 }
 void
 ia64_reload_gp ()
@@ -1524,7 +1515,7 @@ ia64_split_call (retval, addr, retaddr, scratch_r, scratch_b,
 
   /* If we find we're calling through a register, then we're actually
      calling through a descriptor, so load up the values.  */
-  if (REG_P (addr))
+  if (REG_P (addr) && GR_REGNO_P (REGNO (addr)))
     {
       rtx tmp;
       bool addr_dead_p;
@@ -2019,10 +2010,6 @@ ia64_initial_elimination_offset (from, to)
 	abort ();
       break;
 
-    case RETURN_ADDRESS_POINTER_REGNUM:
-      offset = 0;
-      break;
-
     default:
       abort ();
     }
@@ -2372,17 +2359,6 @@ ia64_expand_prologue ()
 	= reg_names[current_frame_info.reg_fp];
       reg_names[current_frame_info.reg_fp] = tmp;
     }
-
-  /* Fix up the return address placeholder.  */
-  /* ??? We can fail if __builtin_return_address is used, and we didn't
-     allocate a register in which to save b0.  I can't think of a way to
-     eliminate RETURN_ADDRESS_POINTER_REGNUM to a local register and
-     then be sure that I got the right one.  Further, reload doesn't seem
-     to care if an eliminable register isn't used, and "eliminates" it
-     anyway.  */
-  if (regs_ever_live[RETURN_ADDRESS_POINTER_REGNUM]
-      && current_frame_info.reg_save_b0 != 0)
-    XINT (return_address_pointer_rtx, 0) = current_frame_info.reg_save_b0;
 
   /* We don't need an alloc instruction if we've used no outputs or locals.  */
   if (current_frame_info.n_local_regs == 0
@@ -2746,7 +2722,7 @@ ia64_expand_epilogue (sibcall_p)
       reg = gen_rtx_REG (DImode, AR_PFS_REGNUM);
       emit_move_insn (reg, alt_reg);
     }
-  else if (! current_function_is_leaf)
+  else if (TEST_HARD_REG_BIT (current_frame_info.mask, AR_PFS_REGNUM))
     {
       alt_regno = next_scratch_gr_reg ();
       alt_reg = gen_rtx_REG (DImode, alt_regno);
@@ -2940,6 +2916,72 @@ ia64_direct_return ()
   return 0;
 }
 
+/* Return the magic cookie that we use to hold the return address
+   during early compilation.  */
+
+rtx
+ia64_return_addr_rtx (count, frame)
+     HOST_WIDE_INT count;
+     rtx frame ATTRIBUTE_UNUSED;
+{
+  if (count != 0)
+    return NULL;
+  return gen_rtx_UNSPEC (Pmode, gen_rtvec (1, const0_rtx), UNSPEC_RET_ADDR);
+}
+
+/* Split this value after reload, now that we know where the return
+   address is saved.  */
+
+void
+ia64_split_return_addr_rtx (dest)
+     rtx dest;
+{
+  rtx src;
+
+  if (TEST_HARD_REG_BIT (current_frame_info.mask, BR_REG (0)))
+    {
+      if (current_frame_info.reg_save_b0 != 0)
+	src = gen_rtx_REG (DImode, current_frame_info.reg_save_b0);
+      else
+	{
+	  HOST_WIDE_INT off;
+	  unsigned int regno;
+
+	  /* Compute offset from CFA for BR0.  */
+	  /* ??? Must be kept in sync with ia64_expand_prologue.  */
+	  off = (current_frame_info.spill_cfa_off
+		 + current_frame_info.spill_size);
+	  for (regno = GR_REG (1); regno <= GR_REG (31); ++regno)
+	    if (TEST_HARD_REG_BIT (current_frame_info.mask, regno))
+	      off -= 8;
+
+	  /* Convert CFA offset to a register based offset.  */
+	  if (frame_pointer_needed)
+	    src = hard_frame_pointer_rtx;
+	  else
+	    {
+	      src = stack_pointer_rtx;
+	      off += current_frame_info.total_size;
+	    }
+
+	  /* Load address into scratch register.  */
+	  if (CONST_OK_FOR_I (off))
+	    emit_insn (gen_adddi3 (dest, src, GEN_INT (off)));
+	  else
+	    {
+	      emit_move_insn (dest, GEN_INT (off));
+	      emit_insn (gen_adddi3 (dest, src, dest));
+	    }
+
+	  src = gen_rtx_MEM (Pmode, dest);
+	}
+    }
+  else
+    src = gen_rtx_REG (DImode, BR_REG (0));
+
+  emit_move_insn (dest, src);
+}
+
 int
 ia64_hard_regno_rename_ok (from, to)
      int from;
@@ -3088,9 +3130,6 @@ ia64_output_function_epilogue (file, size)
      HOST_WIDE_INT size ATTRIBUTE_UNUSED;
 {
   int i;
-
-  /* Reset from the function's potential modifications.  */
-  XINT (return_address_pointer_rtx, 0) = RETURN_ADDRESS_POINTER_REGNUM;
 
   if (current_frame_info.reg_fp)
     {
@@ -7064,7 +7103,8 @@ ia64_emit_nops ()
 	    {
 	      while (bundle_pos < 3)
 		{
-		  emit_insn_before (gen_nop_type (b->t[bundle_pos]), insn);
+		  if (b->t[bundle_pos] != TYPE_L)
+		    emit_insn_before (gen_nop_type (b->t[bundle_pos]), insn);
 		  bundle_pos++;
 		}
 	      continue;
@@ -7162,12 +7202,11 @@ ia64_epilogue_uses (regno)
   switch (regno)
     {
     case R_GR (1):
-      /* When a function makes a call through a function descriptor, we
-         will write a (potentially) new value to "gp".  After returning
-         from such a call, we need to make sure the function restores the
-         original gp-value, even if the function itself does not use the
-         gp anymore.  */
-      return (TARGET_CONST_GP && !(TARGET_AUTO_PIC || TARGET_NO_PIC));
+      /* With a call to a function in another module, we will write a new
+	 value to "gp".  After returning from such a call, we need to make
+	 sure the function restores the original gp-value, even if the
+	 function itself does not use the gp anymore.  */
+      return !(TARGET_AUTO_PIC || TARGET_NO_PIC);
 
     case IN_REG (0): case IN_REG (1): case IN_REG (2): case IN_REG (3):
     case IN_REG (4): case IN_REG (5): case IN_REG (6): case IN_REG (7):
@@ -7349,14 +7388,9 @@ bool
 ia64_function_ok_for_sibcall (decl)
      tree decl;
 {
-  /* Direct calls are always ok.  */
-  if (decl)
-    return true;
-
-  /* If TARGET_CONST_GP is in effect, then our caller expects us to
-     return with our current GP.  This means that we'll always have
-     a GP reload after an indirect call.  */
-  return !ia64_epilogue_uses (R_GR (1));
+  /* We must always return with our current GP.  This means we can
+     only sibcall to functions defined in the current module.  */
+  return decl && (*targetm.binds_local_p) (decl);
 }
 
 /* Output assembly directives for prologue regions.  */
@@ -8378,6 +8412,9 @@ ia64_output_mi_thunk (file, thunk, delta, vcall_offset, function)
   emit_note (NULL, NOTE_INSN_PROLOGUE_END);
 
   this = gen_rtx_REG (Pmode, IN_REG (0));
+  if (TARGET_ILP32)
+    emit_insn (gen_ptr_extend (this,
+			       gen_rtx_REG (ptr_mode, IN_REG (0))));
 
   /* Apply the constant offset, if required.  */
   if (delta)
@@ -8399,7 +8436,14 @@ ia64_output_mi_thunk (file, thunk, delta, vcall_offset, function)
       rtx vcall_offset_rtx = GEN_INT (vcall_offset);
       rtx tmp = gen_rtx_REG (Pmode, 2);
 
-      emit_move_insn (tmp, gen_rtx_MEM (Pmode, this));
+      if (TARGET_ILP32)
+	{
+	  rtx t = gen_rtx_REG (ptr_mode, 2);
+	  emit_move_insn (t, gen_rtx_MEM (ptr_mode, this));
+	  emit_insn (gen_ptr_extend (tmp, t));
+	}
+      else
+	emit_move_insn (tmp, gen_rtx_MEM (Pmode, this));
 
       if (!CONST_OK_FOR_J (vcall_offset))
 	{
@@ -8409,7 +8453,11 @@ ia64_output_mi_thunk (file, thunk, delta, vcall_offset, function)
 	}
       emit_insn (gen_adddi3 (tmp, tmp, vcall_offset_rtx));
 
-      emit_move_insn (tmp, gen_rtx_MEM (Pmode, tmp));
+      if (TARGET_ILP32)
+	emit_move_insn (gen_rtx_REG (ptr_mode, 2), 
+			gen_rtx_MEM (ptr_mode, tmp));
+      else
+	emit_move_insn (tmp, gen_rtx_MEM (Pmode, tmp));
 
       emit_insn (gen_adddi3 (this, this, tmp));
     }

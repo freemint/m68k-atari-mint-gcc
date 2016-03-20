@@ -1002,12 +1002,7 @@ grokfield (declarator, declspecs, init, asmspec_tree, attrlist)
 		init = decl_constant_value (init);
 	      else if (TREE_CODE (init) == CONSTRUCTOR)
 		init = digest_init (TREE_TYPE (value), init, (tree *)0);
-	      if (init == error_mark_node)
-		/* We must make this look different than `error_mark_node'
-		   because `decl_const_value' would mis-interpret it
-		   as only meaning that this VAR_DECL is defined.  */
-		init = build1 (NOP_EXPR, TREE_TYPE (value), init);
-	      else if (! TREE_CONSTANT (init))
+	      if (init != error_mark_node && ! TREE_CONSTANT (init))
 		{
 		  /* We can allow references to things that are effectively
 		     static, since references are initialized with the
@@ -1024,7 +1019,7 @@ grokfield (declarator, declspecs, init, asmspec_tree, attrlist)
 	}
     }
 
-  if (processing_template_decl && ! current_function_decl
+  if (processing_template_decl
       && (TREE_CODE (value) == VAR_DECL || TREE_CODE (value) == FUNCTION_DECL))
     value = push_template_decl (value);
 
@@ -2076,8 +2071,7 @@ get_guard (decl)
       
       DECL_ARTIFICIAL (guard) = 1;
       TREE_USED (guard) = 1;
-      pushdecl_top_level (guard);
-      cp_finish_decl (guard, NULL_TREE, NULL_TREE, 0);
+      pushdecl_top_level_and_finish (guard, NULL_TREE);
     }
   return guard;
 }
@@ -2699,15 +2693,16 @@ generate_ctor_or_dtor_function (constructor_p, priority)
 
   /* Call the static storage duration function with appropriate
      arguments.  */
-  for (i = 0; i < ssdf_decls->elements_used; ++i) 
-    {
-      arguments = tree_cons (NULL_TREE, build_int_2 (priority, 0), 
-			     NULL_TREE);
-      arguments = tree_cons (NULL_TREE, build_int_2 (constructor_p, 0),
-			     arguments);
-      finish_expr_stmt (build_function_call (VARRAY_TREE (ssdf_decls, i),
-					     arguments));
-    }
+  if (ssdf_decls)
+    for (i = 0; i < ssdf_decls->elements_used; ++i) 
+      {
+	arguments = tree_cons (NULL_TREE, build_int_2 (priority, 0), 
+			       NULL_TREE);
+	arguments = tree_cons (NULL_TREE, build_int_2 (constructor_p, 0),
+			       arguments);
+	finish_expr_stmt (build_function_call (VARRAY_TREE (ssdf_decls, i),
+					       arguments));
+      }
 
   /* If we're generating code for the DEFAULT_INIT_PRIORITY, throw in
      calls to any functions marked with attributes indicating that
@@ -2715,7 +2710,7 @@ generate_ctor_or_dtor_function (constructor_p, priority)
   if (priority == DEFAULT_INIT_PRIORITY)
     {
       tree fns;
-      
+
       for (fns = constructor_p ? static_ctors : static_dtors; 
 	   fns;
 	   fns = TREE_CHAIN (fns))
@@ -3020,6 +3015,15 @@ finish_file ()
     splay_tree_foreach (priority_info_map, 
 			generate_ctor_and_dtor_functions_for_priority,
 			/*data=*/0);
+  else
+    {
+      if (static_ctors)
+	generate_ctor_or_dtor_function (/*constructor_p=*/true,
+					DEFAULT_INIT_PRIORITY);
+      if (static_dtors)
+	generate_ctor_or_dtor_function (/*constructor_p=*/false,
+					DEFAULT_INIT_PRIORITY);
+    }
 
   /* We're done with the splay-tree now.  */
   if (priority_info_map)
@@ -4133,6 +4137,8 @@ add_function (k, fn)
   /* We must find only functions, or exactly one non-function.  */
   if (!k->functions) 
     k->functions = fn;
+  else if (fn == k->functions)
+    ;
   else if (is_overloaded_fn (k->functions) && is_overloaded_fn (fn))
     k->functions = build_overload (fn, k->functions);
   else
@@ -5006,6 +5012,69 @@ handle_class_head (tag_kind, scope, id, attributes, defn_p, new_type_p)
       if (!xrefd_p && PROCESSING_REAL_TEMPLATE_DECL_P ())
 	decl = push_template_decl (decl);
     }
+  else
+    {
+      /* For elaborated type specifier in declaration like
+
+	   class A::B *a;
+
+         we get an implicit typename here.  Let's remove its
+         implicitness so that we don't issue any implicit
+         typename warning later.  Note that when defn_p is true,
+         implicitness is still required by begin_class_definition.  */
+      if (IMPLICIT_TYPENAME_P (type))
+	decl = TYPE_STUB_DECL (build_typename_type (TYPE_CONTEXT (type),
+						    TYPE_IDENTIFIER (type),
+						    TYPENAME_TYPE_FULLNAME (type),
+						    NULL_TREE));
+    }
+
+  return decl;
+}
+
+/* Like handle_class_head but for a definition of a class specialization.
+   DECL is a TYPE_DECL node representing the class.  NEW_TYPE_P is set to
+   nonzero, if we push into the scope containing the to be defined
+   aggregate.
+
+   Return a TYPE_DECL for the type declared by ID in SCOPE.  */
+
+tree
+handle_class_head_apparent_template (decl, new_type_p)
+    tree decl;
+    int *new_type_p;
+{
+  tree context;
+  tree current;
+
+  if (decl == error_mark_node)
+    return decl;
+
+  current = current_scope ();
+  if (current == NULL_TREE)
+    current = current_namespace;
+
+  *new_type_p = 0;
+  
+  /* For a definition, we want to enter the containing scope
+     before looking up any base classes etc. Only do so, if this
+     is different to the current scope.  */
+  context = CP_DECL_CONTEXT (decl);
+
+  if (IMPLICIT_TYPENAME_P (context))
+    context = TREE_TYPE (context);
+
+  *new_type_p = (current != context
+		 && TREE_CODE (context) != TEMPLATE_TYPE_PARM
+	         && TREE_CODE (context) != BOUND_TEMPLATE_TEMPLATE_PARM);
+  if (*new_type_p)
+    push_scope (context);
+
+  if (TREE_CODE (TREE_TYPE (decl)) == RECORD_TYPE)
+    /* We might be specializing a template with a different
+       class-key.  */
+    CLASSTYPE_DECLARED_CLASS (TREE_TYPE (decl))
+      = (current_aggr == class_type_node);
 
   return decl;
 }

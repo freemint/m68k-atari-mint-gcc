@@ -487,7 +487,6 @@ extern int x86_prefetch_sse;
       if (TARGET_64BIT)						\
 	{							\
 	  builtin_assert ("cpu=x86_64");			\
-	  builtin_assert ("machine=x86_64");			\
 	  builtin_define ("__x86_64");				\
 	  builtin_define ("__x86_64__");			\
 	  builtin_define ("__amd64");				\
@@ -1049,7 +1048,7 @@ do {									\
 	    && (TARGET_64BIT || !TARGET_PARTIAL_REG_STALL))	\
         || ((MODE1) == DImode && TARGET_64BIT))			\
        && ((MODE2) == HImode || (MODE2) == SImode		\
-	   || ((MODE1) == QImode				\
+	   || ((MODE2) == QImode				\
 	       && (TARGET_64BIT || !TARGET_PARTIAL_REG_STALL))	\
 	   || ((MODE2) == DImode && TARGET_64BIT))))
 

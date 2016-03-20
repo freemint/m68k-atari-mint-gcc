@@ -834,6 +834,42 @@ s390_extract_qi (op, mode, part)
   abort ();
 }
 
+/* Check whether we can (and want to) split a double-word 
+   move in mode MODE from SRC to DST into two single-word 
+   moves, moving the subword FIRST_SUBWORD first.  */
+
+bool
+s390_split_ok_p (dst, src, mode, first_subword)
+     rtx dst;
+     rtx src;
+     enum machine_mode mode;
+     int first_subword;
+{
+  /* Floating point registers cannot be split.  */
+  if (FP_REG_P (src) || FP_REG_P (dst))
+    return false;
+
+  /* We don't need to split if operands are directly accessable.  */
+  if (s_operand (src, mode) || s_operand (dst, mode))
+    return false;
+
+  /* Non-offsettable memory references cannot be split.  */
+  if ((GET_CODE (src) == MEM && !offsettable_memref_p (src))
+      || (GET_CODE (dst) == MEM && !offsettable_memref_p (dst)))
+    return false;
+
+  /* Moving the first subword must not clobber a register
+     needed to move the second subword.  */
+  if (register_operand (dst, mode))
+    {
+      rtx subreg = operand_subword (dst, first_subword, 0, mode);
+      if (reg_overlap_mentioned_p (subreg, src))
+        return false;
+    }
+
+  return true;
+}
+
 
 /* Change optimizations to be performed, depending on the 
    optimization level.
@@ -1533,6 +1569,29 @@ s390_secondary_input_reload_class (class, mode, in)
      rtx in;
 {
   if (s390_plus_operand (in, mode))
+    return ADDR_REGS;
+
+  return NO_REGS;
+}
+
+/* Return the register class of a scratch register needed to
+   store a register of class CLASS in MODE into OUT:
+
+   We need a temporary when storing a double-word to a 
+   non-offsettable memory address.  */
+
+enum reg_class
+s390_secondary_output_reload_class (class, mode, out)
+     enum reg_class class;
+     enum machine_mode mode;
+     rtx out;
+{
+  if ((TARGET_64BIT ? mode == TImode
+                    : (mode == DImode || mode == DFmode))
+      && reg_classes_intersect_p (GENERAL_REGS, class)
+      && GET_CODE (out) == MEM
+      && !offsettable_memref_p (out)
+      && !s_operand (out, VOIDmode))
     return ADDR_REGS;
 
   return NO_REGS;
@@ -5317,8 +5376,10 @@ s390_emit_prologue ()
           REG_NOTES(insn) = gen_rtx_EXPR_LIST (REG_MAYBE_DEAD, NULL_RTX,
                                                REG_NOTES (insn));
 
-	  insn = emit_insn (gen_add2_insn (pic_offset_table_rtx,
-					   gen_rtx_REG (Pmode, BASE_REGISTER)));
+          got_symbol = gen_rtx_REG (Pmode, BASE_REGISTER);
+          got_symbol = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, got_symbol), 101);
+          got_symbol = gen_rtx_PLUS (Pmode, got_symbol, pic_offset_table_rtx);
+	  insn = emit_move_insn (pic_offset_table_rtx, got_symbol);
           REG_NOTES(insn) = gen_rtx_EXPR_LIST (REG_MAYBE_DEAD, NULL_RTX,
                                                REG_NOTES (insn));
 	}
@@ -6340,13 +6401,16 @@ s390_output_mi_thunk (file, thunk, delta, vcall_offset, function)
      HOST_WIDE_INT vcall_offset;
      tree function;
 {
-  rtx op[9];
+  rtx op[10];
+  int nonlocal = 0;
 
   /* Operand 0 is the target function.  */
   op[0] = XEXP (DECL_RTL (function), 0);
   if (flag_pic && !SYMBOL_REF_FLAG (op[0]))
     {
-      op[0] = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, op[0]), 113);
+      nonlocal = 1;
+      op[0] = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, op[0]),
+			      TARGET_64BIT ? 113 : flag_pic == 2 ? 112 : 110);
       op[0] = gen_rtx_CONST (Pmode, op[0]);
     }
 
@@ -6370,6 +6434,9 @@ s390_output_mi_thunk (file, thunk, delta, vcall_offset, function)
   op[6] = NULL_RTX;
   op[7] = NULL_RTX;
   op[8] = NULL_RTX;
+
+  /* Operand 9 can be used for temporary register.  */
+  op[9] = NULL_RTX;
 
   /* Generate code.  */
   if (TARGET_64BIT)
@@ -6496,14 +6563,39 @@ s390_output_mi_thunk (file, thunk, delta, vcall_offset, function)
 
       /* Jump to target.  */
       op[8] = gen_label_rtx ();
+
       if (!flag_pic)
 	output_asm_insn ("l\t%4,%8-%5(%4)", op);
-      else
+      else if (!nonlocal)
 	output_asm_insn ("a\t%4,%8-%5(%4)", op);
+      /* We cannot call through .plt, since .plt requires %r12 loaded.  */
+      else if (flag_pic == 1)
+	{
+	  output_asm_insn ("a\t%4,%8-%5(%4)", op);
+	  output_asm_insn ("l\t%4,%0(%4)", op);
+	}
+      else if (flag_pic == 2)
+	{
+	  op[9] = gen_rtx_REG (Pmode, 0);
+	  output_asm_insn ("l\t%9,%8-4-%5(%4)", op);
+	  output_asm_insn ("a\t%4,%8-%5(%4)", op);
+	  output_asm_insn ("ar\t%4,%9", op);
+	  output_asm_insn ("l\t%4,0(%4)", op);
+	}
+
       output_asm_insn ("br\t%4", op);
 
       /* Output literal pool.  */
       output_asm_insn (".align\t4", op);
+
+      if (nonlocal && flag_pic == 2)
+	output_asm_insn (".long\t%0", op);
+      if (nonlocal)
+	{
+	  op[0] = gen_rtx_SYMBOL_REF (Pmode, "_GLOBAL_OFFSET_TABLE_");
+	  SYMBOL_REF_FLAG (op[0]) = 1;
+	}
+
       ASM_OUTPUT_INTERNAL_LABEL (file, "L", CODE_LABEL_NUMBER (op[8]));
       if (!flag_pic)
 	output_asm_insn (".long\t%0", op);
