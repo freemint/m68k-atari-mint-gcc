@@ -515,6 +515,9 @@ if test x$enable_libgomp = x ; then
 	;;
     nvptx*-*-*)
 	;;
+    *-*-mint*)
+        # Enable libmudflap by default in MiNT.
+	;;
     *)
 	noconfigdirs="$noconfigdirs target-libgomp"
 	;;
@@ -854,6 +857,9 @@ case "${target}" in
     ;;
   m68hc11-*-*|m6811-*-*|m68hc12-*-*|m6812-*-*)
     libgloss_dir=m68hc11
+    ;;
+  m68k-*-mint*)
+    noconfigdirs="$noconfigdirs target-libiberty"
     ;;
   m68*-*-* | fido-*-*)
     libgloss_dir=m68k

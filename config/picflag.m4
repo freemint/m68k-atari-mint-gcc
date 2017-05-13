@@ -27,6 +27,8 @@ case "${$2}" in
 	;;
     i[[34567]]86-*-mingw* | x86_64-*-mingw*)
 	;;
+    *-*-mint*)
+	;;
     i[[34567]]86-*-interix[[3-9]]*)
 	# Interix 3.x gcc -fpic/-fPIC options generate broken code.
 	# Instead, we relocate shared libraries at runtime.

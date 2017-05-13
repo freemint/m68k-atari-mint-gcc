@@ -65,6 +65,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
 #endif
+#ifdef __MINT__
+#include <mint/osbind.h>
+#endif
 
 void *__stack_chk_guard = 0;
 
@@ -114,6 +117,9 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
 {
 #ifdef __GNU_LIBRARY__
   extern char * __progname;
+#elif defined (__MINT__)
+  extern char * program_invocation_short_name;
+  #define __progname program_invocation_short_name
 #else
   static const char __progname[] = "";
 #endif
@@ -155,6 +161,9 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
     syslog (LOG_CRIT, "%s", msg3);
 #endif /* HAVE_SYSLOG_H */
 
+#ifdef __MINT__
+    Pterm(127);
+#else
   /* Try very hard to exit.  Note that signals may be blocked preventing
      the first two options from working.  The use of volatile is here to
      prevent optimizers from "knowing" that __builtin_trap is called first,
@@ -176,6 +185,7 @@ fail (const char *msg1, size_t msg1len, const char *msg3)
           break;
         }
   }
+#endif
 }
 
 void

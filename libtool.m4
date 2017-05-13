@@ -1513,6 +1513,12 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
     lt_cv_sys_max_cmd_len=8192;
     ;;
 
+  mint*)
+    # On MiNT this test can take minutes to run, and I'm not sure it's
+    # healthy for this platform. Let's restrict it to 8192.
+    lt_cv_sys_max_cmd_len=8192;
+    ;;
+
   netbsd* | freebsd* | openbsd* | darwin* | dragonfly*)
     # This has been around since 386BSD, at least.  Likely further.
     if test -x /sbin/sysctl; then

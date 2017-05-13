@@ -550,7 +550,7 @@ AC_SUBST(CHECK)
 AC_SUBST(target_header_dir)
 
 case "${host}" in
-  *-*-cygwin* | *-*-mingw*)
+  *-*-cygwin* | *-*-mingw* | *-*-mint*)
     AC_DEFINE(HAVE_SYS_ERRLIST)
     AC_DEFINE(HAVE_SYS_NERR)
     ;;

@@ -131,7 +131,10 @@ along with GCC; see the file COPYING3.  If not see
 	}								\
 									\
       if (TARGET_68881)							\
-	builtin_define ("__HAVE_68881__");				\
+	{								\
+	  builtin_define ("__HAVE_68881__");				\
+	  builtin_define ("__M68881__"); /* Non-standard */		\
+	}								\
 									\
       if (TARGET_COLDFIRE)						\
 	{								\

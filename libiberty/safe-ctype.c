@@ -118,7 +118,7 @@ sets of characters:
 #include <safe-ctype.h>
 #include <stdio.h>  /* for EOF */
 
-#if EOF != -1
+#if !(EOF == -1)	/* gcc 2.95.3 has bug in '!=' operator for negative constants */
  #error "<safe-ctype.h> requires EOF == -1"
 #endif
 

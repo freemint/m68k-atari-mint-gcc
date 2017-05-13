@@ -12994,6 +12994,10 @@ else
     lt_cv_sys_max_cmd_len=8192;
     ;;
 
+  mint*)
+    lt_cv_sys_max_cmd_len=8192;
+    ;;
+
   netbsd* | freebsd* | openbsd* | darwin* | dragonfly*)
     # This has been around since 386BSD, at least.  Likely further.
     if test -x /sbin/sysctl; then

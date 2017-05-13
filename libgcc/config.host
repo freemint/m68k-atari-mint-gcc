@@ -834,6 +834,9 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
 	fi
 	md_unwind_header=m68k/linux-unwind.h
 	;;
+m68k-*-mint*)
+	tmake_file="$tmake_file m68k/t-floatlib"
+	;;
 m68k-*-rtems*)
 	tmake_file="$tmake_file m68k/t-floatlib"
 	extra_parts="$extra_parts crti.o crtn.o"

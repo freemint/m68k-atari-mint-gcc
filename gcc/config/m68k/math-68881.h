@@ -44,6 +44,16 @@
 
 #include <errno.h>
 
+/* GCC 4.3 and above with -std=c99 or -std=gnu99 implements ISO C99
+   inline semantics, unless -fgnu89-inline is used.  */
+#ifdef __cplusplus
+# define __MATH_68881_INLINE inline
+#elif defined __GNUC_STDC_INLINE__
+# define __MATH_68881_INLINE extern __inline __attribute__ ((__gnu_inline__))
+#else
+# define __MATH_68881_INLINE extern __inline
+#endif
+
 #undef HUGE_VAL
 #ifdef __sun__
 /* The Sun assembler fails to handle the hex constant in the usual defn.  */
@@ -64,7 +74,7 @@
 })
 #endif
 
-__inline extern double
+__MATH_68881_INLINE double
 sin (double x)
 {
   double value;
@@ -75,7 +85,7 @@ sin (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 cos (double x)
 {
   double value;
@@ -86,7 +96,7 @@ cos (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 tan (double x)
 {
   double value;
@@ -97,7 +107,7 @@ tan (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 asin (double x)
 {
   double value;
@@ -108,7 +118,7 @@ asin (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 acos (double x)
 {
   double value;
@@ -119,7 +129,7 @@ acos (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 atan (double x)
 {
   double value;
@@ -130,7 +140,7 @@ atan (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 atan2 (double y, double x)
 {
   double pi, pi_over_2;
@@ -187,7 +197,7 @@ atan2 (double y, double x)
     }
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 sinh (double x)
 {
   double value;
@@ -198,7 +208,7 @@ sinh (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 cosh (double x)
 {
   double value;
@@ -209,7 +219,7 @@ cosh (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 tanh (double x)
 {
   double value;
@@ -220,7 +230,7 @@ tanh (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 atanh (double x)
 {
   double value;
@@ -231,7 +241,7 @@ atanh (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 exp (double x)
 {
   double value;
@@ -242,7 +252,7 @@ exp (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 expm1 (double x)
 {
   double value;
@@ -253,7 +263,7 @@ expm1 (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 log (double x)
 {
   double value;
@@ -264,7 +274,7 @@ log (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 log1p (double x)
 {
   double value;
@@ -275,7 +285,7 @@ log1p (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 log10 (double x)
 {
   double value;
@@ -286,7 +296,7 @@ log10 (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 sqrt (double x)
 {
   double value;
@@ -297,13 +307,13 @@ sqrt (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 hypot (double x, double y)
 {
   return sqrt (x*x + y*y);
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 pow (double x, double y)
 {
   if (x > 0)
@@ -352,7 +362,7 @@ pow (double x, double y)
     }
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 fabs (double x)
 {
   double value;
@@ -363,7 +373,7 @@ fabs (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 ceil (double x)
 {
   int rounding_mode, round_up;
@@ -385,7 +395,7 @@ ceil (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 floor (double x)
 {
   int rounding_mode, round_down;
@@ -408,7 +418,7 @@ floor (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 rint (double x)
 {
   int rounding_mode, round_nearest;
@@ -430,7 +440,7 @@ rint (double x)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 fmod (double x, double y)
 {
   double value;
@@ -442,7 +452,7 @@ fmod (double x, double y)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 drem (double x, double y)
 {
   double value;
@@ -454,19 +464,20 @@ drem (double x, double y)
   return value;
 }
 
-__inline extern double
-scalb (double x, int n)
+__MATH_68881_INLINE double
+scalb (double x, double n)
 {
   double value;
+  int exp = (int)(n);
 
   __asm ("fscale%.l %2,%0"
 	 : "=f" (value)
 	 : "0" (x),
-	   "dmi" (n));
+	   "dmi" (exp));
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 logb (double x)
 {
   double exponent;
@@ -477,7 +488,7 @@ logb (double x)
   return exponent;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 ldexp (double x, int n)
 {
   double value;
@@ -489,7 +500,7 @@ ldexp (double x, int n)
   return value;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 frexp (double x, int *exp)
 {
   double float_exponent;
@@ -514,7 +525,7 @@ frexp (double x, int *exp)
   return mantissa;
 }
 
-__inline extern double
+__MATH_68881_INLINE double
 modf (double x, double *ip)
 {
   double temp;

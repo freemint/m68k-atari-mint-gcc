@@ -1,0 +1,59 @@
+# 
+# Use multiple libraries
+# 
+
+M68K_AWK = $(strip $(shell $(AWK) 'BEGIN { FS="[ \t]*[,()][ \t]*"; ORS=" " }; \
+	/^M68K_DEVICE/ { CPU=$$3; FLAGS=$$8; \
+	CPU_NAME=substr($$2,2,length($$2)-2); \
+	MLIB=substr($$5,2,length($$5)-2); \
+	if ($1) print $2 }' $(srcdir)/config/m68k/m68k-devices.def))
+
+# Add a multilib for each distinct architecture.  M68K_MLIB_CPU, if defined,
+# adds additional restrictions.
+M68K_MLIB_CPUS := $(call M68K_AWK,\
+	(CPU_NAME == MLIB) $(M68K_MLIB_CPU), \
+	"m"MLIB)
+
+# Make the default cpu the default multilib.
+M68K_MLIB_DEFAULT := $(call M68K_AWK, CPU == "$(target_cpu_default)", MLIB)
+
+ifeq ($(filter m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)),)
+$(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
+endif
+
+MULTILIB_OPTIONS = m68020-60/mcpu=5475 mshort
+
+MULTILIB_DIRNAMES = m68020-60 m5475 mshort
+
+MULTILIB_MATCHES = \
+	m68020-60=m68881 \
+	m68020-60=m68020 \
+	m68020-60=m68020-40 \
+	m68020-60=mc68020 \
+	m68020-60=m68030 \
+	m68020-60=m68040 \
+	m68020-60=m68060 \
+	m68020-60=mcpu?68020 \
+	m68020-60=mcpu?68030 \
+	m68020-60=mcpu?68040 \
+	m68020-60=mcpu?68060 \
+	m68020-60=march?68020 \
+	m68020-60=march?68030 \
+	m68020-60=march?68040 \
+	m68020-60=march?68060 \
+	mcpu?5475=mcfv4e \
+	mcpu?5475=mcpu?5470 \
+	mcpu?5475=mcpu?5471 \
+	mcpu?5475=mcpu?5472 \
+	mcpu?5475=mcpu?5473 \
+	mcpu?5475=mcpu?5474 \
+	mcpu?5475=mcpu?547x \
+	mcpu?5475=mcpu?5480 \
+	mcpu?5475=mcpu?5481 \
+	mcpu?5475=mcpu?5482 \
+	mcpu?5475=mcpu?5483 \
+	mcpu?5475=mcpu?5484 \
+	mcpu?5475=mcpu?5485 \
+	mcpu?5475=mcpu?548x
+
+MULTILIB_EXCEPTIONS :=

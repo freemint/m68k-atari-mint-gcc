@@ -187,7 +187,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
   #if (DECNUMMAXE != DEC_MAX_EMAX)
     #error Maximum exponent mismatch
   #endif
-  #if (DECNUMMINE != DEC_MIN_EMIN)
+  #if !(DECNUMMINE == DEC_MIN_EMIN) /* gcc 2.95.3 has bug in '!=' operator for negative constants */
     #error Minimum exponent mismatch
   #endif
 

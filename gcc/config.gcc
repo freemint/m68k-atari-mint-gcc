@@ -1959,6 +1959,15 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
 	tm_defines="${tm_defines} MOTOROLA=1"
 	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
 	;;
+m68k-*-mint*)
+	default_m68k_cpu=68000
+	default_cf_cpu=5475
+	tm_file="${tm_file} m68k/mint.h"
+	tm_defines="${tm_defines} MOTOROLA=1"
+	tmake_file="m68k/t-floatlib m68k/t-mint"
+	gas=yes
+	gnu_ld=yes
+	;;
 m68k-*-rtems*)
 	default_m68k_cpu=68020
 	default_cf_cpu=5206
