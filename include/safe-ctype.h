@@ -146,5 +146,18 @@ extern const unsigned char  _sch_tolower[256];
 #define toupper(c) do_not_use_toupper_with_safe_ctype
 #undef tolower
 #define tolower(c) do_not_use_tolower_with_safe_ctype
+#undef isblank
+#define isblank(c) do_not_use_isblank_with_safe_ctype
+
+#undef _CTc
+#undef _CTd
+#undef _CTu
+#undef _CTl
+#undef _CTs
+#undef _CTp
+#undef _CTx
+#undef _CTb
+#undef _CTg
+#undef _CTP
 
 #endif /* SAFE_CTYPE_H */

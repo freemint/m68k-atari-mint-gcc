@@ -58,6 +58,18 @@
 #undef isxdigit
 #undef tolower
 #undef toupper
+#undef isblank
+
+#undef _CTc
+#undef _CTd
+#undef _CTu
+#undef _CTl
+#undef _CTs
+#undef _CTp
+#undef _CTx
+#undef _CTb
+#undef _CTg
+#undef _CTP
 
 namespace std
 {
