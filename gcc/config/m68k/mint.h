@@ -45,6 +45,9 @@ along with GCC; see the file COPYING3.  If not see
 #undef ASM_COMMENT_START
 #define ASM_COMMENT_START "|"
 
+#undef TARGET_LIBC_HAS_FUNCTION
+#define TARGET_LIBC_HAS_FUNCTION no_c99_libc_has_function
+
 #undef WCHAR_TYPE
 #define WCHAR_TYPE "short unsigned int"
 
