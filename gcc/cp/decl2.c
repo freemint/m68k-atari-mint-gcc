@@ -1094,9 +1094,10 @@ is_late_template_attribute (tree attr, tree decl)
   if (is_attribute_p ("weak", name))
     return true;
 
-  /* Attribute unused is applied directly, as it appertains to
+  /* Attributes used and unused are applied directly, as they appertain to
      decls. */
-  if (is_attribute_p ("unused", name))
+  if (is_attribute_p ("unused", name)
+      || is_attribute_p ("used", name))
     return false;
 
   /* Attribute tls_model wants to modify the symtab.  */
@@ -4661,6 +4662,8 @@ c_parse_final_cleanups (void)
 	  if (!DECL_SAVED_TREE (decl))
 	    continue;
 
+	  cgraph_node *node = cgraph_node::get_create (decl);
+
 	  /* We lie to the back end, pretending that some functions
 	     are not defined when they really are.  This keeps these
 	     functions from being put out unnecessarily.  But, we must
@@ -4681,9 +4684,6 @@ c_parse_final_cleanups (void)
 	      && DECL_INITIAL (decl)
 	      && decl_needed_p (decl))
 	    {
-	      struct cgraph_node *node, *next;
-
-	      node = cgraph_node::get (decl);
 	      if (node->cpp_implicit_alias)
 		node = node->get_alias_target ();
 
@@ -4693,7 +4693,8 @@ c_parse_final_cleanups (void)
 		 group, we need to mark all symbols in the same comdat group
 		 that way.  */
 	      if (node->same_comdat_group)
-		for (next = dyn_cast<cgraph_node *> (node->same_comdat_group);
+		for (cgraph_node *next
+		       = dyn_cast<cgraph_node *> (node->same_comdat_group);
 		     next != node;
 		     next = dyn_cast<cgraph_node *> (next->same_comdat_group))
 		  next->call_for_symbol_thunks_and_aliases (clear_decl_external,
@@ -4707,7 +4708,7 @@ c_parse_final_cleanups (void)
 	  if (!DECL_EXTERNAL (decl)
 	      && decl_needed_p (decl)
 	      && !TREE_ASM_WRITTEN (decl)
-	      && !cgraph_node::get (decl)->definition)
+	      && !node->definition)
 	    {
 	      /* We will output the function; no longer consider it in this
 		 loop.  */

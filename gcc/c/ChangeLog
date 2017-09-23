@@ -1,3 +1,31 @@
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-06-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/81006
+	* c-typeck.c (handle_omp_array_sections_1): Convert TYPE_MAX_VALUE
+	to sizetype before size_binop.
+
+2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-05-17  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80659
+	* c-decl.c (build_compound_literal): Set DECL_ARTIFICIAL and
+	DECL_IGNORED_P even for non-static compound literals.
+
+2017-05-03  Jakub Jelinek <jakub@redhat.com>
+
+	Backported from mainline
+	2017-04-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/80468
+	* c-decl.c (finish_declspecs) <case cts_int_n>: If int_n_idx is not
+	enabled, set specs->type to integer_type_node.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

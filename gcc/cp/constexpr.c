@@ -209,16 +209,17 @@ is_valid_constexpr_fn (tree fun, bool complain)
 	    }
 	}
 
-      if (DECL_NONSTATIC_MEMBER_FUNCTION_P (fun)
+      /* C++14 DR 1684 removed this restriction.  */
+      if (cxx_dialect < cxx14
+	  && DECL_NONSTATIC_MEMBER_FUNCTION_P (fun)
 	  && !CLASSTYPE_LITERAL_P (DECL_CONTEXT (fun)))
 	{
 	  ret = false;
-	  if (complain)
-	    {
-	      error ("enclosing class of constexpr non-static member "
-		     "function %q+#D is not a literal type", fun);
-	      explain_non_literal_class (DECL_CONTEXT (fun));
-	    }
+	  if (complain
+	      && pedwarn (DECL_SOURCE_LOCATION (fun), OPT_Wpedantic,
+			  "enclosing class of constexpr non-static member "
+			  "function %q+#D is not a literal type", fun))
+	    explain_non_literal_class (DECL_CONTEXT (fun));
 	}
     }
   else if (CLASSTYPE_VBASECLASSES (DECL_CONTEXT (fun)))
@@ -1392,6 +1393,21 @@ cxx_eval_internal_function (const constexpr_ctx *ctx, tree t,
   return t;
 }
 
+/* Clean CONSTRUCTOR_NO_IMPLICIT_ZERO from CTOR and its sub-aggregates.  */
+
+static void
+clear_no_implicit_zero (tree ctor)
+{
+  if (CONSTRUCTOR_NO_IMPLICIT_ZERO (ctor))
+    {
+      CONSTRUCTOR_NO_IMPLICIT_ZERO (ctor) = false;
+      tree elt; unsigned HOST_WIDE_INT idx;
+      FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (ctor), idx, elt)
+	if (TREE_CODE (elt) == CONSTRUCTOR)
+	  clear_no_implicit_zero (elt);
+    }
+}
+
 /* Subroutine of cxx_eval_constant_expression.
    Evaluate the call expression tree T in the context of OLD_CALL expression
    evaluation.  */
@@ -1695,7 +1711,7 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
 
   /* The result of a constexpr function must be completely initialized.  */
   if (TREE_CODE (result) == CONSTRUCTOR)
-    CONSTRUCTOR_NO_IMPLICIT_ZERO (result) = false;
+    clear_no_implicit_zero (result);
 
   pop_cx_call_context ();
   return unshare_constructor (result);
@@ -2643,8 +2659,16 @@ verify_ctor_sanity (const constexpr_ctx *ctx, tree type)
   /* We used to check that ctx->ctor was empty, but that isn't the case when
      the object is zero-initialized before calling the constructor.  */
   if (ctx->object)
-    gcc_assert (same_type_ignoring_top_level_qualifiers_p
-		(type, TREE_TYPE (ctx->object)));
+    {
+      tree otype = TREE_TYPE (ctx->object);
+      gcc_assert (same_type_ignoring_top_level_qualifiers_p (type, otype)
+		  /* Handle flexible array members.  */
+		  || (TREE_CODE (otype) == ARRAY_TYPE
+		      && TYPE_DOMAIN (otype) == NULL_TREE
+		      && TREE_CODE (type) == ARRAY_TYPE
+		      && (same_type_ignoring_top_level_qualifiers_p
+			  (TREE_TYPE (type), TREE_TYPE (otype)))));
+    }
   gcc_assert (!ctx->object || !DECL_P (ctx->object)
 	      || *(ctx->values->get (ctx->object)) == ctx->ctor);
 }
@@ -4012,6 +4036,13 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
       break;
 
     case DECL_EXPR:
+      if (!potential_constant_expression (t))
+	{
+	  if (!ctx->quiet)
+	    require_potential_constant_expression (t);
+	  *non_constant_p = true;
+	  break;
+	}
       {
 	r = DECL_EXPR_DECL (t);
 	if (AGGREGATE_TYPE_P (TREE_TYPE (r))
@@ -5284,7 +5315,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       {
         tree x = TREE_OPERAND (t, 0);
         STRIP_NOPS (x);
-        if (is_this_parameter (x))
+        if (is_this_parameter (x) && !is_capture_proxy (x))
 	  {
 	    if (DECL_CONTEXT (x)
 		&& !DECL_DECLARED_CONSTEXPR_P (DECL_CONTEXT (x)))

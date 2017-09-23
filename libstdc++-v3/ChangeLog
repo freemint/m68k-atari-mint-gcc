@@ -1,3 +1,301 @@
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-07-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-06-02  Richard Biener  <rguenther@suse.de>
+		Markus Eisenmann  <meisenmann.lba@fh-salzburg.ac.at>
+
+	PR libstdc++/80721
+	* libsupc++/eh_alloc.cc (pool::free): Keep list properly
+	sorted and add missing freelist item merging cases.
+
+2017-07-25  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-06-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/intro.xml: Document LWG 2802, 2873 and 2942 changes.
+	* include/bits/shared_ptr.h (shared_ptr): Use rvalues for deleters
+	(LWG 2802).
+	* include/bits/shared_ptr_base.h (_Sp_ebo_helper, _Sp_counted_deleter
+	(_Sp_counted_deleter::_Impl, __shared_count, __shared_ptr): Likewise.
+	* testsuite/20_util/shared_ptr/cons/lwg2802.cc: New.
+
+	Backport from mainline
+	2017-06-05  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/shared_ptr_base.h (__shared_ptr::owner_before)
+	(__weak_ptr::owner_before, _Sp_owner_less::operator()): Add noexcept
+	specifiers as per LWG 2873 and LWG 2942.
+	* testsuite/20_util/owner_less/noexcept.cc: New.
+	* testsuite/20_util/shared_ptr/observers/owner_before.cc: Test
+	noexcept guarantees.
+	* testsuite/20_util/weak_ptr/observers/owner_before.cc: Likewise.
+
+	Backport from mainline
+	2017-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80553
+	* include/bits/stl_construct.h (_Destroy, _Destroy_n): Add static
+	assertions to ensure type is destructible.
+	(destroy_at, destroy, destroy_n): Move from stl_uninitialized.h.
+	* include/bits/stl_uninitialized.h (destroy_at, destroy, destroy_n):
+	Move to stl_construct.h.
+	* testsuite/20_util/specialized_algorithms/memory_management_tools/
+	destroy_neg.cc: New test.
+	* testsuite/23_containers/vector/cons/destructible_neg.cc: New test.
+
+	Backport from mainline
+	2017-05-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* configure: Regenerate.
+	* doc/xml/manual/status_cxx2017.xml: Update status table.
+	* doc/html/*: Regenerate.
+	* include/Makefile.am: Add new header.
+	* include/Makefile.in: Regenerate.
+	* include/experimental/source_location: New header implementing N4519.
+	* testsuite/experimental/source_location/1.cc: New test.
+
+	Backport from mainline
+	2017-07-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/uses_allocator.h (__use_alloc(const _Alloc&&)): Add
+	deleted overload to prevent dangling references to rvalues.
+	* include/experimental/memory_resource
+	(polymorphic_allocator::construct): Do not call __use_alloc with
+	rvalue arguments.
+
+	Backport from mainline
+	2017-06-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81017
+	* include/bits/std_function.h (function::function(function&&))
+	(function::operator=(funtion&&)): Add noexcept.
+	* testsuite/20_util/function/assign/move.cc: Check for noexcept.
+	* testsuite/20_util/function/cons/move.cc: Likewise.
+
+	Backport from mainline
+	2017-07-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/mutex (scoped_lock): Reorder std::adopt_lock_t parameter
+	as per P0739R0.
+	* testsuite/30_threads/scoped_lock/cons/1.cc: Reorder arguments.
+	* testsuite/30_threads/scoped_lock/cons/deduction.cc: Test deduction
+	with std::adopt_lock_t.
+	* testsuite/30_threads/scoped_lock/requirements/typedefs.cc: Check
+	feature-test macro.
+
+	Backport from mainline
+	2017-07-14  Jason Merrill  <jason@redhat.com>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/variant (variant::variant(_Tp&&)): Constrain to remove
+	the constructor for empty variants from the candidate functions
+	during class template argument deduction.
+	* testsuite/20_util/variant/deduction.cc: New.
+
+	Backport from mainline
+	2017-06-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80939
+	* include/std/variant (__erased_ctor, __erased_assign, __erased_swap)
+	(__erased_hash): Remove constexpr specifier and qualify calls to
+	__ref_cast.
+	(__erased_dtor): Remove constexpr specifier and use _Destroy.
+
+	Backport from mainline
+	2017-05-20  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/80737
+	* include/std/variant(variant::variant): SFINAE on is_same first.
+	* testsuite/20_util/variant/any.cc: test case.
+
+2017-07-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-04-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80316
+	* include/std/future (_State_baseV2::_Setter::operator()): Remove
+	_S_check calls that are done after the pointer to the shared state is
+	already dereferenced.
+	(_State_baseV2::_Setter<_Res, void>): Define specialization for void
+	as partial specialization so it can be defined within the definition
+	of _State_baseV2.
+	(_State_baseV2::__setter): Call _S_check.
+	(_State_baseV2::__setter(promise<void>*)): Add overload for use by
+	promise<void>::set_value and promise<void>::set_value_at_thread_exit.
+	(promise<T>, promise<T&>, promise<void>): Make _State a friend.
+	(_State_baseV2::_Setter<void, void>): Remove explicit specialization.
+	(promise<void>::set_value, promise<void>::set_value_at_thread_exit):
+	Use new __setter overload.
+	* testsuite/30_threads/promise/members/at_thread_exit2.cc: New test.
+	* testsuite/30_threads/promise/members/set_exception.cc: Test
+	promise<T&> and promise<void> specializations.
+	* testsuite/30_threads/promise/members/set_exception2.cc: Likewise.
+	Test for no_state error condition.
+	* testsuite/30_threads/promise/members/set_value2.cc: Likewise.
+
+2017-06-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81221
+	* include/bits/stl_algo.h (sample): Qualify with _GLIBCXX_STD_A not
+	std.
+	* testsuite/25_algorithms/sample/81221.cc: New.
+
+2017-06-21  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Backport from mainline
+	2017-06-21  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/80675
+	PR libstdc++/80940
+	* include/std/istream:
+	(__is_convertible_to_basic_istream_test(basic_istream<_Ch, _Up>*)): New.
+	(__do_is_convertible_to_basic_istream_impl): Likewise.
+	(__is_convertible_to_basic_istream_impl): Likewise.
+	(__is_convertible_to_basic_istream): Use the new base.
+	(__rvalue_istream_type): New.
+	(operator>>(_Istream&&, _Tp&&)): Use the new helper alias
+	for the SFINAE check, convert to the helper alias type before
+	doing the actual extraction.
+	* include/std/ostream:
+	(__is_convertible_to_basic_ostream_test(basic_ostream<_Ch, _Up>*)): New.
+	(__do_is_convertible_to_basic_ostream_impl): Likewise.
+	(__is_convertible_to_basic_ostream_impl): Likewise.
+	(__is_convertible_to_basic_ostream): Use the new base.
+	(__rvalue_ostream_type): New.
+	(operator<<(_Ostream&&, const _Tp&)): Use the new helper alias
+	for the SFINAE check, convert to the helper alias type before
+	doing the actual insertion.
+	* testsuite/27_io/rvalue_streams-2.cc: Add new tests.
+
+2017-06-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/abi/post/alpha-linux-gnu/baseline_symbols.txt: Update.
+
+2017-06-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81092
+	* configure: Regenerate.
+
+2017-06-19  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* config/abi/post/i386-solaris2.10/baseline_symbols.txt: Regenerate.
+	* config/abi/post/i386-solaris2.10/amd64/baseline_symbols.txt: Likewise.
+	* config/abi/post/i386-solaris2.11/baseline_symbols.txt: Likewise.
+	* config/abi/post/i386-solaris2.11/amd64/baseline_symbols.txt: Likewise.
+	* config/abi/post/sparc-solaris2.10/baseline_symbols.txt: Likewise.
+	* config/abi/post/sparc-solaris2.10/sparcv9/baseline_symbols.txt:
+	Likewise.
+	* config/abi/post/sparc-solaris2.11/baseline_symbols.txt: Likewise.
+	* config/abi/post/sparc-solaris2.11/sparcv9/baseline_symbols.txt:
+	Likewise.
+
+2017-06-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR libstdc++/81092
+	* config/abi/post/x86_64-linux-gnu/x32/baseline_symbols.txt: Updated.
+
+2017-06-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libstdc++/81092
+	* config/abi/post/i486-linux-gnu/baseline_symbols.txt: Update.
+
+2017-06-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/locale_conv.h (wbuffer_convert::sync): Fix condition.
+	* testsuite/22_locale/conversions/buffer/2.cc: New.
+
+	* doc/xml/manual/appendix_contributing.xml: Link to the list of bad
+	names, and link to the test docs and note higher DejaGnu version
+	requirement.
+	* doc/xml/manual/allocator.xml: Fix ViewCVS URLs.
+	* doc/xml/manual/mt_allocator.xml: Likewise.
+	* doc/xml/manual/test.xml: Correct instructions on running tests.
+	* doc/html/*: Regenerate.
+
+	PR libstdc++/81092
+	* acinclude.m4: Bump libtool_VERSION.
+	* config/abi/post/i386-linux-gnu/baseline_symbols.txt: Update.
+	* config/abi/post/x86_64-linux-gnu/32/baseline_symbols.txt: Update.
+	* config/abi/pre/gnu.ver: Add wstring constructor symbols to new
+	GLIBCXX_3.4.24 version.
+	* doc/xml/manual/abi.xml: Document new versions.
+	* doc/html/*: Regenerate.
+	* testsuite/21_strings/basic_string/cons/char/8.cc: Use base object
+	constructors to ensure required symbols are exported.
+	* testsuite/21_strings/basic_string/cons/wchar_t/8.cc: Likewise.
+	* testsuite/util/testsuite_abi.cc: Add new version.
+
+	* include/bits/locale_conv.h (wbuffer_convert::_M_put): Add missing
+	return statement.
+	* testsuite/21_strings/basic_string_view/operations/copy/char/1.cc:
+	Return void.
+	* testsuite/21_strings/basic_string_view/operations/copy/wchar_t/1.cc:
+	Likewise.
+	* testsuite/23_containers/map/modifiers/insert_or_assign/1.cc: Add
+	missing return statements.
+	* testsuite/23_containers/unordered_map/modifiers/insert_or_assign.cc:
+	Likewise.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/char/12.cc:
+	Return void.
+	* testsuite/special_functions/14_expint/pr68397.cc: Likewise.
+
+2017-06-07  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81002
+	* include/bits/regex_compiler.h (__compile_nfa): Add template argument
+	list to specify traits type.
+	* testsuite/28_regex/basic_regex/ctors/basic/iter.cc: New.
+
+2017-05-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80796
+	* include/bits/stl_algo.h (search): Add new overload for C++17.
+	* testsuite/25_algorithms/search/searcher.cc: New.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80478
+	* include/std/functional (_Mem_fn_traits_base): Add specializations
+	for noexcept member function types.
+	* testsuite/20_util/function_objects/mem_fn/80478.cc: New test.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/policy_data_structures.xml: Fix typo.
+	* doc/xml/manual/test_policy_data_structures.xml: Likewise.
+	* doc/html/*: Regenerate.
+
+	* doc/xml/manual/abi.xml: Document latest library versions.
+	* doc/xml/manual/build_hacking.xml: Document requirement to update
+	abi.xml when bumping library versions.
+	* doc/html/*: Regenerate.
+
+2017-05-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80761
+	* include/bits/node_handle.h (_Node_insert_return): Reorder members.
+	(tuple_size, tuple_element): Remove partial specializations.
+	* include/bits/stl_tree.h (_Rb_tree::insert_return_type): Use
+	const_iterator for std::set.
+	* testsuite/23_containers/map/modifiers/extract.cc: New.
+	* testsuite/23_containers/set/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_map/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_set/modifiers/extract.cc: New.
+
+2017-05-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78939
+	* include/std/utility (tuple_size<cv T>) [__cplusplus > 201402L]:
+	Only define partial specializations when tuple_size<T>::value is
+	valid.
+	* testsuite/20_util/tuple/78939.cc: New.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

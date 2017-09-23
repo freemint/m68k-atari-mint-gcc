@@ -7324,13 +7324,13 @@
 (define_insn "vec_extract_lo_<mode><mask_name>"
   [(set (match_operand:<ssehalfvecmode> 0 "<store_mask_predicate>" "=<store_mask_constraint>,v")
 	(vec_select:<ssehalfvecmode>
-	  (match_operand:V8FI 1 "nonimmediate_operand" "v,m")
+	  (match_operand:V8FI 1 "<store_mask_predicate>" "v,<store_mask_constraint>")
 	  (parallel [(const_int 0) (const_int 1)
             (const_int 2) (const_int 3)])))]
   "TARGET_AVX512F
    && (<mask_applied> || !(MEM_P (operands[0]) && MEM_P (operands[1])))"
 {
-  if (<mask_applied> || !TARGET_AVX512VL)
+  if (<mask_applied> || (!TARGET_AVX512VL && !MEM_P (operands[1])))
     return "vextract<shuffletype>64x4\t{$0x0, %1, %0<mask_operand2>|%0<mask_operand2>, %1, 0x0}";
   else
     return "#";
@@ -7480,14 +7480,15 @@
 (define_insn "vec_extract_lo_<mode><mask_name>"
   [(set (match_operand:<ssehalfvecmode> 0 "nonimmediate_operand" "=v,m")
 	(vec_select:<ssehalfvecmode>
-	  (match_operand:V16FI 1 "nonimmediate_operand" "vm,v")
+	  (match_operand:V16FI 1 "<store_mask_predicate>"
+				 "<store_mask_constraint>,v")
 	  (parallel [(const_int 0) (const_int 1)
                      (const_int 2) (const_int 3)
                      (const_int 4) (const_int 5)
                      (const_int 6) (const_int 7)])))]
   "TARGET_AVX512F
    && <mask_mode512bit_condition>
-   && !(MEM_P (operands[0]) && MEM_P (operands[1]))"
+   && (<mask_applied> || !(MEM_P (operands[0]) && MEM_P (operands[1])))"
 {
   if (<mask_applied>)
     return "vextract<shuffletype>32x8\t{$0x0, %1, %0<mask_operand2>|%0<mask_operand2>, %1, 0x0}";
@@ -7511,11 +7512,12 @@
 (define_insn "vec_extract_lo_<mode><mask_name>"
   [(set (match_operand:<ssehalfvecmode> 0 "<store_mask_predicate>" "=v,m")
 	(vec_select:<ssehalfvecmode>
-	  (match_operand:VI8F_256 1 "nonimmediate_operand" "vm,v")
+	  (match_operand:VI8F_256 1 "<store_mask_predicate>"
+				    "<store_mask_constraint>,v")
 	  (parallel [(const_int 0) (const_int 1)])))]
   "TARGET_AVX
    && <mask_avx512vl_condition> && <mask_avx512dq_condition>
-   && !(MEM_P (operands[0]) && MEM_P (operands[1]))"
+   && (<mask_applied> || !(MEM_P (operands[0]) && MEM_P (operands[1])))"
 {
   if (<mask_applied>)
     return "vextract<shuffletype>64x2\t{$0x0, %1, %0%{%3%}|%0%{%3%}, %1, 0x0}";
@@ -7575,12 +7577,16 @@
   "operands[1] = gen_lowpart (<ssehalfvecmode>mode, operands[1]);")
 
 (define_insn "vec_extract_lo_<mode><mask_name>"
-  [(set (match_operand:<ssehalfvecmode> 0 "<store_mask_predicate>" "=<store_mask_constraint>")
+  [(set (match_operand:<ssehalfvecmode> 0 "<store_mask_predicate>"
+					  "=<store_mask_constraint>,v")
 	(vec_select:<ssehalfvecmode>
-	  (match_operand:VI4F_256 1 "register_operand" "v")
+	  (match_operand:VI4F_256 1 "<store_mask_predicate>"
+				    "v,<store_mask_constraint>")
 	  (parallel [(const_int 0) (const_int 1)
 		     (const_int 2) (const_int 3)])))]
-  "TARGET_AVX && <mask_avx512vl_condition> && <mask_avx512dq_condition>"
+  "TARGET_AVX
+   && <mask_avx512vl_condition> && <mask_avx512dq_condition>
+   && (<mask_applied> || !(MEM_P (operands[0]) && MEM_P (operands[1])))"
 {
   if (<mask_applied>)
     return "vextract<shuffletype>32x4\t{$0x0, %1, %0<mask_operand2>|%0<mask_operand2>, %1, 0x0}";
@@ -13508,13 +13514,12 @@
   "#")
 
 (define_insn "*vec_extract<ssevecmodelower>_0"
-  [(set (match_operand:SWI48 0 "nonimmediate_operand"	       "=r ,r,v ,m")
+  [(set (match_operand:SWI48 0 "nonimmediate_operand"	       "=r ,v ,m")
 	(vec_select:SWI48
-	  (match_operand:<ssevecmode> 1 "nonimmediate_operand" "mYj,v,vm,v")
+	  (match_operand:<ssevecmode> 1 "nonimmediate_operand" "mYj,vm,v")
 	  (parallel [(const_int 0)])))]
   "TARGET_SSE && !(MEM_P (operands[0]) && MEM_P (operands[1]))"
-  "#"
-  [(set_attr "isa" "*,sse4,*,*")])
+  "#")
 
 (define_insn "*vec_extractv2di_0_sse"
   [(set (match_operand:DI 0 "nonimmediate_operand"     "=v,m")
@@ -13842,10 +13847,10 @@
 ;; movd instead of movq is required to handle broken assemblers.
 (define_insn "vec_concatv2di"
   [(set (match_operand:V2DI 0 "register_operand"
-	  "=Yr,*x,x ,v ,Yi,v ,!x,x,v ,x,x,v")
+	  "=Yr,*x,x ,v ,Yi,v ,x    ,x,v ,x,x,v")
 	(vec_concat:V2DI
 	  (match_operand:DI 1 "nonimmediate_operand"
-	  "  0, 0,x ,Yv,r ,vm,*y,0,Yv,0,0,v")
+	  "  0, 0,x ,Yv,r ,vm,?!*Yn,0,Yv,0,0,v")
 	  (match_operand:DI 2 "vector_move_operand"
 	  "*rm,rm,rm,rm,C ,C ,C ,x,Yv,x,m,m")))]
   "TARGET_SSE"
@@ -15618,13 +15623,13 @@
    (set_attr "mode" "<MODE>")])
 
 (define_expand "round<mode>2"
-  [(set (match_dup 4)
+  [(set (match_dup 3)
 	(plus:VF
 	  (match_operand:VF 1 "register_operand")
-	  (match_dup 3)))
+	  (match_dup 2)))
    (set (match_operand:VF 0 "register_operand")
 	(unspec:VF
-	  [(match_dup 4) (match_dup 5)]
+	  [(match_dup 3) (match_dup 4)]
 	  UNSPEC_ROUND))]
   "TARGET_ROUND && !flag_trapping_math"
 {
@@ -15644,11 +15649,11 @@
   vec_half = ix86_build_const_vector (<MODE>mode, true, half);
   vec_half = force_reg (<MODE>mode, vec_half);
 
-  operands[3] = gen_reg_rtx (<MODE>mode);
-  emit_insn (gen_copysign<mode>3 (operands[3], vec_half, operands[1]));
+  operands[2] = gen_reg_rtx (<MODE>mode);
+  emit_insn (gen_copysign<mode>3 (operands[2], vec_half, operands[1]));
 
-  operands[4] = gen_reg_rtx (<MODE>mode);
-  operands[5] = GEN_INT (ROUND_TRUNC);
+  operands[3] = gen_reg_rtx (<MODE>mode);
+  operands[4] = GEN_INT (ROUND_TRUNC);
 })
 
 (define_expand "round<mode>2_sfix"
@@ -17105,12 +17110,12 @@
    (set_attr "mode" "TI")])
 
 (define_insn "xop_vpermil2<mode>3"
-  [(set (match_operand:VF_128_256 0 "register_operand" "=x")
+  [(set (match_operand:VF_128_256 0 "register_operand" "=x,x")
 	(unspec:VF_128_256
-	  [(match_operand:VF_128_256 1 "register_operand" "x")
-	   (match_operand:VF_128_256 2 "nonimmediate_operand" "%x")
-	   (match_operand:<sseintvecmode> 3 "nonimmediate_operand" "xm")
-	   (match_operand:SI 4 "const_0_to_3_operand" "n")]
+	  [(match_operand:VF_128_256 1 "register_operand" "x,x")
+	   (match_operand:VF_128_256 2 "nonimmediate_operand" "x,m")
+	   (match_operand:<sseintvecmode> 3 "nonimmediate_operand" "xm,x")
+	   (match_operand:SI 4 "const_0_to_3_operand" "n,n")]
 	  UNSPEC_VPERMIL2))]
   "TARGET_XOP"
   "vpermil2<ssemodesuffix>\t{%4, %3, %2, %1, %0|%0, %1, %2, %3, %4}"

@@ -379,7 +379,9 @@ static const struct
   { "tar",		PPC_FEATURE2_HAS_TAR,		1 },
   { "vcrypto",		PPC_FEATURE2_HAS_VEC_CRYPTO,	1 },
   { "arch_3_00",	PPC_FEATURE2_ARCH_3_00,		1 },
-  { "ieee128",		PPC_FEATURE2_HAS_IEEE128,	1 }
+  { "ieee128",		PPC_FEATURE2_HAS_IEEE128,	1 },
+  { "darn",		PPC_FEATURE2_DARN,		1 },
+  { "scv",		PPC_FEATURE2_SCV,		1 }
 };
 
 /* Newer LIBCs explicitly export this symbol to declare that they provide
@@ -5873,6 +5875,10 @@ rs6000_density_test (rs6000_cost_data *data)
 
 /* Implement targetm.vectorize.init_cost.  */
 
+/* For each vectorized loop, this var holds TRUE iff a non-memory vector
+   instruction is needed by the vectorization.  */
+static bool rs6000_vect_nonmem;
+
 static void *
 rs6000_init_cost (struct loop *loop_info)
 {
@@ -5881,6 +5887,7 @@ rs6000_init_cost (struct loop *loop_info)
   data->cost[vect_prologue] = 0;
   data->cost[vect_body]     = 0;
   data->cost[vect_epilogue] = 0;
+  rs6000_vect_nonmem = false;
   return data;
 }
 
@@ -5907,6 +5914,15 @@ rs6000_add_stmt_cost (void *data, int count, enum vect_cost_for_stmt kind,
 
       retval = (unsigned) (count * stmt_cost);
       cost_data->cost[where] += retval;
+
+      /* Check whether we're doing something other than just a copy loop.
+	 Not all such loops may be profitably vectorized; see
+	 rs6000_finish_cost.  */
+      if ((kind == vec_to_scalar || kind == vec_perm
+	   || kind == vec_promote_demote || kind == vec_construct
+	   || kind == scalar_to_vec)
+	  || (where == vect_body && kind == vector_stmt))
+	rs6000_vect_nonmem = true;
     }
 
   return retval;
@@ -5922,6 +5938,19 @@ rs6000_finish_cost (void *data, unsigned *prologue_cost,
 
   if (cost_data->loop_info)
     rs6000_density_test (cost_data);
+
+  /* Don't vectorize minimum-vectorization-factor, simple copy loops
+     that require versioning for any reason.  The vectorization is at
+     best a wash inside the loop, and the versioning checks make
+     profitability highly unlikely and potentially quite harmful.  */
+  if (cost_data->loop_info)
+    {
+      loop_vec_info vec_info = loop_vec_info_for_loop (cost_data->loop_info);
+      if (!rs6000_vect_nonmem
+	  && LOOP_VINFO_VECT_FACTOR (vec_info) == 2
+	  && LOOP_REQUIRES_VERSIONING (vec_info))
+	cost_data->cost[vect_body] += 10000;
+    }
 
   *prologue_cost = cost_data->cost[vect_prologue];
   *body_cost     = cost_data->cost[vect_body];
@@ -7454,6 +7483,8 @@ rs6000_expand_vector_set (rtx target, rtx val, int elt)
 	    insn = gen_vsx_set_v8hi_p9 (target, target, val, elt_rtx);
 	  else if (mode == V16QImode)
 	    insn = gen_vsx_set_v16qi_p9 (target, target, val, elt_rtx);
+	  else if (mode == V4SFmode)
+	    insn = gen_vsx_set_v4sf_p9 (target, target, val, elt_rtx);
 	}
 
       if (insn)
@@ -15555,6 +15586,8 @@ cpu_expand_builtin (enum rs6000_builtins fcode, tree exp ATTRIBUTE_UNUSED,
       emit_insn (gen_eqsi3 (scratch2, scratch1, const0_rtx));
       emit_insn (gen_rtx_SET (target, gen_rtx_XOR (SImode, scratch2, const1_rtx)));
     }
+  else
+    gcc_unreachable ();
 
   /* Record that we have expanded a CPU builtin, so that we can later
      emit a reference to the special symbol exported by LIBC to ensure we
@@ -15562,6 +15595,9 @@ cpu_expand_builtin (enum rs6000_builtins fcode, tree exp ATTRIBUTE_UNUSED,
   cpu_builtin_p = true;
 
 #else
+  warning (0, "%s needs GLIBC (2.23 and newer) that exports hardware "
+	   "capability bits", rs6000_builtin_info[(size_t) fcode].name);
+  
   /* For old LIBCs, always return FALSE.  */
   emit_move_insn (target, GEN_INT (0));
 #endif /* TARGET_LIBC_PROVIDES_HWCAP_IN_TCB */
@@ -18182,6 +18218,17 @@ altivec_init_builtins (void)
 		   void_ftype_v8hi_long_pvoid, VSX_BUILTIN_ST_ELEMREV_V8HI);
       def_builtin ("__builtin_vsx_st_elemrev_v16qi",
 		   void_ftype_v16qi_long_pvoid, VSX_BUILTIN_ST_ELEMREV_V16QI);
+    }
+  else
+    {
+      rs6000_builtin_decls[(int)VSX_BUILTIN_LD_ELEMREV_V8HI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_LXVW4X_V8HI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_LD_ELEMREV_V16QI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_LXVW4X_V16QI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_ST_ELEMREV_V8HI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_STXVW4X_V8HI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_ST_ELEMREV_V16QI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_STXVW4X_V16QI];
     }
 
   def_builtin ("__builtin_vec_vsx_ld", opaque_ftype_long_pcvoid,
@@ -28096,9 +28143,11 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
 	  && REGNO (stack_limit_rtx) > 1
 	  && REGNO (stack_limit_rtx) <= 31)
 	{
-	  emit_insn (gen_add3_insn (tmp_reg, stack_limit_rtx, GEN_INT (size)));
-	  emit_insn (gen_cond_trap (LTU, stack_reg, tmp_reg,
-				    const0_rtx));
+	  rtx_insn *insn
+	    = gen_add3_insn (tmp_reg, stack_limit_rtx, GEN_INT (size));
+	  gcc_assert (insn);
+	  emit_insn (insn);
+	  emit_insn (gen_cond_trap (LTU, stack_reg, tmp_reg, const0_rtx));
 	}
       else if (GET_CODE (stack_limit_rtx) == SYMBOL_REF
 	       && TARGET_32BIT

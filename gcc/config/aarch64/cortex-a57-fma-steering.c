@@ -411,9 +411,9 @@ fma_forest::merge_forest (fma_forest *other_forest)
      the list of tree roots of ref_forest.  */
   this->m_globals->remove_forest (other_forest);
   this->m_roots->splice (this->m_roots->begin (), *other_roots);
-  delete other_forest;
-
   this->m_nb_nodes += other_forest->m_nb_nodes;
+
+  delete other_forest;
 }
 
 /* Dump information about the forest FOREST.  */
@@ -973,10 +973,17 @@ func_fma_steering::analyze ()
 		break;
 	    }
 
-	  /* We didn't find a chain with a def for this instruction.  */
-	  gcc_assert (i < dest_op_info->n_chains);
-
-	  this->analyze_fma_fmul_insn (forest, chain, head);
+	  /* Due to implementation of regrename, dest register can slip away
+	     from regrename's analysis.  As a result, there is no chain for
+	     the destination register of insn.  We simply skip the insn even
+	     it is a fmul/fmac instruction.  This can happen when the dest
+	     register is also a source register of insn and one of the below
+	     conditions is satisfied:
+	       1) the source reg is setup in larger mode than this insn;
+	       2) the source reg is uninitialized;
+	       3) the source reg is passed in as parameter.  */
+	  if (i < dest_op_info->n_chains)
+	    this->analyze_fma_fmul_insn (forest, chain, head);
 	}
     }
   free (bb_dfs_preorder);

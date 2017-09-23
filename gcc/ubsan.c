@@ -114,10 +114,10 @@ decl_for_type_insert (tree type, tree decl)
 /* Helper routine, which encodes a value in the pointer_sized_int_node.
    Arguments with precision <= POINTER_SIZE are passed directly,
    the rest is passed by reference.  T is a value we are to encode.
-   IN_EXPAND_P is true if this function is called during expansion.  */
+   PHASE determines when this function is called.  */
 
 tree
-ubsan_encode_value (tree t, bool in_expand_p)
+ubsan_encode_value (tree t, enum ubsan_encode_value_phase phase)
 {
   tree type = TREE_TYPE (t);
   const unsigned int bitsize = GET_MODE_BITSIZE (TYPE_MODE (type));
@@ -143,10 +143,19 @@ ubsan_encode_value (tree t, bool in_expand_p)
 	{
 	  /* The reason for this is that we don't want to pessimize
 	     code by making vars unnecessarily addressable.  */
-	  tree var = create_tmp_var (type);
-	  tree tem = build2 (MODIFY_EXPR, void_type_node, var, t);
-	  mark_addressable (var);
-	  if (in_expand_p)
+	  tree var;
+	  if (phase != UBSAN_ENCODE_VALUE_GENERIC)
+	    {
+	      var = create_tmp_var (type);
+	      mark_addressable (var);
+	    }
+	  else
+	    {
+	      var = create_tmp_var_raw (type);
+	      TREE_ADDRESSABLE (var) = 1;
+	      DECL_CONTEXT (var) = current_function_decl;
+	    }
+	  if (phase == UBSAN_ENCODE_VALUE_RTL)
 	    {
 	      rtx mem
 		= assign_stack_temp_for_type (TYPE_MODE (type),
@@ -156,8 +165,17 @@ ubsan_encode_value (tree t, bool in_expand_p)
 	      expand_assignment (var, t, false);
 	      return build_fold_addr_expr (var);
 	    }
-	  t = build_fold_addr_expr (var);
-	  return build2 (COMPOUND_EXPR, TREE_TYPE (t), tem, t);
+	  if (phase != UBSAN_ENCODE_VALUE_GENERIC)
+	    {
+	      tree tem = build2 (MODIFY_EXPR, void_type_node, var, t);
+	      t = build_fold_addr_expr (var);
+	      return build2 (COMPOUND_EXPR, TREE_TYPE (t), tem, t);
+	    }
+	  else
+	    {
+	      var = build4 (TARGET_EXPR, type, var, t, NULL_TREE, NULL_TREE);
+	      return build_fold_addr_expr (var);
+	    }
 	}
       else
 	return build_fold_addr_expr (t);
@@ -382,6 +400,7 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
     /* We weren't able to determine the type name.  */
     tname = "<unknown>";
 
+  tree eltype = type;
   if (pstyle == UBSAN_PRINT_POINTER)
     {
       pp_printf (&pretty_name, "'%s%s%s%s%s%s%s",
@@ -432,12 +451,12 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
       pp_quote (&pretty_name);
 
       /* Save the tree with stripped types.  */
-      type = t;
+      eltype = t;
     }
   else
     pp_printf (&pretty_name, "'%s'", tname);
 
-  switch (TREE_CODE (type))
+  switch (TREE_CODE (eltype))
     {
     case BOOLEAN_TYPE:
     case ENUMERAL_TYPE:
@@ -447,9 +466,9 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
     case REAL_TYPE:
       /* FIXME: libubsan right now only supports float, double and
 	 long double type formats.  */
-      if (TYPE_MODE (type) == TYPE_MODE (float_type_node)
-	  || TYPE_MODE (type) == TYPE_MODE (double_type_node)
-	  || TYPE_MODE (type) == TYPE_MODE (long_double_type_node))
+      if (TYPE_MODE (eltype) == TYPE_MODE (float_type_node)
+	  || TYPE_MODE (eltype) == TYPE_MODE (double_type_node)
+	  || TYPE_MODE (eltype) == TYPE_MODE (long_double_type_node))
 	tkind = 0x0001;
       else
 	tkind = 0xffff;
@@ -458,7 +477,7 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
       tkind = 0xffff;
       break;
     }
-  tinfo = get_ubsan_type_info_for_type (type);
+  tinfo = get_ubsan_type_info_for_type (eltype);
 
   /* Create a new VAR_DECL of type descriptor.  */
   const char *tmp = pp_formatted_text (&pretty_name);
@@ -708,9 +727,9 @@ ubsan_expand_bounds_ifn (gimple_stmt_iterator *gsi)
 	  ? BUILT_IN_UBSAN_HANDLE_OUT_OF_BOUNDS
 	  : BUILT_IN_UBSAN_HANDLE_OUT_OF_BOUNDS_ABORT;
       tree fn = builtin_decl_explicit (bcode);
-      tree val
-	= force_gimple_operand_gsi (gsi, ubsan_encode_value (orig_index), true,
-				    NULL_TREE, true, GSI_SAME_STMT);
+      tree val = ubsan_encode_value (orig_index, UBSAN_ENCODE_VALUE_GIMPLE);
+      val = force_gimple_operand_gsi (gsi, val, true, NULL_TREE, true,
+				      GSI_SAME_STMT);
       g = gimple_build_call (fn, 2, data, val);
     }
   gimple_set_location (g, loc);
@@ -1266,9 +1285,11 @@ ubsan_build_overflow_builtin (tree_code code, location_t loc, tree lhstype,
   tree fn = builtin_decl_explicit (fn_code);
   return build_call_expr_loc (loc, fn, 2 + (code != NEGATE_EXPR),
 			      build_fold_addr_expr_loc (loc, data),
-			      ubsan_encode_value (op0, true),
-			      op1 ? ubsan_encode_value (op1, true)
-				  : NULL_TREE);
+			      ubsan_encode_value (op0, UBSAN_ENCODE_VALUE_RTL),
+			      op1
+			      ? ubsan_encode_value (op1,
+						    UBSAN_ENCODE_VALUE_RTL)
+			      : NULL_TREE);
 }
 
 /* Perform the signed integer instrumentation.  GSI is the iterator
@@ -1458,9 +1479,9 @@ instrument_bool_enum_load (gimple_stmt_iterator *gsi)
 	  : BUILT_IN_UBSAN_HANDLE_LOAD_INVALID_VALUE_ABORT;
       tree fn = builtin_decl_explicit (bcode);
 
-      tree val = force_gimple_operand_gsi (&gsi2, ubsan_encode_value (urhs),
-					   true, NULL_TREE, true,
-					   GSI_SAME_STMT);
+      tree val = ubsan_encode_value (urhs, UBSAN_ENCODE_VALUE_GIMPLE);
+      val = force_gimple_operand_gsi (&gsi2, val, true, NULL_TREE, true,
+				      GSI_SAME_STMT);
       g = gimple_build_call (fn, 2, data, val);
     }
   gimple_set_location (g, loc);
@@ -1624,7 +1645,7 @@ ubsan_instrument_float_cast (location_t loc, tree type, tree expr)
       fn = builtin_decl_explicit (bcode);
       fn = build_call_expr_loc (loc, fn, 2,
 				build_fold_addr_expr_loc (loc, data),
-				ubsan_encode_value (expr, false));
+				ubsan_encode_value (expr));
     }
 
   return fold_build3 (COND_EXPR, void_type_node, t, fn, integer_zero_node);

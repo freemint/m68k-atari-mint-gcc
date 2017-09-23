@@ -1,3 +1,25 @@
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-06-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-05-19  Richard Biener  <rguenther@suse.de>
+
+	PR c++/80593
+	* c-warn.c (strict_aliasing_warning): Do not warn for accesses
+	to alias-set zero memory.
+
+2017-06-07  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2017-06-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c/80919
+	* c-format.c (matching_type_p): Return false if any of the types
+	requires structural equality.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

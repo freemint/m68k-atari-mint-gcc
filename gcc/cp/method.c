@@ -486,6 +486,7 @@ forward_parm (tree parm)
     type = PACK_EXPANSION_PATTERN (type);
   if (TREE_CODE (type) != REFERENCE_TYPE)
     type = cp_build_reference_type (type, /*rval=*/true);
+  warning_sentinel w (warn_useless_cast);
   exp = build_static_cast (type, exp, tf_warning_or_error);
   if (DECL_PACK_P (parm))
     exp = make_pack_expansion (exp);
@@ -1313,7 +1314,7 @@ walk_field_subobs (tree fields, tree fnname, special_function_kind sfk,
 	  if (bad && deleted_p)
 	    *deleted_p = true;
 	}
-      else if (sfk == sfk_constructor)
+      else if (sfk == sfk_constructor || sfk == sfk_inheriting_constructor)
 	{
 	  bool bad;
 

@@ -1893,10 +1893,10 @@ arm_init_builtins (void)
 	= build_function_type_list (unsigned_type_node, NULL);
 
       arm_builtin_decls[ARM_BUILTIN_GET_FPSCR]
-	= add_builtin_function ("__builtin_arm_ldfscr", ftype_get_fpscr,
+	= add_builtin_function ("__builtin_arm_get_fpscr", ftype_get_fpscr,
 				ARM_BUILTIN_GET_FPSCR, BUILT_IN_MD, NULL, NULL_TREE);
       arm_builtin_decls[ARM_BUILTIN_SET_FPSCR]
-	= add_builtin_function ("__builtin_arm_stfscr", ftype_set_fpscr,
+	= add_builtin_function ("__builtin_arm_set_fpscr", ftype_set_fpscr,
 				ARM_BUILTIN_SET_FPSCR, BUILT_IN_MD, NULL, NULL_TREE);
     }
 
@@ -2245,7 +2245,12 @@ constant_arg:
 		{
 		  error ("%Kargument %d must be a constant immediate",
 			 exp, argc + 1);
-		  return const0_rtx;
+		  /* We have failed to expand the pattern, and are safely
+		     in to invalid code.  But the mid-end will still try to
+		     build an assignment for this node while it expands,
+		     before stopping for the error, just pass it back
+		     TARGET to ensure a valid assignment.  */
+		  return target;
 		}
 	      break;
 

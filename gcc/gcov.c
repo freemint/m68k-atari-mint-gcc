@@ -499,13 +499,13 @@ unblock (const block_t *u, block_vector_t &blocked,
   unsigned index = it - blocked.begin ();
   blocked.erase (it);
 
-  for (block_vector_t::iterator it2 = block_lists[index].begin ();
-       it2 != block_lists[index].end (); it2++)
-    unblock (*it2, blocked, block_lists);
-  for (unsigned j = 0; j < block_lists[index].size (); j++)
-    unblock (u, blocked, block_lists);
+  block_vector_t to_unblock (block_lists[index]);
 
   block_lists.erase (block_lists.begin () + index);
+
+  for (block_vector_t::iterator it = to_unblock.begin ();
+       it != to_unblock.end (); it++)
+    unblock (*it, blocked, block_lists);
 }
 
 /* Find circuit going to block V, PATH is provisional seen cycle.
@@ -655,13 +655,13 @@ print_usage (int error_p)
 
   fnotice (file, "Usage: gcov [OPTION...] SOURCE|OBJ...\n\n");
   fnotice (file, "Print code coverage information.\n\n");
-  fnotice (file, "  -h, --help                      Print this help, then exit\n");
   fnotice (file, "  -a, --all-blocks                Show information for every basic block\n");
   fnotice (file, "  -b, --branch-probabilities      Include branch probabilities in output\n");
   fnotice (file, "  -c, --branch-counts             Output counts of branches taken\n\
                                     rather than percentages\n");
   fnotice (file, "  -d, --display-progress          Display progress information\n");
   fnotice (file, "  -f, --function-summaries        Output summaries for each function\n");
+  fnotice (file, "  -h, --help                      Print this help, then exit\n");
   fnotice (file, "  -i, --intermediate-format       Output .gcov file in intermediate text format\n");
   fnotice (file, "  -l, --long-file-names           Use long output file names for included\n\
                                     source files\n");
@@ -1958,6 +1958,13 @@ static char const *
 format_gcov (gcov_type top, gcov_type bottom, int dp)
 {
   static char buffer[20];
+
+  /* Handle invalid values that would result in a misleading value.  */
+  if (bottom != 0 && top > bottom && dp >= 0)
+    {
+      sprintf (buffer, "NAN %%");
+      return buffer;
+    }
 
   if (dp >= 0)
     {

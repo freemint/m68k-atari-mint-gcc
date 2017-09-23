@@ -5261,6 +5261,8 @@ build_compound_literal (location_t loc, tree type, tree init, bool non_const)
   DECL_CONTEXT (decl) = current_function_decl;
   TREE_USED (decl) = 1;
   DECL_READ_P (decl) = 1;
+  DECL_ARTIFICIAL (decl) = 1;
+  DECL_IGNORED_P (decl) = 1;
   TREE_TYPE (decl) = type;
   TREE_READONLY (decl) = (TYPE_READONLY (type)
 			  || (TREE_CODE (type) == ARRAY_TYPE
@@ -5297,8 +5299,6 @@ build_compound_literal (location_t loc, tree type, tree init, bool non_const)
       set_compound_literal_name (decl);
       DECL_DEFER_OUTPUT (decl) = 1;
       DECL_COMDAT (decl) = 1;
-      DECL_ARTIFICIAL (decl) = 1;
-      DECL_IGNORED_P (decl) = 1;
       pushdecl (decl);
       rest_of_decl_compilation (decl, 1, 0);
     }
@@ -10929,9 +10929,12 @@ finish_declspecs (struct c_declspecs *specs)
     case cts_int_n:
       gcc_assert (!specs->long_p && !specs->short_p && !specs->long_long_p);
       gcc_assert (!(specs->signed_p && specs->unsigned_p));
-      specs->type = (specs->unsigned_p
-		     ? int_n_trees[specs->int_n_idx].unsigned_type
-		     : int_n_trees[specs->int_n_idx].signed_type);
+      if (! int_n_enabled_p[specs->int_n_idx])
+	specs->type = integer_type_node;
+      else
+	specs->type = (specs->unsigned_p
+		       ? int_n_trees[specs->int_n_idx].unsigned_type
+		       : int_n_trees[specs->int_n_idx].signed_type);
       if (specs->complex_p)
 	{
 	  pedwarn (specs->locations[cdw_complex], OPT_Wpedantic,

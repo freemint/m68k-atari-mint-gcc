@@ -143,6 +143,7 @@ extern enum cmodel sparc_cmodel;
 #define TARGET_CPU_niagara3	15
 #define TARGET_CPU_niagara4	16
 #define TARGET_CPU_niagara7	19
+#define TARGET_CPU_m8		20
 
 #if TARGET_CPU_DEFAULT == TARGET_CPU_v9 \
  || TARGET_CPU_DEFAULT == TARGET_CPU_ultrasparc \
@@ -151,7 +152,8 @@ extern enum cmodel sparc_cmodel;
  || TARGET_CPU_DEFAULT == TARGET_CPU_niagara2 \
  || TARGET_CPU_DEFAULT == TARGET_CPU_niagara3 \
  || TARGET_CPU_DEFAULT == TARGET_CPU_niagara4 \
- || TARGET_CPU_DEFAULT == TARGET_CPU_niagara7
+ || TARGET_CPU_DEFAULT == TARGET_CPU_niagara7 \
+ || TARGET_CPU_DEFAULT == TARGET_CPU_m8
 
 #define CPP_CPU32_DEFAULT_SPEC ""
 #define ASM_CPU32_DEFAULT_SPEC ""
@@ -191,6 +193,10 @@ extern enum cmodel sparc_cmodel;
 #if TARGET_CPU_DEFAULT == TARGET_CPU_niagara7
 #define CPP_CPU64_DEFAULT_SPEC "-D__sparc_v9__"
 #define ASM_CPU64_DEFAULT_SPEC AS_NIAGARA7_FLAG
+#endif
+#if TARGET_CPU_DEFAULT == TARGET_CPU_m8
+#define CPP_CPU64_DEFAULT_SPEC "-D__sparc_v9__"
+#define ASM_CPU64_DEFAULT_SPEC AS_M8_FLAG
 #endif
 
 #else
@@ -295,6 +301,7 @@ extern enum cmodel sparc_cmodel;
 %{mcpu=niagara3:-D__sparc_v9__} \
 %{mcpu=niagara4:-D__sparc_v9__} \
 %{mcpu=niagara7:-D__sparc_v9__} \
+%{mcpu=m8:-D__sparc_v9__} \
 %{!mcpu*:%(cpp_cpu_default)} \
 "
 #define CPP_ARCH32_SPEC ""
@@ -347,6 +354,7 @@ extern enum cmodel sparc_cmodel;
 %{mcpu=niagara3:%{!mv8plus:-Av9" AS_NIAGARA3_FLAG "}} \
 %{mcpu=niagara4:%{!mv8plus:" AS_NIAGARA4_FLAG "}} \
 %{mcpu=niagara7:%{!mv8plus:" AS_NIAGARA7_FLAG "}} \
+%{mcpu=m8:%{!mv8plus:" AS_M8_FLAG "}} \
 %{!mcpu*:%(asm_cpu_default)} \
 "
 
@@ -423,10 +431,16 @@ extern enum cmodel sparc_cmodel;
 #define WCHAR_TYPE_SIZE 16
 
 /* Mask of all CPU selection flags.  */
-#define MASK_ISA					\
-  (MASK_SPARCLITE + MASK_SPARCLET			\
+#define MASK_ISA						\
+  (MASK_SPARCLITE + MASK_SPARCLET + MASK_LEON + MASK_LEON3	\
    + MASK_V8 + MASK_V9 + MASK_DEPRECATED_V8_INSNS)
 
+/* Mask of all CPU feature flags.  */
+#define MASK_FEATURES						\
+  (MASK_FPU + MASK_HARD_QUAD + MASK_VIS + MASK_VIS2 + MASK_VIS3	\
+   + MASK_VIS4 + MASK_CBCOND + MASK_FMAF + MASK_FSMULD		\
+   + MASK_POPC + MASK_SUBXC)
+ 
 /* TARGET_HARD_MUL: Use 32-bit hardware multiply instructions but not %y.  */
 #define TARGET_HARD_MUL				\
   (TARGET_SPARCLITE || TARGET_SPARCLET		\
@@ -1034,6 +1048,10 @@ extern char leaf_reg_remap[];
 /* Local macro to handle the two v9 classes of FP regs.  */
 #define FP_REG_CLASS_P(CLASS) ((CLASS) == FP_REGS || (CLASS) == EXTRA_FP_REGS)
 
+/* Predicate for 2-bit and 5-bit unsigned constants.  */
+#define SPARC_IMM2_P(X) (((unsigned HOST_WIDE_INT) (X) & ~0x3) == 0)
+#define SPARC_IMM5_P(X) (((unsigned HOST_WIDE_INT) (X) & ~0x1F)	== 0)
+
 /* Predicates for 5-bit, 10-bit, 11-bit and 13-bit signed constants.  */
 #define SPARC_SIMM5_P(X)  ((unsigned HOST_WIDE_INT) (X) + 0x10 < 0x20)
 #define SPARC_SIMM10_P(X) ((unsigned HOST_WIDE_INT) (X) + 0x200 < 0x400)
@@ -1566,7 +1584,10 @@ do {									   \
    and annulled branches insert 4 bubbles.
 
    On Niagara-2 and Niagara-3, a not-taken branch costs 1 cycle whereas
-   a taken branch costs 6 cycles.  */
+   a taken branch costs 6 cycles.
+
+   The T4 Supplement specifies the branch latency at 2 cycles.
+   The M7 Supplement specifies the branch latency at 1 cycle. */
 
 #define BRANCH_COST(speed_p, predictable_p) \
 	((sparc_cpu == PROCESSOR_V9 \
@@ -1579,7 +1600,11 @@ do {									   \
 	 : ((sparc_cpu == PROCESSOR_NIAGARA2 \
 	     || sparc_cpu == PROCESSOR_NIAGARA3) \
 	    ? 5 \
-	 : 3))))
+	 : (sparc_cpu == PROCESSOR_NIAGARA4 \
+	    ? 2 \
+	 : (sparc_cpu == PROCESSOR_NIAGARA7 \
+	    ? 1 \
+	 : 3))))))
 
 /* Control the assembler format that we output.  */
 
@@ -1785,6 +1810,12 @@ extern int sparc_indent_opcode;
 #define AS_NIAGARA7_FLAG "-xarch=sparc5"
 #else
 #define AS_NIAGARA7_FLAG AS_NIAGARA4_FLAG
+#endif
+
+#ifdef HAVE_AS_SPARC6
+#define AS_M8_FLAG "-xarch=sparc6"
+#else
+#define AS_M8_FLAG AS_NIAGARA7_FLAG
 #endif
 
 #ifdef HAVE_AS_LEON

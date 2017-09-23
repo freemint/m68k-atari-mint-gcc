@@ -9808,6 +9808,7 @@ fold_binary_loc (location_t loc,
 	  if (TREE_CODE (op1) == INTEGER_CST
 	      && tree_int_cst_sgn (op1) == -1
 	      && negate_expr_p (op0)
+	      && negate_expr_p (op1)
 	      && (tem = negate_expr (op1)) != op1
 	      && ! TREE_OVERFLOW (tem))
 	    return fold_build2_loc (loc, MULT_EXPR, type,
@@ -13726,8 +13727,8 @@ fold_negate_const (tree arg0, tree type)
 	bool overflow;
 	wide_int val = wi::neg (arg0, &overflow);
 	t = force_fit_type (type, val, 1,
-			    (overflow | TREE_OVERFLOW (arg0))
-			    && !TYPE_UNSIGNED (type));
+			    (overflow && ! TYPE_UNSIGNED (type))
+			    || TREE_OVERFLOW (arg0));
 	break;
       }
 

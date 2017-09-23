@@ -1,3 +1,81 @@
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-07-28  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-28  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rs6000/ibm-ldouble.c: Disable if defined __rtems__.
+
+2017-07-20  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-07  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/float128-ifunc.c: Don't include auxv.h.
+	(have_ieee_hw_p): Delete function.
+	(SW_OR_HW) Use __builtin_cpu_supports().
+
+2017-07-19  John Marino  <gnugcc@marino.st>
+
+	* config/i386/dragonfly-unwind.h: Handle sigtramp relocation.
+
+2017-07-04  Joseph Myers  <joseph@codesourcery.com>
+
+	* config/aarch64/linux-unwind.h (aarch64_fallback_frame_state),
+	config/alpha/linux-unwind.h (alpha_fallback_frame_state),
+	config/bfin/linux-unwind.h (bfin_fallback_frame_state),
+	config/i386/linux-unwind.h (x86_64_fallback_frame_state,
+	x86_fallback_frame_state), config/m68k/linux-unwind.h (struct
+	uw_ucontext), config/nios2/linux-unwind.h (struct nios2_ucontext),
+	config/pa/linux-unwind.h (pa32_fallback_frame_state),
+	config/riscv/linux-unwind.h (riscv_fallback_frame_state),
+	config/sh/linux-unwind.h (sh_fallback_frame_state),
+	config/tilepro/linux-unwind.h (tile_fallback_frame_state),
+	config/xtensa/linux-unwind.h (xtensa_fallback_frame_state): Use
+	ucontext_t instead of struct ucontext.
+
+2017-06-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-06-21  Richard Biener  <rguenther@suse.de>
+
+	PR gcov-profile/81080
+	* configure.ac: Add AC_SYS_LARGEFILE.
+	* libgcov.h: Include auto-target.h before tsystem.h to pick
+	up _FILE_OFFSET_BITS which might differ for multilibs.
+	* config.in: Regenerate.
+	* configure: Likewise.
+
+2017-05-26  Richard Henderson  <rth@redhat.com>
+
+	PR libgcc/80037
+	* config/alpha/t-alpha (CRTSTUFF_T_CFLAGS): New.
+
+2017-05-19  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-05-17  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/arm/unwind-arm.h: Make _Unwind_GetIP, _Unwind_GetIPInfo and
+	_Unwind_SetIP available as functions for arm*-*-freebsd*.
+	* config/arm/unwind-arm.c: Implement the above.
+
+2017-05-15  Adhemerval Zanella  <adhemerval.zanella@linaro.org>
+
+	* config/sparc/lb1spc.S [__ELF__ && __linux__]: Emit .note.GNU-stack
+	section for a non-executable stack.
+
+2017-05-10  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+        2017-05-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config.host: Use the generic FreeBSD t-slibgcc-elf-ver for
+	arm*-*-freebsd* instead of the t-slibgcc-libgcc.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

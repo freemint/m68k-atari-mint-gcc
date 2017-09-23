@@ -1,3 +1,89 @@
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-06-09  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/70601
+	* trans-expr.c (gfc_conv_procedure_call): Fix detection of allocatable
+	function results.
+
+2017-06-05  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80766
+	* resolve.c (resolve_fl_derived): Make sure that vtype symbols are
+	properly resolved.
+
+2017-06-02  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/80904
+	* frontend-passes.c (matmul_lhs_realloc):  Correct
+	allocation size for case A1B2.
+
+2017-06-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/80918
+	* openmp.c (resolve_omp_clauses): Fix a typo.
+
+2017-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80741
+	* trans-io.c (transfer_namelist_element): Change check from
+	NULL_TREE to null_pointer_node.
+
+2017-05-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80333
+	* trans-io.c (nml_get_addr_expr): If we are dealing with class
+	type data set tmp tree to get that address.
+	(transfer_namelist_element): Set the array spec to point to the
+	the class data.
+
+2017-05-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78659
+	* io.c (dtio_procs_present): Add new function to check for DTIO
+	procedures relative to I/O statement READ or WRITE.
+	(gfc_resolve_dt): Add namelist checks using the new function.
+	* resolve.c (dtio_procs_present): Remove function and related
+	namelist checks. (resolve_fl_namelist): Add check specific to
+	Fortran 95 restriction on namelist objects.
+
+2017-05-15  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80752
+	* expr.c (gfc_generate_initializer):  If type conversion fails,
+	check for error and return NULL.
+
+2017-05-05  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80121
+	* trans-expr.c (gfc_conv_procedure_call): Deallocate the components
+	of allocatable intent(out) arguments.
+
+2017-05-05  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80392
+	* trans-types.c (gfc_get_derived_type): Prevent an infinite loop when
+	building a derived type that includes a procedure pointer component
+	with a polymorphic result.
+
+2017-05-04  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/80484
+	* io.c (format_lex): Check for '/' and set token to FMT_SLASH.
+	(check_format): Move FMT_DT checking code to data_desc section.
+	* module.c (gfc_match_use): Include the case of INTERFACE_DTIO.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

@@ -332,7 +332,6 @@ struct GTY(()) lang_identifier {
   cxx_binding *bindings;
   tree class_template_info;
   tree label_value;
-  bool oracle_looked_up;
 };
 
 /* Return a typed pointer version of T if it designates a
@@ -6148,6 +6147,7 @@ extern void check_template_variable		(tree);
 extern tree make_auto				(void);
 extern tree make_decltype_auto			(void);
 extern tree make_template_placeholder		(tree);
+extern bool template_placeholder_p		(tree);
 extern tree do_auto_deduction                   (tree, tree, tree);
 extern tree do_auto_deduction                   (tree, tree, tree,
                                                  tsubst_flags_t,
@@ -6344,6 +6344,7 @@ extern tree dfs_walk_all (tree, tree (*) (tree, void *),
 extern tree dfs_walk_once (tree, tree (*) (tree, void *),
 			   tree (*) (tree, void *), void *);
 extern tree binfo_via_virtual			(tree, tree);
+extern bool binfo_direct_p			(tree);
 extern tree build_baselink			(tree, tree, tree, tree);
 extern tree adjust_result_of_qualified_name_lookup
 						(tree, tree, tree);
