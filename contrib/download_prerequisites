@@ -46,14 +46,11 @@ verify=1
 force=0
 OS=$(uname)
 
-case $OS in
-  "Darwin")
-    chksum='shasum -a 512 --check'
-  ;;
-  *)
-    chksum='sha512sum --check'
-  ;;
-esac
+if type sha512sum > /dev/null ; then
+  chksum='sha512sum --check'
+else
+  chksum='shasum -a 512 --check'
+fi
 
 if type wget > /dev/null ; then
   fetch='wget'
