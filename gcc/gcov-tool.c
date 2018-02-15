@@ -52,7 +52,7 @@ extern void gcov_set_verbose (void);
 /* Set to verbose output mode.  */
 static bool verbose;
 
-#if HAVE_FTW_H
+#if defined(HAVE_FTW_H) && defined(FTW_DEPTH)
 
 /* Remove file NAME if it has a gcda suffix. */
 
@@ -81,7 +81,7 @@ unlink_gcda_file (const char *name,
 static int
 unlink_profile_dir (const char *path ATTRIBUTE_UNUSED)
 {
-#if HAVE_FTW_H
+#if defined(HAVE_FTW_H) && defined(FTW_DEPTH)
     return nftw(path, unlink_gcda_file, 64, FTW_DEPTH | FTW_PHYS);
 #else
     return -1;
