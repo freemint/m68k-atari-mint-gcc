@@ -1,3 +1,116 @@
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2017-12-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_field): Do not set the alignment
+	of the enclosing record type if it is not already set.
+
+2017-12-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (Subprogram_Body_to_gnu): Initialize locus.
+
+2017-12-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (process_freeze_entity): Be prepared for a
+	package without body.
+
+2017-12-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Robustify test for types
+	descendant of System.Address.
+	(gnat_to_gnu_subprog_type): Likewise.
+
+2017-12-04  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* gcc-interface/Makefile.in (RTEMS): Use s-osprim.adb.
+	* s-osprim-rtems.adb: New file.
+	* s-osinte-rtems.adb (pthread_cond_t): Fix alignment.
+	(pthread_mutexattr_t): Likewise.
+	(pthread_rwlockattr_t): Likewise.
+	(pthread_rwlock_t): Likewise.
+	(time_t): Use 64-bit integer.
+
+2017-12-01  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* s-osinte-rtems.ads (pthread_cond_t): Use correct size and
+	alignment.
+	(pthread_mutex_t): Likewise.
+	(pthread_rwlock_t): Likewise.
+
+2017-11-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils.c (convert) <RECORD_TYPE>: Add comment and do
+	not fall through to the next case.
+	<ARRAY_TYPE>: Deal specially with a dereference from another array
+	type with the same element type.
+
+2017-10-21  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/Makefile.in: Remove bogus settings for VxWorks.
+
+2017-10-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/82393
+	* mingw32.h (_O_U8TEXT, _O_U16TEXT, _O_WTEXT): Delete.
+	* sysdep.c (__gnat_set_mode ): Use DJGPP version for Cygwin.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-29  Martin Liska  <mliska@suse.cz>
+
+	PR other/39851
+	* gcc-interface/trans.c (Pragma_to_gnu): Set argument to NULL.
+
+2017-09-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (promote_object_alignment): New function taken
+	from...
+	(gnat_to_gnu_entity) <E_Variable>: ...here.  Invoke it.
+	(gnat_to_gnu_field): If the field is Atomic or VFA, invoke it and
+	create a padding type on success before doing the atomic check.
+
+2017-09-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity) <E_Variable>: Apply the
+	promotion to static memory earlier in the processing.
+
+2017-09-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sem_util.ads (Set_Rep_Info): New inline procedure.
+	* sem_util.adb (Set_Rep_Info): Implement it.
+	* sem_ch3.adb (Process_Subtype): If the case of a constraint present,
+	always copy the representation aspects onto the subtype.
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Only set the TYPE_ALIGN_OK
+	and TYPE_BY_REFERENCE_P flags on types after various promotions.
+	* gcc-interface/trans.c (node_has_volatile_full_access) <N_Identifier>:
+	Consider all kinds of entities.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/62235
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Skip regular processing
+	for Itypes that are E_Record_Subtype with a cloned subtype.
+	<E_Record_Subtype>: Use the DECL of the cloned type directly, if any.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils.c (unchecked_convert): When the result type is a
+	non-biased integral type with size 0, set the result to 0 directly.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (Call_to_gnu): If this is a function call and
+	there is no target, do not create a temporary for the return value for
+	an allocator either.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (pos_to_constructor): Skip conversions to an
+	unconstrained array type.
+
 2017-08-14  Release Manager
 
 	* GCC 7.2.0 released.

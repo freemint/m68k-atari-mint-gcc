@@ -15199,12 +15199,23 @@ operands_ok_ldrd_strd (rtx rt, rtx rt2, rtx rn, HOST_WIDE_INT offset,
   return true;
 }
 
+/* Return true if a 64-bit access with alignment ALIGN and with a
+   constant offset OFFSET from the base pointer is permitted on this
+   architecture.  */
+static bool
+align_ok_ldrd_strd (HOST_WIDE_INT align, HOST_WIDE_INT offset)
+{
+  return (unaligned_access
+	  ? (align >= BITS_PER_WORD && (offset & 3) == 0)
+	  : (align >= 2 * BITS_PER_WORD && (offset & 7) == 0));
+}
+
 /* Helper for gen_operands_ldrd_strd.  Returns true iff the memory
    operand MEM's address contains an immediate offset from the base
-   register and has no side effects, in which case it sets BASE and
-   OFFSET accordingly.  */
+   register and has no side effects, in which case it sets BASE,
+   OFFSET and ALIGN accordingly.  */
 static bool
-mem_ok_for_ldrd_strd (rtx mem, rtx *base, rtx *offset)
+mem_ok_for_ldrd_strd (rtx mem, rtx *base, rtx *offset, HOST_WIDE_INT *align)
 {
   rtx addr;
 
@@ -15223,6 +15234,7 @@ mem_ok_for_ldrd_strd (rtx mem, rtx *base, rtx *offset)
   gcc_assert (MEM_P (mem));
 
   *offset = const0_rtx;
+  *align = MEM_ALIGN (mem);
 
   addr = XEXP (mem, 0);
 
@@ -15263,7 +15275,7 @@ gen_operands_ldrd_strd (rtx *operands, bool load,
                         bool const_store, bool commute)
 {
   int nops = 2;
-  HOST_WIDE_INT offsets[2], offset;
+  HOST_WIDE_INT offsets[2], offset, align[2];
   rtx base = NULL_RTX;
   rtx cur_base, cur_offset, tmp;
   int i, gap;
@@ -15275,7 +15287,8 @@ gen_operands_ldrd_strd (rtx *operands, bool load,
      registers, and the corresponding memory offsets.  */
   for (i = 0; i < nops; i++)
     {
-      if (!mem_ok_for_ldrd_strd (operands[nops+i], &cur_base, &cur_offset))
+      if (!mem_ok_for_ldrd_strd (operands[nops+i], &cur_base, &cur_offset,
+				 &align[i]))
         return false;
 
       if (i == 0)
@@ -15389,6 +15402,7 @@ gen_operands_ldrd_strd (rtx *operands, bool load,
       /* Swap the instructions such that lower memory is accessed first.  */
       std::swap (operands[0], operands[1]);
       std::swap (operands[2], operands[3]);
+      std::swap (align[0], align[1]);
       if (const_store)
         std::swap (operands[4], operands[5]);
     }
@@ -15400,6 +15414,9 @@ gen_operands_ldrd_strd (rtx *operands, bool load,
 
   /* Make sure accesses are to consecutive memory locations.  */
   if (gap != 4)
+    return false;
+
+  if (!align_ok_ldrd_strd (align[0], offset))
     return false;
 
   /* Make sure we generate legal instructions.  */
@@ -19299,7 +19316,12 @@ arm_get_vfp_saved_size (void)
 
 /* Generate a function exit sequence.  If REALLY_RETURN is false, then do
    everything bar the final return instruction.  If simple_return is true,
-   then do not output epilogue, because it has already been emitted in RTL.  */
+   then do not output epilogue, because it has already been emitted in RTL.
+
+   Note: do not forget to update length attribute of corresponding insn pattern
+   when changing assembly output (eg. length attribute of
+   thumb2_cmse_entry_return when updating Armv8-M Mainline Security Extensions
+   register clearing sequences).  */
 const char *
 output_return_instruction (rtx operand, bool really_return, bool reverse,
                            bool simple_return)
@@ -23792,7 +23814,12 @@ thumb_pop (FILE *f, unsigned long mask)
 
 /* Generate code to return from a thumb function.
    If 'reg_containing_return_addr' is -1, then the return address is
-   actually on the stack, at the stack pointer.  */
+   actually on the stack, at the stack pointer.
+
+   Note: do not forget to update length attribute of corresponding insn pattern
+   when changing assembly output (eg. length attribute of epilogue_insns when
+   updating Armv8-M Baseline Security Extensions register clearing
+   sequences).  */
 static void
 thumb_exit (FILE *f, int reg_containing_return_addr)
 {

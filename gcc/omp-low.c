@@ -800,6 +800,8 @@ omp_copy_decl (tree var, copy_body_data *cb)
 
   if (TREE_CODE (var) == LABEL_DECL)
     {
+      if (FORCED_LABEL (var) || DECL_NONLOCAL (var))
+	return var;
       new_var = create_artificial_label (DECL_SOURCE_LOCATION (var));
       DECL_CONTEXT (new_var) = current_function_decl;
       insert_decl_map (&ctx->cb, var, new_var);
@@ -6925,10 +6927,14 @@ lower_omp_for (gimple_stmt_iterator *gsi_p, omp_context *ctx)
       rhs_p = gimple_omp_for_initial_ptr (stmt, i);
       if (!is_gimple_min_invariant (*rhs_p))
 	*rhs_p = get_formal_tmp_var (*rhs_p, &body);
+      else if (TREE_CODE (*rhs_p) == ADDR_EXPR)
+	recompute_tree_invariant_for_addr_expr (*rhs_p);
 
       rhs_p = gimple_omp_for_final_ptr (stmt, i);
       if (!is_gimple_min_invariant (*rhs_p))
 	*rhs_p = get_formal_tmp_var (*rhs_p, &body);
+      else if (TREE_CODE (*rhs_p) == ADDR_EXPR)
+	recompute_tree_invariant_for_addr_expr (*rhs_p);
 
       rhs_p = &TREE_OPERAND (gimple_omp_for_incr (stmt, i), 1);
       if (!is_gimple_min_invariant (*rhs_p))
@@ -9089,7 +9095,7 @@ diagnose_sb_0 (gimple_stmt_iterator *gsi_p,
     }
   if (kind == NULL)
     {
-      gcc_checking_assert (flag_openmp);
+      gcc_checking_assert (flag_openmp || flag_openmp_simd);
       kind = "OpenMP";
     }
 
@@ -9349,7 +9355,7 @@ public:
   /* opt_pass methods: */
   virtual bool gate (function *)
   {
-    return flag_cilkplus || flag_openacc || flag_openmp;
+    return flag_cilkplus || flag_openacc || flag_openmp || flag_openmp_simd;
   }
   virtual unsigned int execute (function *)
     {

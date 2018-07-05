@@ -2591,6 +2591,8 @@ generic:
       if (!gfc_convert_to_structure_constructor (expr, intr->sym, NULL,
 						 NULL, false))
 	return false;
+      if (!gfc_use_derived (expr->ts.u.derived))
+	return false;
       return resolve_structure_cons (expr, 0);
     }
 
@@ -7285,8 +7287,13 @@ resolve_allocate_expr (gfc_expr *e, gfc_code *code, bool *array_alloc_wo_spec)
   if (code->ext.alloc.ts.type == BT_CHARACTER && !e->ts.deferred
       && !UNLIMITED_POLY (e))
     {
-      int cmp = gfc_dep_compare_expr (e->ts.u.cl->length,
-				      code->ext.alloc.ts.u.cl->length);
+      int cmp;
+
+      if (!e->ts.u.cl->length)
+	goto failure;
+
+      cmp = gfc_dep_compare_expr (e->ts.u.cl->length,
+				  code->ext.alloc.ts.u.cl->length);
       if (cmp == 1 || cmp == -1 || cmp == -3)
 	{
 	  gfc_error ("Allocating %s at %L with type-spec requires the same "
@@ -8294,11 +8301,23 @@ resolve_assoc_var (gfc_symbol* sym, bool resolve_target)
 	sym->attr.subref_array_pointer = 1;
     }
 
+  if (target->expr_type == EXPR_NULL)
+    {
+      gfc_error ("Selector at %L cannot be NULL()", &target->where);
+      return;
+    }
+  else if (target->ts.type == BT_UNKNOWN)
+    {
+      gfc_error ("Selector at %L has no type", &target->where);
+      return;
+    }
+
   /* Get type if this was not already set.  Note that it can be
      some other type than the target in case this is a SELECT TYPE
      selector!  So we must not update when the type is already there.  */
   if (sym->ts.type == BT_UNKNOWN)
     sym->ts = target->ts;
+
   gcc_assert (sym->ts.type != BT_UNKNOWN);
 
   /* See if this is a valid association-to-variable.  */
@@ -10112,7 +10131,8 @@ resolve_ordinary_assign (gfc_code *code, gfc_namespace *ns)
 
   /* Assign the 'data' of a class object to a derived type.  */
   if (lhs->ts.type == BT_DERIVED
-      && rhs->ts.type == BT_CLASS)
+      && rhs->ts.type == BT_CLASS
+      && rhs->expr_type != EXPR_ARRAY)
     gfc_add_data_component (rhs);
 
   bool caf_convert_to_send = flag_coarray == GFC_FCOARRAY_LIB
@@ -11005,11 +11025,8 @@ start:
 
 	    /* Assigning a class object always is a regular assign.  */
 	    if (code->expr2->ts.type == BT_CLASS
+		&& code->expr1->ts.type == BT_CLASS
 		&& !CLASS_DATA (code->expr2)->attr.dimension
-		&& !(UNLIMITED_POLY (code->expr2)
-		     && code->expr1->ts.type == BT_DERIVED
-		     && (code->expr1->ts.u.derived->attr.sequence
-			 || code->expr1->ts.u.derived->attr.is_bind_c))
 		&& !(gfc_expr_attr (code->expr1).proc_pointer
 		     && code->expr2->expr_type == EXPR_VARIABLE
 		     && code->expr2->symtree->n.sym->attr.flavor
@@ -11446,10 +11463,17 @@ resolve_charlen (gfc_charlen *cl)
 	  specification_expr = saved_specification_expr;
 	  return false;
 	}
+
+      /* cl->length has been resolved.  It should have an integer type.  */
+      if (cl->length && cl->length->ts.type != BT_INTEGER)
+	{
+	  gfc_error ("Scalar INTEGER expression expected at %L",
+		     &cl->length->where);
+	  return false;
+	}
     }
   else
     {
-
       if (!resolve_index_expr (cl->length))
 	{
 	  specification_expr = saved_specification_expr;
@@ -11824,6 +11848,7 @@ deferred_requirements (gfc_symbol *sym)
   if (sym->ts.deferred
       && !(sym->attr.pointer
 	   || sym->attr.allocatable
+	   || sym->attr.associate_var
 	   || sym->attr.omp_udr_artificial_var))
     {
       gfc_error ("Entity %qs at %L has a deferred type parameter and "
@@ -13288,6 +13313,13 @@ resolve_component (gfc_component *c, gfc_symbol *sym)
   if (c->attr.artificial)
     return true;
 
+  /* Do not allow vtype components to be resolved in nameless namespaces
+     such as block data because the procedure pointers will cause ICEs
+     and vtables are not needed in these contexts.  */
+  if (sym->attr.vtype && sym->attr.use_assoc
+      && sym->ns->proc_name == NULL)
+    return true;
+
   /* F2008, C442.  */
   if ((!sym->attr.is_class || c != sym->components)
       && c->attr.codimension
@@ -13847,6 +13879,20 @@ resolve_fl_derived (gfc_symbol *sym)
   if (!resolve_typebound_procedures (sym))
     return false;
 
+  /* Generate module vtables subject to their accessibility and their not
+     being vtables or pdt templates. If this is not done class declarations
+     in external procedures wind up with their own version and so SELECT TYPE
+     fails because the vptrs do not have the same address.  */
+  if (gfc_option.allow_std & GFC_STD_F2003
+      && sym->ns->proc_name
+      && sym->ns->proc_name->attr.flavor == FL_MODULE
+      && sym->attr.access != ACCESS_PRIVATE
+      && !(sym->attr.use_assoc || sym->attr.vtype))
+    {
+      gfc_symbol *vtab = gfc_find_derived_vtab (sym);
+      gfc_set_sym_referenced (vtab);
+    }
+
   return true;
 }
 
@@ -14231,7 +14277,23 @@ resolve_symbol (gfc_symbol *sym)
 
   if (as)
     {
-      gcc_assert (as->type != AS_IMPLIED_SHAPE);
+      /* If AS_IMPLIED_SHAPE makes it to here, it must be a bad
+	 specification expression.  */
+      if (as->type == AS_IMPLIED_SHAPE)
+	{
+	  int i;
+	  for (i=0; i<as->rank; i++)
+	    {
+	      if (as->lower[i] != NULL && as->upper[i] == NULL)
+		{
+		  gfc_error ("Bad specification for assumed size array at %L",
+			     &as->lower[i]->where);
+		  return;
+		}
+	    }
+	  gcc_unreachable();
+	}
+
       if (((as->type == AS_ASSUMED_SIZE && !as->cp_was_assumed)
 	   || as->type == AS_ASSUMED_SHAPE)
 	  && !sym->attr.dummy && !sym->attr.select_type_temporary)
@@ -14609,6 +14671,7 @@ resolve_symbol (gfc_symbol *sym)
   if (class_attr.codimension
       && !(class_attr.allocatable || sym->attr.dummy || sym->attr.save
 	   || sym->attr.select_type_temporary
+	   || sym->attr.associate_var
 	   || (sym->ns->save_all && !sym->attr.automatic)
 	   || sym->ns->proc_name->attr.flavor == FL_MODULE
 	   || sym->ns->proc_name->attr.is_main_program
@@ -14793,7 +14856,12 @@ resolve_symbol (gfc_symbol *sym)
 
       if ((!a->save && !a->dummy && !a->pointer
 	   && !a->in_common && !a->use_assoc
-	   && !a->result && !a->function)
+	   && a->referenced
+	   && !((a->function || a->result)
+		&& (!a->dimension
+		    || sym->ts.u.derived->attr.alloc_comp
+		    || sym->ts.u.derived->attr.pointer_comp))
+	   && !(a->function && sym != sym->result))
 	  || (a->dummy && a->intent == INTENT_OUT && !a->pointer))
 	apply_default_init (sym);
       else if (a->function && sym->result && a->access != ACCESS_PRIVATE
@@ -15626,9 +15694,22 @@ resolve_equivalence (gfc_equiv *eq)
 	  && sym->ns->proc_name->attr.pure
 	  && sym->attr.in_common)
 	{
-	  gfc_error ("Common block member %qs at %L cannot be an EQUIVALENCE "
-		     "object in the pure procedure %qs",
-		     sym->name, &e->where, sym->ns->proc_name->name);
+	  /* Need to check for symbols that may have entered the pure
+	     procedure via a USE statement.  */
+	  bool saw_sym = false;
+	  if (sym->ns->use_stmts)
+	    {
+	      gfc_use_rename *r;
+	      for (r = sym->ns->use_stmts->rename; r; r = r->next)
+		if (strcmp(r->use_name, sym->name) == 0) saw_sym = true;
+	    }
+	  else
+	    saw_sym = true;
+
+	  if (saw_sym)
+	    gfc_error ("COMMON block member %qs at %L cannot be an "
+		       "EQUIVALENCE object in the pure procedure %qs",
+		       sym->name, &e->where, sym->ns->proc_name->name);
 	  break;
 	}
 

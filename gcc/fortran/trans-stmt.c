@@ -150,7 +150,7 @@ gfc_trans_goto (gfc_code * code)
   gfc_start_block (&se.pre);
   gfc_conv_label_variable (&se, code->expr1);
   tmp = GFC_DECL_STRING_LEN (se.expr);
-  tmp = fold_build2_loc (input_location, NE_EXPR, boolean_type_node, tmp,
+  tmp = fold_build2_loc (input_location, NE_EXPR, logical_type_node, tmp,
 			 build_int_cst (TREE_TYPE (tmp), -1));
   gfc_trans_runtime_check (true, false, tmp, &se.pre, &loc,
 			   "Assigned label is not a target label");
@@ -452,7 +452,10 @@ gfc_trans_call (gfc_code * code, bool dependency_check,
 	 subscripts.  This could be prevented in the elemental case
 	 as temporaries are handled separatedly
 	 (below in gfc_conv_elemental_dependencies).  */
-      gfc_conv_loop_setup (&loop, &code->expr1->where);
+      if (code->expr1)
+	gfc_conv_loop_setup (&loop, &code->expr1->where);
+      else
+	gfc_conv_loop_setup (&loop, &code->loc);
       gfc_mark_ss_chain_used (ss, 1);
 
       /* Convert the arguments, checking for dependencies.  */
@@ -1103,7 +1106,7 @@ gfc_trans_sync (gfc_code *code, gfc_exec_op type)
     {
       tree cond;
       if (flag_coarray != GFC_FCOARRAY_LIB)
-	cond = fold_build2_loc (input_location, NE_EXPR, boolean_type_node,
+	cond = fold_build2_loc (input_location, NE_EXPR, logical_type_node,
 				images, build_int_cst (TREE_TYPE (images), 1));
       else
 	{
@@ -1111,13 +1114,13 @@ gfc_trans_sync (gfc_code *code, gfc_exec_op type)
 	  tmp = build_call_expr_loc (input_location, gfor_fndecl_caf_num_images,
 				     2, integer_zero_node,
 				     build_int_cst (integer_type_node, -1));
-	  cond = fold_build2_loc (input_location, GT_EXPR, boolean_type_node,
+	  cond = fold_build2_loc (input_location, GT_EXPR, logical_type_node,
 				  images, tmp);
-	  cond2 = fold_build2_loc (input_location, LT_EXPR, boolean_type_node,
+	  cond2 = fold_build2_loc (input_location, LT_EXPR, logical_type_node,
 				   images,
 				   build_int_cst (TREE_TYPE (images), 1));
 	  cond = fold_build2_loc (input_location, TRUTH_OR_EXPR,
-				  boolean_type_node, cond, cond2);
+				  logical_type_node, cond, cond2);
 	}
       gfc_trans_runtime_check (true, false, cond, &se.pre,
 			       &code->expr1->where, "Invalid image number "
@@ -1409,10 +1412,10 @@ gfc_trans_arithmetic_if (gfc_code * code)
       branch2 = build1_v (GOTO_EXPR, gfc_get_label_decl (code->label2));
 
       if (code->label1->value != code->label3->value)
-        tmp = fold_build2_loc (input_location, LT_EXPR, boolean_type_node,
+        tmp = fold_build2_loc (input_location, LT_EXPR, logical_type_node,
 			       se.expr, zero);
       else
-        tmp = fold_build2_loc (input_location, NE_EXPR, boolean_type_node,
+        tmp = fold_build2_loc (input_location, NE_EXPR, logical_type_node,
 			       se.expr, zero);
 
       branch1 = fold_build3_loc (input_location, COND_EXPR, void_type_node,
@@ -1426,7 +1429,7 @@ gfc_trans_arithmetic_if (gfc_code * code)
     {
       /* if (cond <= 0) take branch1 else take branch2.  */
       branch2 = build1_v (GOTO_EXPR, gfc_get_label_decl (code->label3));
-      tmp = fold_build2_loc (input_location, LE_EXPR, boolean_type_node,
+      tmp = fold_build2_loc (input_location, LE_EXPR, logical_type_node,
 			     se.expr, zero);
       branch1 = fold_build3_loc (input_location, COND_EXPR, void_type_node,
 				 tmp, branch1, branch2);
@@ -1771,6 +1774,13 @@ trans_associate_var (gfc_symbol *sym, gfc_wrapped_block *block)
 	  gcc_assert (!e->symtree->n.sym->ts.deferred);
 	  tmp = e->symtree->n.sym->ts.u.cl->backend_decl;
 	}
+      else if (e->expr_type == EXPR_VARIABLE
+	       && e->symtree->n.sym->attr.function
+	       && e->symtree->n.sym == e->symtree->n.sym->result)
+	{
+	  tmp = gfc_get_fake_result_decl (e->symtree->n.sym, 0);
+	  tmp = gfc_class_len_get (tmp);
+	}
       else
 	tmp = gfc_class_len_get (gfc_get_symbol_decl (e->symtree->n.sym));
       gfc_get_symbol_decl (sym);
@@ -1910,10 +1920,10 @@ gfc_trans_simple_do (gfc_code * code, stmtblock_t *pblock, tree dovar,
 
   /* Evaluate the loop condition.  */
   if (is_step_positive)
-    cond = fold_build2_loc (loc, GT_EXPR, boolean_type_node, dovar,
+    cond = fold_build2_loc (loc, GT_EXPR, logical_type_node, dovar,
 			    fold_convert (type, to));
   else
-    cond = fold_build2_loc (loc, LT_EXPR, boolean_type_node, dovar,
+    cond = fold_build2_loc (loc, LT_EXPR, logical_type_node, dovar,
 			    fold_convert (type, to));
 
   cond = gfc_evaluate_now_loc (loc, cond, &body);
@@ -1932,7 +1942,7 @@ gfc_trans_simple_do (gfc_code * code, stmtblock_t *pblock, tree dovar,
       tree boundary = is_step_positive ? TYPE_MAX_VALUE (type)
 	: TYPE_MIN_VALUE (type);
 
-      tmp = fold_build2_loc (loc, EQ_EXPR, boolean_type_node,
+      tmp = fold_build2_loc (loc, EQ_EXPR, logical_type_node,
 			     dovar, boundary);
       gfc_trans_runtime_check (true, false, tmp, &body, &code->loc,
 			       "Loop iterates infinitely");
@@ -1952,7 +1962,7 @@ gfc_trans_simple_do (gfc_code * code, stmtblock_t *pblock, tree dovar,
   /* Check whether someone has modified the loop variable.  */
   if (gfc_option.rtcheck & GFC_RTCHECK_DO)
     {
-      tmp = fold_build2_loc (loc, NE_EXPR, boolean_type_node,
+      tmp = fold_build2_loc (loc, NE_EXPR, logical_type_node,
 			     dovar, saved_dovar);
       gfc_trans_runtime_check (true, false, tmp, &body, &code->loc,
 			       "Loop variable has been modified");
@@ -2061,7 +2071,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
 
   if (gfc_option.rtcheck & GFC_RTCHECK_DO)
     {
-      tmp = fold_build2_loc (input_location, EQ_EXPR, boolean_type_node, step,
+      tmp = fold_build2_loc (input_location, EQ_EXPR, logical_type_node, step,
 			     build_zero_cst (type));
       gfc_trans_runtime_check (true, false, tmp, &block, &code->loc,
 			       "DO step value is zero");
@@ -2128,7 +2138,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
 
       /* For a positive step, when to < from, exit, otherwise compute
          countm1 = ((unsigned)to - (unsigned)from) / (unsigned)step  */
-      tmp = fold_build2_loc (loc, LT_EXPR, boolean_type_node, to, from);
+      tmp = fold_build2_loc (loc, LT_EXPR, logical_type_node, to, from);
       tmp2 = fold_build2_loc (loc, TRUNC_DIV_EXPR, utype,
 			      fold_build2_loc (loc, MINUS_EXPR, utype,
 					       tou, fromu),
@@ -2143,7 +2153,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
 
       /* For a negative step, when to > from, exit, otherwise compute
          countm1 = ((unsigned)from - (unsigned)to) / -(unsigned)step  */
-      tmp = fold_build2_loc (loc, GT_EXPR, boolean_type_node, to, from);
+      tmp = fold_build2_loc (loc, GT_EXPR, logical_type_node, to, from);
       tmp2 = fold_build2_loc (loc, TRUNC_DIV_EXPR, utype,
 			      fold_build2_loc (loc, MINUS_EXPR, utype,
 					       fromu, tou),
@@ -2156,7 +2166,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
 				build1_loc (loc, GOTO_EXPR, void_type_node,
 					    exit_label), NULL_TREE));
 
-      tmp = fold_build2_loc (loc, LT_EXPR, boolean_type_node, step,
+      tmp = fold_build2_loc (loc, LT_EXPR, logical_type_node, step,
 			     build_int_cst (TREE_TYPE (step), 0));
       tmp = fold_build3_loc (loc, COND_EXPR, void_type_node, tmp, neg, pos);
 
@@ -2177,13 +2187,13 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
 
       /* We need a special check for empty loops:
 	 empty = (step > 0 ? to < from : to > from);  */
-      pos_step = fold_build2_loc (loc, GT_EXPR, boolean_type_node, step,
+      pos_step = fold_build2_loc (loc, GT_EXPR, logical_type_node, step,
 				  build_zero_cst (type));
-      tmp = fold_build3_loc (loc, COND_EXPR, boolean_type_node, pos_step,
+      tmp = fold_build3_loc (loc, COND_EXPR, logical_type_node, pos_step,
 			     fold_build2_loc (loc, LT_EXPR,
-					      boolean_type_node, to, from),
+					      logical_type_node, to, from),
 			     fold_build2_loc (loc, GT_EXPR,
-					      boolean_type_node, to, from));
+					      logical_type_node, to, from));
       /* If the loop is empty, go directly to the exit label.  */
       tmp = fold_build3_loc (loc, COND_EXPR, void_type_node, tmp,
 			 build1_v (GOTO_EXPR, exit_label),
@@ -2208,7 +2218,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
   /* Check whether someone has modified the loop variable.  */
   if (gfc_option.rtcheck & GFC_RTCHECK_DO)
     {
-      tmp = fold_build2_loc (loc, NE_EXPR, boolean_type_node, dovar,
+      tmp = fold_build2_loc (loc, NE_EXPR, logical_type_node, dovar,
 			     saved_dovar);
       gfc_trans_runtime_check (true, false, tmp, &body, &code->loc,
 			       "Loop variable has been modified");
@@ -2241,7 +2251,7 @@ gfc_trans_do (gfc_code * code, tree exit_cond)
   gfc_add_modify_loc (loc, &body, countm1, tmp);
 
   /* End with the loop condition.  Loop until countm1t == 0.  */
-  cond = fold_build2_loc (loc, EQ_EXPR, boolean_type_node, countm1t,
+  cond = fold_build2_loc (loc, EQ_EXPR, logical_type_node, countm1t,
 			  build_int_cst (utype, 0));
   tmp = fold_build1_loc (loc, GOTO_EXPR, void_type_node, exit_label);
   tmp = fold_build3_loc (loc, COND_EXPR, void_type_node,
@@ -3395,7 +3405,7 @@ gfc_trans_forall_loop (forall_info *forall_tmp, tree body,
       gfc_init_block (&block);
 
       /* The exit condition.  */
-      cond = fold_build2_loc (input_location, LE_EXPR, boolean_type_node,
+      cond = fold_build2_loc (input_location, LE_EXPR, logical_type_node,
 			      count, build_int_cst (TREE_TYPE (count), 0));
       if (forall_tmp->do_concurrent)
 	cond = build2 (ANNOTATE_EXPR, TREE_TYPE (cond), cond,
@@ -5073,7 +5083,7 @@ gfc_trans_where_2 (gfc_code * code, tree mask, bool invert,
 					  &inner_size_body, block);
 
       /* Check whether the size is negative.  */
-      cond = fold_build2_loc (input_location, LE_EXPR, boolean_type_node, size,
+      cond = fold_build2_loc (input_location, LE_EXPR, logical_type_node, size,
 			      gfc_index_zero_node);
       size = fold_build3_loc (input_location, COND_EXPR, gfc_array_index_type,
 			      cond, gfc_index_zero_node, size);
@@ -5857,10 +5867,9 @@ gfc_trans_allocate (gfc_code * code)
       if (code->ext.alloc.ts.type != BT_CHARACTER)
 	expr3_esize = TYPE_SIZE_UNIT (
 	      gfc_typenode_for_spec (&code->ext.alloc.ts));
-      else
+      else if (code->ext.alloc.ts.u.cl->length != NULL)
 	{
 	  gfc_expr *sz;
-	  gcc_assert (code->ext.alloc.ts.u.cl->length != NULL);
 	  sz = gfc_copy_expr (code->ext.alloc.ts.u.cl->length);
 	  gfc_init_se (&se_sz, NULL);
 	  gfc_conv_expr (&se_sz, sz);
@@ -5874,6 +5883,8 @@ gfc_trans_allocate (gfc_code * code)
 					 tmp, se_sz.expr);
 	  expr3_esize = gfc_evaluate_now (expr3_esize, &block);
 	}
+      else
+	expr3_esize = NULL_TREE;
     }
 
   /* The routine gfc_trans_assignment () already implements all
@@ -6078,7 +6089,7 @@ gfc_trans_allocate (gfc_code * code)
 		     polymorphic and stores a _len dependent object,
 		     e.g., a string.  */
 		  memsz = fold_build2_loc (input_location, GT_EXPR,
-					   boolean_type_node, expr3_len,
+					   logical_type_node, expr3_len,
 					   integer_zero_node);
 		  memsz = fold_build3_loc (input_location, COND_EXPR,
 					 TREE_TYPE (expr3_esize),
@@ -6211,7 +6222,7 @@ gfc_trans_allocate (gfc_code * code)
 	{
 	  tmp = build1_v (GOTO_EXPR, label_errmsg);
 	  parm = fold_build2_loc (input_location, NE_EXPR,
-				  boolean_type_node, stat,
+				  logical_type_node, stat,
 				  build_int_cst (TREE_TYPE (stat), 0));
 	  tmp = fold_build3_loc (input_location, COND_EXPR, void_type_node,
 				 gfc_unlikely (parm, PRED_FORTRAN_FAIL_ALLOC),
@@ -6430,7 +6441,7 @@ gfc_trans_allocate (gfc_code * code)
 			     gfc_default_character_kind);
       dlen = gfc_finish_block (&errmsg_block);
 
-      tmp = fold_build2_loc (input_location, NE_EXPR, boolean_type_node,
+      tmp = fold_build2_loc (input_location, NE_EXPR, logical_type_node,
 			     stat, build_int_cst (TREE_TYPE (stat), 0));
 
       tmp = build3_v (COND_EXPR, tmp,
@@ -6668,7 +6679,7 @@ gfc_trans_deallocate (gfc_code *code)
 	{
           tree cond;
 
-	  cond = fold_build2_loc (input_location, NE_EXPR, boolean_type_node, stat,
+	  cond = fold_build2_loc (input_location, NE_EXPR, logical_type_node, stat,
 				  build_int_cst (TREE_TYPE (stat), 0));
 	  tmp = fold_build3_loc (input_location, COND_EXPR, void_type_node,
 				 gfc_unlikely (cond, PRED_FORTRAN_FAIL_ALLOC),
@@ -6708,7 +6719,7 @@ gfc_trans_deallocate (gfc_code *code)
 			     slen, errmsg_str, gfc_default_character_kind);
       tmp = gfc_finish_block (&errmsg_block);
 
-      cond = fold_build2_loc (input_location, NE_EXPR, boolean_type_node, stat,
+      cond = fold_build2_loc (input_location, NE_EXPR, logical_type_node, stat,
 			     build_int_cst (TREE_TYPE (stat), 0));
       tmp = fold_build3_loc (input_location, COND_EXPR, void_type_node,
 			     gfc_unlikely (cond, PRED_FORTRAN_FAIL_ALLOC), tmp,

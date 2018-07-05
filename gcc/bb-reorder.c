@@ -2405,7 +2405,10 @@ reorder_basic_blocks_simple (void)
 
   basic_block last_tail = (basic_block) ENTRY_BLOCK_PTR_FOR_FN (cfun)->aux;
 
-  int current_partition = BB_PARTITION (last_tail);
+  int current_partition
+    = BB_PARTITION (last_tail == ENTRY_BLOCK_PTR_FOR_FN (cfun)
+		    ? EDGE_SUCC (ENTRY_BLOCK_PTR_FOR_FN (cfun), 0)->dest
+		    : last_tail);
   bool need_another_pass = true;
 
   for (int pass = 0; pass < 2 && need_another_pass; pass++)
@@ -2446,7 +2449,6 @@ reorder_basic_blocks_simple (void)
     {
       force_nonfallthru (e);
       e->src->aux = ENTRY_BLOCK_PTR_FOR_FN (cfun)->aux;
-      BB_COPY_PARTITION (e->src, e->dest);
     }
 }
 
@@ -2881,7 +2883,8 @@ pass_partition_blocks::execute (function *fun)
 
   crossing_edges = find_rarely_executed_basic_blocks_and_crossing_edges ();
   if (!crossing_edges.exists ())
-    return 0;
+    /* Make sure to process deferred rescans and clear changeable df flags.  */
+    return TODO_df_finish;
 
   crtl->has_bb_partition = true;
 
@@ -2947,7 +2950,8 @@ pass_partition_blocks::execute (function *fun)
       df_analyze ();
     }
 
-  return 0;
+  /* Make sure to process deferred rescans and clear changeable df flags.  */
+  return TODO_df_finish;
 }
 
 } // anon namespace

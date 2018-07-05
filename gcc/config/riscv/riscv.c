@@ -1,5 +1,5 @@
 /* Subroutines used for code generation for RISC-V.
-   Copyright (C) 2011-2017 Free Software Foundation, Inc.
+   Copyright (C) 2011-2018 Free Software Foundation, Inc.
    Contributed by Andrew Waterman (andrew@sifive.com).
    Based on MIPS target for GNU compiler.
 
@@ -177,9 +177,6 @@ struct GTY(())  machine_function {
      This area is allocated by the callee at the very top of the frame.  */
   int varargs_size;
 
-  /* Memoized return value of leaf_function_p.  <0 if false, >0 if true.  */
-  int is_leaf;
-
   /* The current frame information, calculated by riscv_compute_frame_info.  */
   struct riscv_frame_info frame;
 };
@@ -255,6 +252,7 @@ struct riscv_tune_info
   unsigned short issue_rate;
   unsigned short branch_cost;
   unsigned short memory_cost;
+  bool slow_unaligned_access;
 };
 
 /* Information about one CPU we know about.  */
@@ -267,6 +265,9 @@ struct riscv_cpu_info {
 };
 
 /* Global variables for machine-dependent things.  */
+
+/* Whether unaligned accesses execute very slowly.  */
+bool riscv_slow_unaligned_access;
 
 /* Which tuning parameters to use.  */
 static const struct riscv_tune_info *tune_info;
@@ -301,7 +302,8 @@ static const struct riscv_tune_info rocket_tune_info = {
   {COSTS_N_INSNS (6), COSTS_N_INSNS (6)},	/* int_div */
   1,						/* issue_rate */
   3,						/* branch_cost */
-  5						/* memory_cost */
+  5,						/* memory_cost */
+  true,						/* slow_unaligned_access */
 };
 
 /* Costs to use when optimizing for size.  */
@@ -313,12 +315,14 @@ static const struct riscv_tune_info optimize_size_tune_info = {
   {COSTS_N_INSNS (1), COSTS_N_INSNS (1)},	/* int_div */
   1,						/* issue_rate */
   1,						/* branch_cost */
-  2						/* memory_cost */
+  2,						/* memory_cost */
+  false,					/* slow_unaligned_access */
 };
 
 /* A table describing all the processors GCC knows about.  */
 static const struct riscv_cpu_info riscv_cpu_info_table[] = {
   { "rocket", &rocket_tune_info },
+  { "size", &optimize_size_tune_info },
 };
 
 /* Return the riscv_cpu_info entry for the given name string.  */
@@ -726,7 +730,8 @@ riscv_valid_lo_sum_p (enum riscv_symbol_type sym_type, enum machine_mode mode)
   /* We may need to split multiword moves, so make sure that each word
      can be accessed without inducing a carry.  */
   if (GET_MODE_SIZE (mode) > UNITS_PER_WORD
-      && GET_MODE_BITSIZE (mode) > GET_MODE_ALIGNMENT (mode))
+      && (!TARGET_STRICT_ALIGN
+	  || GET_MODE_BITSIZE (mode) > GET_MODE_ALIGNMENT (mode)))
     return false;
 
   return true;
@@ -1375,6 +1380,22 @@ riscv_legitimize_move (enum machine_mode mode, rtx dest, rtx src)
       riscv_legitimize_const_move (mode, dest, src);
       set_unique_reg_note (get_last_insn (), REG_EQUAL, copy_rtx (src));
       return true;
+    }
+
+  /* RISC-V GCC may generate non-legitimate address due to we provide some
+     pattern for optimize access PIC local symbol and it's make GCC generate
+     unrecognizable instruction during optmizing.  */
+
+  if (MEM_P (dest) && !riscv_legitimate_address_p (mode, XEXP (dest, 0),
+						   reload_completed))
+    {
+      XEXP (dest, 0) = riscv_force_address (XEXP (dest, 0), mode);
+    }
+
+  if (MEM_P (src) && !riscv_legitimate_address_p (mode, XEXP (src, 0),
+						  reload_completed))
+    {
+      XEXP (src, 0) = riscv_force_address (XEXP (src, 0), mode);
     }
 
   return false;
@@ -3773,6 +3794,16 @@ riscv_option_override (void)
 			 RISCV_TUNE_STRING_DEFAULT);
   tune_info = optimize_size ? &optimize_size_tune_info : cpu->tune_info;
 
+  /* Use -mtune's setting for slow_unaligned_access, even when optimizing
+     for size.  For architectures that trap and emulate unaligned accesses,
+     the performance cost is too great, even for -Os.  Similarly, if
+     -m[no-]strict-align is left unspecified, heed -mtune's advice.  */
+  riscv_slow_unaligned_access = (cpu->tune_info->slow_unaligned_access
+				 || TARGET_STRICT_ALIGN);
+  if ((target_flags_explicit & MASK_STRICT_ALIGN) == 0
+      && cpu->tune_info->slow_unaligned_access)
+    target_flags |= MASK_STRICT_ALIGN;
+
   /* If the user hasn't specified a branch cost, use the processor's
      default.  */
   if (riscv_branch_cost == 0)
@@ -3960,26 +3991,15 @@ riscv_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
   emit_insn (gen_clear_cache (addr, end_addr));
 }
 
-/* Return leaf_function_p () and memoize the result.  */
-
-static bool
-riscv_leaf_function_p (void)
-{
-  if (cfun->machine->is_leaf == 0)
-    cfun->machine->is_leaf = leaf_function_p () ? 1 : -1;
-
-  return cfun->machine->is_leaf > 0;
-}
-
 /* Implement TARGET_FUNCTION_OK_FOR_SIBCALL.  */
 
 static bool
 riscv_function_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED,
 			       tree exp ATTRIBUTE_UNUSED)
 {
-  /* When optimzing for size, don't use sibcalls in non-leaf routines */
+  /* Don't use sibcalls when use save-restore routine.  */
   if (TARGET_SAVE_RESTORE)
-    return riscv_leaf_function_p ();
+    return false;
 
   return true;
 }

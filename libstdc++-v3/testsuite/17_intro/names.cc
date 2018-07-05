@@ -107,4 +107,13 @@
 #undef y
 #endif
 
+#ifdef __hpux__
+#undef d
+#undef r
+#endif
+
+#if defined (__linux__) && defined (__sparc__)
+#undef y
+#endif
+
 #include <bits/stdc++.h>

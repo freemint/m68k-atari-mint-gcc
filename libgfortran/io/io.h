@@ -69,7 +69,7 @@ internal_proto(old_locale_lock);
 
 #define is_array_io(dtp) ((dtp)->internal_unit_desc)
 
-#define is_internal_unit(dtp) ((dtp)->u.p.current_unit->internal_unit_kind)
+#define is_internal_unit(dtp) ((dtp)->u.p.unit_is_internal)
 
 #define is_stream_io(dtp) ((dtp)->u.p.current_unit->flags.access == ACCESS_STREAM)
 
@@ -765,14 +765,16 @@ extern void unlock_unit (gfc_unit *);
 internal_proto(unlock_unit);
 
 extern void finish_last_advance_record (gfc_unit *u);
-internal_proto (finish_last_advance_record);
+internal_proto(finish_last_advance_record);
 
 extern int unit_truncate (gfc_unit *, gfc_offset, st_parameter_common *);
-internal_proto (unit_truncate);
+internal_proto(unit_truncate);
 
 extern int newunit_alloc (void);
 internal_proto(newunit_alloc);
 
+extern void newunit_free (int);
+internal_proto(newunit_free);
 
 /* open.c */
 

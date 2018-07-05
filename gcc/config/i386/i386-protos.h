@@ -282,8 +282,6 @@ extern bool i386_pe_type_dllexport_p (tree);
 
 extern int i386_pe_reloc_rw_mask (void);
 
-extern rtx maybe_get_pool_constant (rtx);
-
 extern char internal_label_prefix[16];
 extern int internal_label_prefix_len;
 
@@ -315,6 +313,8 @@ extern enum attr_cpu ix86_schedule;
 #endif
 
 extern const char * ix86_output_call_insn (rtx_insn *insn, rtx call_op);
+extern const char * ix86_output_indirect_jmp (rtx call_op, bool ret_p);
+extern const char * ix86_output_function_return (bool long_p);
 extern bool ix86_operands_ok_for_move_multiple (rtx *operands, bool load,
 						enum machine_mode mode);
 

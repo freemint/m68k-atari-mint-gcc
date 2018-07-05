@@ -1,3 +1,66 @@
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2018-01-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2018-01-23  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/ieee754-df.S (__addsf3, __subsf3, __mulsf3)
+	(__divsf3): Make NaN return value quiet.
+	* config/xtensa/ieee754-sf.S (__adddf3, __subdf3, __muldf3)
+	(__divdf3): Make NaN return value quiet.
+
+2018-01-08  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2018-01-05  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config.host (epiphany-*-elf*): Add (epiphany-*-rtems*)
+	configuration.
+
+2017-11-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2017-11-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* config.host (*-*-solaris2*): Adapt comment for Solaris 12
+	renaming.
+	* config/sol2/crtpg.c (__start_crt_compiler): Likewise.
+	* configure.ac (libgcc_cv_solaris_crts): Likewise.
+	* configure: Regenerate.
+
+2017-11-17  Vineet Gupta <vgupta@synopsys.com>
+
+	* config.host: Remove uclibc from arc target spec.
+
+2017-11-05  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-11-04  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	PR libgcc/82635
+	* config/i386/freebsd-unwind.h (MD_FALLBACK_FRAME_STATE_FOR): Use a
+	sysctl to determine whether we're in a trampoline.
+	Keep the pattern matching method for systems without
+	KERN_PROC_SIGTRAMP sysctl.
+
+2017-10-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/82274
+	* libgcc2.c (__mulvDI3): If both operands have
+	the same highpart of -1 and the topmost bit of lowpart is 0,
+	multiplication overflows even if both lowparts are 0.
+
+2017-09-28  Krister Walfridsson  <krister.walfridsson@gmail.com>
+
+	Backport from mainline
+	2017-05-14  Krister Walfridsson  <krister.walfridsson@gmail.com>
+
+	PR target/80600
+	* config.host (*-*-netbsd*): Add t-slibgcc-libgcc to tmake_file.
+
 2017-08-14  Release Manager
 
 	* GCC 7.2.0 released.

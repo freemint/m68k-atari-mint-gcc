@@ -581,7 +581,7 @@ set_parameter_value_chk (stmtblock_t *block, bool has_iostat, tree var,
       /* UNIT numbers should be greater than the min.  */
       i = gfc_validate_kind (BT_INTEGER, 4, false);
       val = gfc_conv_mpz_to_tree (gfc_integer_kinds[i].pedantic_min_int, 4);
-      cond = fold_build2_loc (input_location, LT_EXPR, boolean_type_node,
+      cond = fold_build2_loc (input_location, LT_EXPR, logical_type_node,
 			      se.expr,
 			      fold_convert (TREE_TYPE (se.expr), val));
       gfc_trans_io_runtime_check (has_iostat, cond, var, LIBERROR_BAD_UNIT,
@@ -590,7 +590,7 @@ set_parameter_value_chk (stmtblock_t *block, bool has_iostat, tree var,
 
       /* UNIT numbers should be less than the max.  */
       val = gfc_conv_mpz_to_tree (gfc_integer_kinds[i].huge, 4);
-      cond = fold_build2_loc (input_location, GT_EXPR, boolean_type_node,
+      cond = fold_build2_loc (input_location, GT_EXPR, logical_type_node,
 			      se.expr,
 			      fold_convert (TREE_TYPE (se.expr), val));
       gfc_trans_io_runtime_check (has_iostat, cond, var, LIBERROR_BAD_UNIT,
@@ -641,17 +641,17 @@ set_parameter_value_inquire (stmtblock_t *block, tree var,
 
       /* UNIT numbers should be greater than zero.  */
       i = gfc_validate_kind (BT_INTEGER, 4, false);
-      cond1 = build2_loc (input_location, LT_EXPR, boolean_type_node,
+      cond1 = build2_loc (input_location, LT_EXPR, logical_type_node,
 			  se.expr,
 			  fold_convert (TREE_TYPE (se.expr),
 			  integer_zero_node));
       /* UNIT numbers should be less than the max.  */
       val = gfc_conv_mpz_to_tree (gfc_integer_kinds[i].huge, 4);
-      cond2 = build2_loc (input_location, GT_EXPR, boolean_type_node,
+      cond2 = build2_loc (input_location, GT_EXPR, logical_type_node,
 			  se.expr,
 			  fold_convert (TREE_TYPE (se.expr), val));
       cond3 = build2_loc (input_location, TRUTH_OR_EXPR,
-			  boolean_type_node, cond1, cond2);
+			  logical_type_node, cond1, cond2);
 
       gfc_start_block (&newblock);
 
@@ -826,7 +826,7 @@ set_string (stmtblock_t * block, stmtblock_t * postblock, tree var,
 
       gfc_conv_label_variable (&se, e);
       tmp = GFC_DECL_STRING_LEN (se.expr);
-      cond = fold_build2_loc (input_location, LT_EXPR, boolean_type_node,
+      cond = fold_build2_loc (input_location, LT_EXPR, logical_type_node,
 			      tmp, build_int_cst (TREE_TYPE (tmp), 0));
 
       msg = xasprintf ("Label assigned to variable '%s' (%%ld) is not a format "
@@ -2214,18 +2214,24 @@ get_dtio_proc (gfc_typespec * ts, gfc_code * code, gfc_symbol **dtio_sub)
   bool formatted = false;
   gfc_dt *dt = code->ext.dt;
 
-  if (dt && dt->format_expr)
+  if (dt)
     {
-      char *fmt;
-      fmt = gfc_widechar_to_char (dt->format_expr->value.character.string,
-				  -1);
-      if (strtok (fmt, "DT") != NULL)
+      char *fmt = NULL;
+
+      if (dt->format_label == &format_asterisk)
+	{
+	  /* List directed io must call the formatted DTIO procedure.  */
+	  formatted = true;
+	}
+      else if (dt->format_expr)
+	fmt = gfc_widechar_to_char (dt->format_expr->value.character.string,
+				      -1);
+      else if (dt->format_label)
+	fmt = gfc_widechar_to_char (dt->format_label->format->value.character.string,
+				      -1);
+      if (fmt && strtok (fmt, "DT") != NULL)
 	formatted = true;
-    }
-  else if (dt && dt->format_label == &format_asterisk)
-    {
-      /* List directed io must call the formatted DTIO procedure.  */
-      formatted = true;
+
     }
 
   if (ts->type == BT_CLASS)

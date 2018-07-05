@@ -11735,6 +11735,9 @@ cp_convert_range_for (tree statement, tree range_decl, tree range_expr,
 				     tf_warning_or_error);
   finish_for_expr (expression, statement);
 
+  if (VAR_P (range_decl) && DECL_DECOMPOSITION_P (range_decl))
+    cp_maybe_mangle_decomp (range_decl, decomp_first_name, decomp_cnt);
+
   /* The declaration is initialized with *__begin inside the loop body.  */
   cp_finish_decl (range_decl,
 		  build_x_indirect_ref (input_location, begin, RO_NULL,
@@ -13048,7 +13051,8 @@ cp_parser_decomposition_declaration (cp_parser *parser,
       if (initializer == NULL_TREE
 	  || (TREE_CODE (initializer) == TREE_LIST
 	      && TREE_CHAIN (initializer))
-	  || (TREE_CODE (initializer) == CONSTRUCTOR
+	  || (is_direct_init
+	      && BRACE_ENCLOSED_INITIALIZER_P (initializer)
 	      && CONSTRUCTOR_NELTS (initializer) != 1))
 	{
 	  error_at (loc, "invalid initializer for structured binding "
@@ -13058,6 +13062,7 @@ cp_parser_decomposition_declaration (cp_parser *parser,
 
       if (decl != error_mark_node)
 	{
+	  cp_maybe_mangle_decomp (decl, prev, v.length ());
 	  cp_finish_decl (decl, initializer, non_constant_p, NULL_TREE,
 			  is_direct_init ? LOOKUP_NORMAL : LOOKUP_IMPLICIT);
 	  cp_finish_decomp (decl, prev, v.length ());
@@ -20486,7 +20491,7 @@ parsing_nsdmi (void)
    which we ultimately want to defer to instantiation time. */
 
 bool
-parsing_default_capturing_generic_lambda_in_template (void)
+parsing_default_capturing_generic_lambda (void)
 {
   if (!processing_template_decl || !current_class_type)
     return false;
@@ -20499,12 +20504,7 @@ parsing_default_capturing_generic_lambda_in_template (void)
   if (!callop)
     return false;
 
-  return (DECL_TEMPLATE_INFO (callop)
-	  && (DECL_TEMPLATE_RESULT (DECL_TI_TEMPLATE (callop)) == callop)
-	  && ((current_nonlambda_class_type ()
-	       && CLASSTYPE_TEMPLATE_INFO (current_nonlambda_class_type ()))
-	      || ((current_nonlambda_function ()
-		   && DECL_TEMPLATE_INFO (current_nonlambda_function ())))));
+  return generic_lambda_fn_p (callop);
 }
 
 /* Parse a late-specified return type, if any.  This is not a separate
@@ -37258,7 +37258,7 @@ cp_parser_omp_declare_reduction (cp_parser *parser, cp_token *pragma_tok,
       initializer-clause[opt] new-line
    #pragma omp declare target new-line  */
 
-static void
+static bool
 cp_parser_omp_declare (cp_parser *parser, cp_token *pragma_tok,
 		       enum pragma_context context)
 {
@@ -37272,7 +37272,7 @@ cp_parser_omp_declare (cp_parser *parser, cp_token *pragma_tok,
 	  cp_lexer_consume_token (parser->lexer);
 	  cp_parser_omp_declare_simd (parser, pragma_tok,
 				      context);
-	  return;
+	  return true;
 	}
       cp_ensure_no_omp_declare_simd (parser);
       if (strcmp (p, "reduction") == 0)
@@ -37280,23 +37280,24 @@ cp_parser_omp_declare (cp_parser *parser, cp_token *pragma_tok,
 	  cp_lexer_consume_token (parser->lexer);
 	  cp_parser_omp_declare_reduction (parser, pragma_tok,
 					   context);
-	  return;
+	  return false;
 	}
       if (!flag_openmp)  /* flag_openmp_simd  */
 	{
 	  cp_parser_skip_to_pragma_eol (parser, pragma_tok);
-	  return;
+	  return false;
 	}
       if (strcmp (p, "target") == 0)
 	{
 	  cp_lexer_consume_token (parser->lexer);
 	  cp_parser_omp_declare_target (parser, pragma_tok);
-	  return;
+	  return false;
 	}
     }
   cp_parser_error (parser, "expected %<simd%> or %<reduction%> "
 			   "or %<target%>");
   cp_parser_require_pragma_eol (parser, pragma_tok);
+  return false;
 }
 
 /* OpenMP 4.5:
@@ -38216,8 +38217,7 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
       return false;
 
     case PRAGMA_OMP_DECLARE:
-      cp_parser_omp_declare (parser, pragma_tok, context);
-      return false;
+      return cp_parser_omp_declare (parser, pragma_tok, context);
 
     case PRAGMA_OACC_DECLARE:
       cp_parser_oacc_declare (parser, pragma_tok);

@@ -259,6 +259,9 @@
 ;; Iterator for QImode extension patterns.
 (define_mode_iterator SUPERQI [HI SI (DI "TARGET_64BIT")])
 
+;; Iterator for extending loads.
+(define_mode_iterator ZERO_EXTEND_LOAD [QI HI (SI "TARGET_64BIT")])
+
 ;; Iterator for hardware integer modes narrower than XLEN.
 (define_mode_iterator SUBX [QI HI (SI "TARGET_64BIT")])
 
@@ -1426,7 +1429,13 @@
    (match_operand 1 "pmode_register_operand")]
   ""
 {
+#ifdef ICACHE_FLUSH_FUNC
+  emit_library_call (gen_rtx_SYMBOL_REF (Pmode, ICACHE_FLUSH_FUNC),
+		     LCT_NORMAL, VOIDmode, 3, operands[0], Pmode,
+		     operands[1], Pmode, const0_rtx, Pmode);
+#else
   emit_insn (gen_fence_i ());
+#endif
   DONE;
 })
 

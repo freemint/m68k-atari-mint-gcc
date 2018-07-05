@@ -245,6 +245,7 @@ case ${host} in
 *-*-netbsd*)
   tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip"
   tmake_file="$tmake_file t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver"
+  tmake_file="$tmake_file t-slibgcc-libgcc"
   # NetBSD 1.7 and later are set up to use GCC's crtstuff for
   # ELF configurations.  We will clear extra_parts in the
   # a.out configurations.
@@ -279,7 +280,7 @@ case ${host} in
   tmake_file="$tmake_file $cpu_type/t-sol2"
   extra_parts="gmon.o crtbegin.o crtend.o"
   if test "${libgcc_cv_solaris_crts}" = yes; then
-    # Solaris 11.x and 12 provide crt1.o, crti.o, and crtn.o as part of the
+    # Solaris 11.4 provides crt1.o, crti.o, and crtn.o as part of the
     # base system.  crtp.o and crtpg.o implement the compiler-dependent parts.
     extra_parts="$extra_parts crtp.o crtpg.o"
     # If the Solaris CRTs are present, both ld and gld will have PIE support.
@@ -378,7 +379,7 @@ arc*-*-elf*)
 	extra_parts="crti.o crtn.o crtend.o crtbegin.o crtendS.o crtbeginS.o"
 	extra_parts="$extra_parts crttls.o"
 	;;
-arc*-*-linux-uclibc*)
+arc*-*-linux*)
 	tmake_file="${tmake_file} t-slibgcc-libgcc t-slibgcc-nolc-override arc/t-arc-uClibc arc/t-arc"
 	extra_parts="$extra_parts crti.o crtn.o"
 	extra_parts="$extra_parts crttls.o"
@@ -483,8 +484,8 @@ cris-*-elf)
 cris-*-linux* | crisv32-*-linux*)
 	tmake_file="$tmake_file cris/t-cris t-softfp-sfdf t-softfp cris/t-linux"
 	;;
-epiphany-*-elf*)
-	tmake_file="epiphany/t-epiphany t-fdpbit epiphany/t-custom-eqsf"
+epiphany-*-elf* | epiphany-*-rtems*)
+	tmake_file="$tmake_file epiphany/t-epiphany t-fdpbit epiphany/t-custom-eqsf"
 	extra_parts="$extra_parts crti.o crtint.o crtrunc.o crtm1reg-r43.o crtm1reg-r63.o crtn.o"
 	;;
 fr30-*-elf)

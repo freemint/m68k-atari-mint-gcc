@@ -1717,6 +1717,8 @@ static fmtresult
 format_floating (const directive &dir, tree arg)
 {
   HOST_WIDE_INT prec[] = { dir.prec[0], dir.prec[1] };
+  tree type = (dir.modifier == FMT_LEN_L || dir.modifier == FMT_LEN_ll
+	       ? long_double_type_node : double_type_node);
 
   /* For an indeterminate precision the lower bound must be assumed
      to be zero.  */
@@ -1724,10 +1726,6 @@ format_floating (const directive &dir, tree arg)
     {
       /* Get the number of fractional decimal digits needed to represent
 	 the argument without a loss of accuracy.  */
-      tree type = arg ? TREE_TYPE (arg) :
-	(dir.modifier == FMT_LEN_L || dir.modifier == FMT_LEN_ll
-	 ? long_double_type_node : double_type_node);
-
       unsigned fmtprec
 	= REAL_MODE_FORMAT (TYPE_MODE (type))->p;
 
@@ -1778,7 +1776,9 @@ format_floating (const directive &dir, tree arg)
 	}
     }
 
-  if (!arg || TREE_CODE (arg) != REAL_CST)
+  if (!arg
+      || TREE_CODE (arg) != REAL_CST
+      || !useless_type_conversion_p (type, TREE_TYPE (arg)))
     return format_floating (dir, prec);
 
   /* The minimum and maximum number of bytes produced by the directive.  */
@@ -2294,7 +2294,8 @@ maybe_warn (substring_loc &dirloc, source_range *pargrange,
 	  /* For plain character directives (i.e., the format string itself)
 	     but not others, point the caret at the first character that's
 	     past the end of the destination.  */
-	  dirloc.set_caret_index (dirloc.get_caret_idx () + navail);
+	  if (navail < dir.len)
+	    dirloc.set_caret_index (dirloc.get_caret_idx () + navail);
 	}
 
       if (*dir.beg == '\0')
@@ -2423,7 +2424,8 @@ maybe_warn (substring_loc &dirloc, source_range *pargrange,
       /* For plain character directives (i.e., the format string itself)
 	 but not others, point the caret at the first character that's
 	 past the end of the destination.  */
-      dirloc.set_caret_index (dirloc.get_caret_idx () + navail);
+      if (navail < dir.len)
+	dirloc.set_caret_index (dirloc.get_caret_idx () + navail);
     }
 
   if (*dir.beg == '\0')

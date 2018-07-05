@@ -3806,7 +3806,8 @@ gfc_check_pointer_assign (gfc_expr *lvalue, gfc_expr *rvalue)
   if (warn_target_lifetime
       && rvalue->expr_type == EXPR_VARIABLE
       && !rvalue->symtree->n.sym->attr.save
-      && !attr.pointer && !rvalue->symtree->n.sym->attr.host_assoc
+      && !rvalue->symtree->n.sym->attr.pointer && !attr.pointer
+      && !rvalue->symtree->n.sym->attr.host_assoc
       && !rvalue->symtree->n.sym->attr.in_common
       && !rvalue->symtree->n.sym->attr.use_assoc
       && !rvalue->symtree->n.sym->attr.dummy)
@@ -4129,7 +4130,8 @@ gfc_apply_init (gfc_typespec *ts, symbol_attribute *attr, gfc_expr *init)
       if (init->expr_type == EXPR_CONSTANT)
         gfc_set_constant_character_len (len, init, -1);
       else if (init
-               && init->ts.u.cl
+	       && init->ts.type == BT_CHARACTER
+               && init->ts.u.cl && init->ts.u.cl->length
                && mpz_cmp (ts->u.cl->length->value.integer,
                            init->ts.u.cl->length->value.integer))
         {
@@ -4514,7 +4516,11 @@ gfc_get_full_arrayspec_from_expr (gfc_expr *expr)
   if (expr->expr_type == EXPR_VARIABLE
       || expr->expr_type == EXPR_CONSTANT)
     {
-      as = expr->symtree->n.sym->as;
+      if (expr->symtree)
+	as = expr->symtree->n.sym->as;
+      else
+	as = NULL;
+
       for (ref = expr->ref; ref; ref = ref->next)
 	{
 	  switch (ref->type)

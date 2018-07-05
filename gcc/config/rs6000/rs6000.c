@@ -375,6 +375,7 @@ static const struct
   { "ebb",		PPC_FEATURE2_HAS_EBB,		1 },
   { "htm",		PPC_FEATURE2_HAS_HTM,		1 },
   { "htm-nosc",		PPC_FEATURE2_HTM_NOSC,		1 },
+  { "htm-no-suspend",	PPC_FEATURE2_HTM_NO_SUSPEND,	1 },
   { "isel",		PPC_FEATURE2_HAS_ISEL,		1 },
   { "tar",		PPC_FEATURE2_HAS_TAR,		1 },
   { "vcrypto",		PPC_FEATURE2_HAS_VEC_CRYPTO,	1 },
@@ -508,6 +509,91 @@ mode_supports_pre_modify_p (machine_mode mode)
 {
   return ((reg_addr[mode].addr_mask[RELOAD_REG_ANY] & RELOAD_REG_PRE_MODIFY)
 	  != 0);
+}
+
+/* Given that there exists at least one variable that is set (produced)
+   by OUT_INSN and read (consumed) by IN_INSN, return true iff
+   IN_INSN represents one or more memory store operations and none of
+   the variables set by OUT_INSN is used by IN_INSN as the address of a
+   store operation.  If either IN_INSN or OUT_INSN does not represent
+   a "single" RTL SET expression (as loosely defined by the
+   implementation of the single_set function) or a PARALLEL with only
+   SETs, CLOBBERs, and USEs inside, this function returns false.
+
+   This rs6000-specific version of store_data_bypass_p checks for
+   certain conditions that result in assertion failures (and internal
+   compiler errors) in the generic store_data_bypass_p function and
+   returns false rather than calling store_data_bypass_p if one of the
+   problematic conditions is detected.  */
+
+int
+rs6000_store_data_bypass_p (rtx_insn *out_insn, rtx_insn *in_insn)
+{
+  rtx out_set, in_set;
+  rtx out_pat, in_pat;
+  rtx out_exp, in_exp;
+  int i, j;
+
+  in_set = single_set (in_insn);
+  if (in_set)
+    {
+      if (MEM_P (SET_DEST (in_set)))
+	{
+	  out_set = single_set (out_insn);
+	  if (!out_set)
+	    {
+	      out_pat = PATTERN (out_insn);
+	      if (GET_CODE (out_pat) == PARALLEL)
+		{
+		  for (i = 0; i < XVECLEN (out_pat, 0); i++)
+		    {
+		      out_exp = XVECEXP (out_pat, 0, i);
+		      if ((GET_CODE (out_exp) == CLOBBER)
+			  || (GET_CODE (out_exp) == USE))
+			continue;
+		      else if (GET_CODE (out_exp) != SET)
+			return false;
+		    }
+		}
+	    }
+	}
+    }
+  else
+    {
+      in_pat = PATTERN (in_insn);
+      if (GET_CODE (in_pat) != PARALLEL)
+	return false;
+
+      for (i = 0; i < XVECLEN (in_pat, 0); i++)
+	{
+	  in_exp = XVECEXP (in_pat, 0, i);
+	  if ((GET_CODE (in_exp) == CLOBBER) || (GET_CODE (in_exp) == USE))
+	    continue;
+	  else if (GET_CODE (in_exp) != SET)
+	    return false;
+
+	  if (MEM_P (SET_DEST (in_exp)))
+	    {
+	      out_set = single_set (out_insn);
+	      if (!out_set)
+		{
+		  out_pat = PATTERN (out_insn);
+		  if (GET_CODE (out_pat) != PARALLEL)
+		    return false;
+		  for (j = 0; j < XVECLEN (out_pat, 0); j++)
+		    {
+		      out_exp = XVECEXP (out_pat, 0, j);
+		      if ((GET_CODE (out_exp) == CLOBBER)
+			  || (GET_CODE (out_exp) == USE))
+			continue;
+		      else if (GET_CODE (out_exp) != SET)
+			return false;
+		    }
+		}
+	    }
+	}
+    }
+  return store_data_bypass_p (out_insn, in_insn);
 }
 
 /* Return true if we have D-form addressing in altivec registers.  */
@@ -3899,14 +3985,10 @@ static bool
 rs6000_option_override_internal (bool global_init_p)
 {
   bool ret = true;
-  bool have_cpu = false;
-
-  /* The default cpu requested at configure time, if any.  */
-  const char *implicit_cpu = OPTION_TARGET_CPU_DEFAULT;
 
   HOST_WIDE_INT set_masks;
   HOST_WIDE_INT ignore_masks;
-  int cpu_index;
+  int cpu_index = -1;
   int tune_index;
   struct cl_target_option *main_target_opt
     = ((global_init_p || target_option_default_node == NULL)
@@ -3984,93 +4066,51 @@ rs6000_option_override_internal (bool global_init_p)
      with -mtune on the command line.  Process a '--with-cpu' configuration
      request as an implicit --cpu.  */
   if (rs6000_cpu_index >= 0)
-    {
-      cpu_index = rs6000_cpu_index;
-      have_cpu = true;
-    }
+    cpu_index = rs6000_cpu_index;
   else if (main_target_opt != NULL && main_target_opt->x_rs6000_cpu_index >= 0)
-    {
-      rs6000_cpu_index = cpu_index = main_target_opt->x_rs6000_cpu_index;
-      have_cpu = true;
-    }
-  else if (implicit_cpu)
-    {
-      rs6000_cpu_index = cpu_index = rs6000_cpu_name_lookup (implicit_cpu);
-      have_cpu = true;
-    }
-  else
-    {
-      /* PowerPC 64-bit LE requires at least ISA 2.07.  */
-      const char *default_cpu = ((!TARGET_POWERPC64)
-				 ? "powerpc"
-				 : ((BYTES_BIG_ENDIAN)
-				    ? "powerpc64"
-				    : "powerpc64le"));
+    cpu_index = main_target_opt->x_rs6000_cpu_index;
+  else if (OPTION_TARGET_CPU_DEFAULT)
+    cpu_index = rs6000_cpu_name_lookup (OPTION_TARGET_CPU_DEFAULT);
 
-      rs6000_cpu_index = cpu_index = rs6000_cpu_name_lookup (default_cpu);
-      have_cpu = false;
-    }
-
-  gcc_assert (cpu_index >= 0);
-
-  if (have_cpu)
+  if (cpu_index >= 0)
     {
-#ifndef HAVE_AS_POWER9
-      if (processor_target_table[rs6000_cpu_index].processor 
-	  == PROCESSOR_POWER9)
+      const char *unavailable_cpu = NULL;
+      switch (processor_target_table[cpu_index].processor)
 	{
-	  have_cpu = false;
-	  warning (0, "will not generate power9 instructions because "
-		   "assembler lacks power9 support");
-	}
+#ifndef HAVE_AS_POWER9
+	case PROCESSOR_POWER9:
+	  unavailable_cpu = "power9";
+	  break;
 #endif
 #ifndef HAVE_AS_POWER8
-      if (processor_target_table[rs6000_cpu_index].processor
-	  == PROCESSOR_POWER8)
-	{
-	  have_cpu = false;
-	  warning (0, "will not generate power8 instructions because "
-		   "assembler lacks power8 support");
-	}
+	case PROCESSOR_POWER8:
+	  unavailable_cpu = "power8";
+	  break;
 #endif
 #ifndef HAVE_AS_POPCNTD
-      if (processor_target_table[rs6000_cpu_index].processor
-	  == PROCESSOR_POWER7)
-	{
-	  have_cpu = false;
-	  warning (0, "will not generate power7 instructions because "
-		   "assembler lacks power7 support");
-	}
+	case PROCESSOR_POWER7:
+	  unavailable_cpu = "power7";
+	  break;
 #endif
 #ifndef HAVE_AS_DFP
-      if (processor_target_table[rs6000_cpu_index].processor
-	  == PROCESSOR_POWER6)
-	{
-	  have_cpu = false;
-	  warning (0, "will not generate power6 instructions because "
-		   "assembler lacks power6 support");
-	}
+	case PROCESSOR_POWER6:
+	  unavailable_cpu = "power6";
+	  break;
 #endif
 #ifndef HAVE_AS_POPCNTB
-      if (processor_target_table[rs6000_cpu_index].processor
-	  == PROCESSOR_POWER5)
-	{
-	  have_cpu = false;
-	  warning (0, "will not generate power5 instructions because "
-		   "assembler lacks power5 support");
-	}
+	case PROCESSOR_POWER5:
+	  unavailable_cpu = "power5";
+	  break;
 #endif
-
-      if (!have_cpu)
+	default:
+	  break;
+	}
+      if (unavailable_cpu)
 	{
-	  /* PowerPC 64-bit LE requires at least ISA 2.07.  */
-	  const char *default_cpu = (!TARGET_POWERPC64
-				     ? "powerpc"
-				     : (BYTES_BIG_ENDIAN
-					? "powerpc64"
-					: "powerpc64le"));
-
-	  rs6000_cpu_index = cpu_index = rs6000_cpu_name_lookup (default_cpu);
+	  cpu_index = -1;
+	  warning (0, "will not generate %qs instructions because "
+		   "assembler lacks %qs support", unavailable_cpu,
+		   unavailable_cpu);
 	}
     }
 
@@ -4079,8 +4119,9 @@ rs6000_option_override_internal (bool global_init_p)
      with those from the cpu, except for options that were explicitly set.  If
      we don't have a cpu, do not override the target bits set in
      TARGET_DEFAULT.  */
-  if (have_cpu)
+  if (cpu_index >= 0)
     {
+      rs6000_cpu_index = cpu_index;
       rs6000_isa_flags &= ~set_masks;
       rs6000_isa_flags |= (processor_target_table[cpu_index].target_enable
 			   & set_masks);
@@ -4094,14 +4135,26 @@ rs6000_option_override_internal (bool global_init_p)
 
 	 If there is a TARGET_DEFAULT, use that.  Otherwise fall back to using
 	 -mcpu=powerpc, -mcpu=powerpc64, or -mcpu=powerpc64le defaults.  */
-      HOST_WIDE_INT flags = ((TARGET_DEFAULT) ? TARGET_DEFAULT
-			     : processor_target_table[cpu_index].target_enable);
+      HOST_WIDE_INT flags;
+      if (TARGET_DEFAULT)
+	flags = TARGET_DEFAULT;
+      else
+	{
+	  /* PowerPC 64-bit LE requires at least ISA 2.07.  */
+	  const char *default_cpu = (!TARGET_POWERPC64
+				     ? "powerpc"
+				     : (BYTES_BIG_ENDIAN
+					? "powerpc64"
+					: "powerpc64le"));
+	  int default_cpu_index = rs6000_cpu_name_lookup (default_cpu);
+	  flags = processor_target_table[default_cpu_index].target_enable;
+	}
       rs6000_isa_flags |= (flags & ~rs6000_isa_flags_explicit);
     }
 
   if (rs6000_tune_index >= 0)
     tune_index = rs6000_tune_index;
-  else if (have_cpu)
+  else if (cpu_index >= 0)
     rs6000_tune_index = tune_index = cpu_index;
   else
     {
@@ -4113,7 +4166,7 @@ rs6000_option_override_internal (bool global_init_p)
       for (i = 0; i < ARRAY_SIZE (processor_target_table); i++)
 	if (processor_target_table[i].processor == tune_proc)
 	  {
-	    rs6000_tune_index = tune_index = i;
+	    tune_index = i;
 	    break;
 	  }
     }
@@ -4286,7 +4339,7 @@ rs6000_option_override_internal (bool global_init_p)
     rs6000_isa_flags |= (ISA_3_0_MASKS_SERVER & ~ignore_masks);
   else if (TARGET_P9_MINMAX)
     {
-      if (have_cpu)
+      if (cpu_index >= 0)
 	{
 	  if (cpu_index == PROCESSOR_POWER9)
 	    {
@@ -5036,7 +5089,7 @@ rs6000_option_override_internal (bool global_init_p)
 
     default:
 
-      if (have_cpu && !(rs6000_isa_flags_explicit & OPTION_MASK_ISEL))
+      if (cpu_index >= 0 && !(rs6000_isa_flags_explicit & OPTION_MASK_ISEL))
 	rs6000_isa_flags &= ~OPTION_MASK_ISEL;
 
       break;
@@ -5766,8 +5819,20 @@ rs6000_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
 	if (SCALAR_FLOAT_TYPE_P (elem_type)
 	    && TYPE_PRECISION (elem_type) == 32)
 	  return 5;
+	/* On POWER9, integer vector types are built up in GPRs and then
+           use a direct move (2 cycles).  For POWER8 this is even worse,
+           as we need two direct moves and a merge, and the direct moves
+	   are five cycles.  */
+	else if (INTEGRAL_TYPE_P (elem_type))
+	  {
+	    if (TARGET_P9_VECTOR)
+	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 2;
+	    else
+	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 5;
+	  }
 	else
-	  return max (2, TYPE_VECTOR_SUBPARTS (vectype) - 1);
+	  /* V2DFmode doesn't need a direct move.  */
+	  return 2;
 
       default:
         gcc_unreachable ();
@@ -7531,7 +7596,7 @@ rs6000_expand_vector_set (rtx target, rtx val, int elt)
     {
       if (TARGET_P9_VECTOR)
 	x = gen_rtx_UNSPEC (mode,
-			    gen_rtvec (3, target, reg,
+			    gen_rtvec (3, reg, target,
 				       force_reg (V16QImode, x)),
 			    UNSPEC_VPERMR);
       else
@@ -27718,24 +27783,23 @@ debug_stack_info (rs6000_stack_t *info)
 rtx
 rs6000_return_addr (int count, rtx frame)
 {
-  /* Currently we don't optimize very well between prolog and body
-     code and for PIC code the code can be actually quite bad, so
-     don't try to be too clever here.  */
+  /* We can't use get_hard_reg_initial_val for LR when count == 0 if LR
+     is trashed by the prologue, as it is for PIC on ABI_V4 and Darwin.  */
   if (count != 0
       || ((DEFAULT_ABI == ABI_V4 || DEFAULT_ABI == ABI_DARWIN) && flag_pic))
     {
       cfun->machine->ra_needs_full_frame = 1;
 
-      return
-	gen_rtx_MEM
-	  (Pmode,
-	   memory_address
-	   (Pmode,
-	    plus_constant (Pmode,
-			   copy_to_reg
-			   (gen_rtx_MEM (Pmode,
-					 memory_address (Pmode, frame))),
-			   RETURN_ADDRESS_OFFSET)));
+      if (count == 0)
+	/* FRAME is set to frame_pointer_rtx by the generic code, but that
+	   is good for loading 0(r1) only when !FRAME_GROWS_DOWNWARD.  */
+	frame = stack_pointer_rtx;
+      rtx prev_frame_addr = memory_address (Pmode, frame);
+      rtx prev_frame = copy_to_reg (gen_rtx_MEM (Pmode, prev_frame_addr));
+      rtx lr_save_off = plus_constant (Pmode,
+				       prev_frame, RETURN_ADDRESS_OFFSET);
+      rtx lr_save_addr = memory_address (Pmode, lr_save_off);
+      return gen_rtx_MEM (Pmode, lr_save_addr);
     }
 
   cfun->machine->ra_need_lr = 1;
@@ -33080,14 +33144,14 @@ rs6000_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn, int cost,
                   case TYPE_LOAD:
                   case TYPE_CNTLZ:
                     {
-                      if (! store_data_bypass_p (dep_insn, insn))
+                      if (! rs6000_store_data_bypass_p (dep_insn, insn))
                         return get_attr_sign_extend (dep_insn)
                                == SIGN_EXTEND_YES ? 6 : 4;
                       break;
                     }
                   case TYPE_SHIFT:
                     {
-                      if (! store_data_bypass_p (dep_insn, insn))
+                      if (! rs6000_store_data_bypass_p (dep_insn, insn))
                         return get_attr_var_shift (dep_insn) == VAR_SHIFT_YES ?
                                6 : 3;
                       break;
@@ -33098,7 +33162,7 @@ rs6000_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn, int cost,
                   case TYPE_EXTS:
                   case TYPE_INSERT:
                     {
-                      if (! store_data_bypass_p (dep_insn, insn))
+                      if (! rs6000_store_data_bypass_p (dep_insn, insn))
                         return 3;
                       break;
                     }
@@ -33107,19 +33171,19 @@ rs6000_adjust_cost (rtx_insn *insn, int dep_type, rtx_insn *dep_insn, int cost,
                   case TYPE_FPSTORE:
                     {
                       if (get_attr_update (dep_insn) == UPDATE_YES
-                          && ! store_data_bypass_p (dep_insn, insn))
+                          && ! rs6000_store_data_bypass_p (dep_insn, insn))
                         return 3;
                       break;
                     }
                   case TYPE_MUL:
                     {
-                      if (! store_data_bypass_p (dep_insn, insn))
+                      if (! rs6000_store_data_bypass_p (dep_insn, insn))
                         return 17;
                       break;
                     }
                   case TYPE_DIV:
                     {
-                      if (! store_data_bypass_p (dep_insn, insn))
+                      if (! rs6000_store_data_bypass_p (dep_insn, insn))
                         return get_attr_size (dep_insn) == SIZE_32 ? 45 : 57;
                       break;
                     }
@@ -37296,14 +37360,16 @@ rs6000_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	  *total = COSTS_N_INSNS (1);
 	  return true;
 	}
+      /* FALLTHRU */
+
+    case GT:
+    case LT:
+    case UNORDERED:
       if (outer_code == SET)
 	{
 	  if (XEXP (x, 1) == const0_rtx)
 	    {
-	      if (TARGET_ISEL && !TARGET_MFCRF)
-		*total = COSTS_N_INSNS (8);
-	      else
-		*total = COSTS_N_INSNS (2);
+	      *total = COSTS_N_INSNS (2);
 	      return true;
 	    }
 	  else
@@ -37311,19 +37377,6 @@ rs6000_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	      *total = COSTS_N_INSNS (3);
 	      return false;
 	    }
-	}
-      /* FALLTHRU */
-
-    case GT:
-    case LT:
-    case UNORDERED:
-      if (outer_code == SET && (XEXP (x, 1) == const0_rtx))
-	{
-	  if (TARGET_ISEL && !TARGET_MFCRF)
-	    *total = COSTS_N_INSNS (8);
-	  else
-	    *total = COSTS_N_INSNS (2);
-	  return true;
 	}
       /* CC COMPARE.  */
       if (outer_code == COMPARE)
@@ -37983,7 +38036,7 @@ altivec_expand_vec_perm_le (rtx operands[4])
 
   if (TARGET_P9_VECTOR)
     {
-      unspec = gen_rtx_UNSPEC (mode, gen_rtvec (3, op0, op1, sel),
+      unspec = gen_rtx_UNSPEC (mode, gen_rtvec (3, op1, op0, sel),
 			       UNSPEC_VPERMR);
     }
   else
@@ -39170,6 +39223,9 @@ static struct rs6000_opt_var const rs6000_opt_vars[] =
   { "sched-epilog",
     offsetof (struct gcc_options, x_TARGET_SCHED_PROLOG),
     offsetof (struct cl_target_option, x_TARGET_SCHED_PROLOG), },
+  { "speculate-indirect-jumps",
+    offsetof (struct gcc_options, x_rs6000_speculate_indirect_jumps),
+    offsetof (struct cl_target_option, x_rs6000_speculate_indirect_jumps), },
   { "gen-cell-microcode",
     offsetof (struct gcc_options, x_rs6000_gen_cell_microcode),
     offsetof (struct cl_target_option, x_rs6000_gen_cell_microcode), },
@@ -39389,9 +39445,9 @@ rs6000_valid_attribute_p (tree fndecl,
 {
   struct cl_target_option cur_target;
   bool ret;
-  tree old_optimize = build_optimization_node (&global_options);
+  tree old_optimize;
   tree new_target, new_optimize;
-  tree func_optimize = DECL_FUNCTION_SPECIFIC_OPTIMIZATION (fndecl);
+  tree func_optimize;
 
   gcc_assert ((fndecl != NULL_TREE) && (args != NULL_TREE));
 
@@ -39518,6 +39574,7 @@ rs6000_pragma_target_parse (tree args, tree pop_target)
     }
 
   target_option_current_node = cur_tree;
+  rs6000_activate_target_options (target_option_current_node);
 
   /* If we have the preprocessor linked in (i.e. C or C++ languages), possibly
      change the macros that are defined.  */
@@ -39555,23 +39612,30 @@ rs6000_pragma_target_parse (tree args, tree pop_target)
 /* Remember the last target of rs6000_set_current_function.  */
 static GTY(()) tree rs6000_previous_fndecl;
 
+/* Restore target's globals from NEW_TREE and invalidate the
+   rs6000_previous_fndecl cache.  */
+
+void
+rs6000_activate_target_options (tree new_tree)
+{
+  cl_target_option_restore (&global_options, TREE_TARGET_OPTION (new_tree));
+  if (TREE_TARGET_GLOBALS (new_tree))
+    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
+  else if (new_tree == target_option_default_node)
+    restore_target_globals (&default_target_globals);
+  else
+    TREE_TARGET_GLOBALS (new_tree) = save_target_globals_default_opts ();
+  rs6000_previous_fndecl = NULL_TREE;
+}
+
 /* Establish appropriate back-end context for processing the function
    FNDECL.  The argument might be NULL to indicate processing at top
    level, outside of any function scope.  */
 static void
 rs6000_set_current_function (tree fndecl)
 {
-  tree old_tree = (rs6000_previous_fndecl
-		   ? DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl)
-		   : NULL_TREE);
-
-  tree new_tree = (fndecl
-		   ? DECL_FUNCTION_SPECIFIC_TARGET (fndecl)
-		   : NULL_TREE);
-
   if (TARGET_DEBUG_TARGET)
     {
-      bool print_final = false;
       fprintf (stderr, "\n==================== rs6000_set_current_function");
 
       if (fndecl)
@@ -39584,58 +39648,60 @@ rs6000_set_current_function (tree fndecl)
 	fprintf (stderr, ", prev_fndecl (%p)", (void *)rs6000_previous_fndecl);
 
       fprintf (stderr, "\n");
+    }
+
+  /* Only change the context if the function changes.  This hook is called
+     several times in the course of compiling a function, and we don't want to
+     slow things down too much or call target_reinit when it isn't safe.  */
+  if (fndecl == rs6000_previous_fndecl)
+    return;
+
+  tree old_tree;
+  if (rs6000_previous_fndecl == NULL_TREE)
+    old_tree = target_option_current_node;
+  else if (DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl))
+    old_tree = DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl);
+  else
+    old_tree = target_option_default_node;
+
+  tree new_tree;
+  if (fndecl == NULL_TREE)
+    {
+      if (old_tree != target_option_current_node)
+	new_tree = target_option_current_node;
+      else
+	new_tree = NULL_TREE;
+    }
+  else
+    {
+      new_tree = DECL_FUNCTION_SPECIFIC_TARGET (fndecl);
+      if (new_tree == NULL_TREE)
+	new_tree = target_option_default_node;
+    }
+
+  if (TARGET_DEBUG_TARGET)
+    {
       if (new_tree)
 	{
 	  fprintf (stderr, "\nnew fndecl target specific options:\n");
 	  debug_tree (new_tree);
-	  print_final = true;
 	}
 
       if (old_tree)
 	{
 	  fprintf (stderr, "\nold fndecl target specific options:\n");
 	  debug_tree (old_tree);
-	  print_final = true;
 	}
 
-      if (print_final)
+      if (old_tree != NULL_TREE || new_tree != NULL_TREE)
 	fprintf (stderr, "--------------------\n");
     }
 
-  /* Only change the context if the function changes.  This hook is called
-     several times in the course of compiling a function, and we don't want to
-     slow things down too much or call target_reinit when it isn't safe.  */
-  if (fndecl && fndecl != rs6000_previous_fndecl)
-    {
-      rs6000_previous_fndecl = fndecl;
-      if (old_tree == new_tree)
-	;
+  if (new_tree && old_tree != new_tree)
+    rs6000_activate_target_options (new_tree);
 
-      else if (new_tree && new_tree != target_option_default_node)
-	{
-	  cl_target_option_restore (&global_options,
-				    TREE_TARGET_OPTION (new_tree));
-	  if (TREE_TARGET_GLOBALS (new_tree))
-	    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
-	  else
-	    TREE_TARGET_GLOBALS (new_tree)
-	      = save_target_globals_default_opts ();
-	}
-
-      else if (old_tree && old_tree != target_option_default_node)
-	{
-	  new_tree = target_option_current_node;
-	  cl_target_option_restore (&global_options,
-				    TREE_TARGET_OPTION (new_tree));
-	  if (TREE_TARGET_GLOBALS (new_tree))
-	    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
-	  else if (new_tree == target_option_default_node)
-	    restore_target_globals (&default_target_globals);
-	  else
-	    TREE_TARGET_GLOBALS (new_tree)
-	      = save_target_globals_default_opts ();
-	}
-    }
+  if (fndecl)
+    rs6000_previous_fndecl = fndecl;
 }
 
 
@@ -39929,7 +39995,8 @@ rs6000_address_for_fpconvert (rtx x)
 
   gcc_assert (MEM_P (x));
   addr = XEXP (x, 0);
-  if (! legitimate_indirect_address_p (addr, strict_p)
+  if (can_create_pseudo_p ()
+      && ! legitimate_indirect_address_p (addr, strict_p)
       && ! legitimate_indexed_address_p (addr, strict_p))
     {
       if (GET_CODE (addr) == PRE_INC || GET_CODE (addr) == PRE_DEC)
@@ -42693,9 +42760,10 @@ alignment_mask (rtx_insn *insn)
 }
 
 /* Given INSN that's a load or store based at BASE_REG, look for a
-   feeding computation that aligns its address on a 16-byte boundary.  */
+   feeding computation that aligns its address on a 16-byte boundary.
+   Return the rtx and its containing AND_INSN.  */
 static rtx
-find_alignment_op (rtx_insn *insn, rtx base_reg)
+find_alignment_op (rtx_insn *insn, rtx base_reg, rtx_insn **and_insn)
 {
   df_ref base_use;
   struct df_insn_info *insn_info = DF_INSN_INFO_GET (insn);
@@ -42716,8 +42784,8 @@ find_alignment_op (rtx_insn *insn, rtx base_reg)
       if (DF_REF_IS_ARTIFICIAL (base_def_link->ref))
 	break;
 
-      rtx_insn *and_insn = DF_REF_INSN (base_def_link->ref);
-      and_operation = alignment_mask (and_insn);
+      *and_insn = DF_REF_INSN (base_def_link->ref);
+      and_operation = alignment_mask (*and_insn);
       if (and_operation != 0)
 	break;
     }
@@ -42739,7 +42807,8 @@ recombine_lvx_pattern (rtx_insn *insn, del_info *to_delete)
   rtx mem = XEXP (SET_SRC (body), 0);
   rtx base_reg = XEXP (mem, 0);
 
-  rtx and_operation = find_alignment_op (insn, base_reg);
+  rtx_insn *and_insn;
+  rtx and_operation = find_alignment_op (insn, base_reg, &and_insn);
 
   if (and_operation != 0)
     {
@@ -42763,7 +42832,21 @@ recombine_lvx_pattern (rtx_insn *insn, del_info *to_delete)
 	  to_delete[INSN_UID (swap_insn)].replace = true;
 	  to_delete[INSN_UID (swap_insn)].replace_insn = swap_insn;
 
-	  XEXP (mem, 0) = and_operation;
+	  /* However, first we must be sure that we make the
+	     base register from the AND operation available
+	     in case the register has been overwritten.  Copy
+	     the base register to a new pseudo and use that
+	     as the base register of the AND operation in
+	     the new LVX instruction.  */
+	  rtx and_base = XEXP (and_operation, 0);
+	  rtx new_reg = gen_reg_rtx (GET_MODE (and_base));
+	  rtx copy = gen_rtx_SET (new_reg, and_base);
+	  rtx_insn *new_insn = emit_insn_after (copy, and_insn);
+	  set_block_for_insn (new_insn, BLOCK_FOR_INSN (and_insn));
+	  df_insn_rescan (new_insn);
+
+	  XEXP (mem, 0) = gen_rtx_AND (GET_MODE (and_base), new_reg,
+				       XEXP (and_operation, 1));
 	  SET_SRC (body) = mem;
 	  INSN_CODE (insn) = -1; /* Force re-recognition.  */
 	  df_insn_rescan (insn);
@@ -42786,7 +42869,8 @@ recombine_stvx_pattern (rtx_insn *insn, del_info *to_delete)
   rtx mem = SET_DEST (body);
   rtx base_reg = XEXP (mem, 0);
 
-  rtx and_operation = find_alignment_op (insn, base_reg);
+  rtx_insn *and_insn;
+  rtx and_operation = find_alignment_op (insn, base_reg, &and_insn);
 
   if (and_operation != 0)
     {
@@ -42814,7 +42898,21 @@ recombine_stvx_pattern (rtx_insn *insn, del_info *to_delete)
 	  to_delete[INSN_UID (swap_insn)].replace = true;
 	  to_delete[INSN_UID (swap_insn)].replace_insn = swap_insn;
 
-	  XEXP (mem, 0) = and_operation;
+	  /* However, first we must be sure that we make the
+	     base register from the AND operation available
+	     in case the register has been overwritten.  Copy
+	     the base register to a new pseudo and use that
+	     as the base register of the AND operation in
+	     the new STVX instruction.  */
+	  rtx and_base = XEXP (and_operation, 0);
+	  rtx new_reg = gen_reg_rtx (GET_MODE (and_base));
+	  rtx copy = gen_rtx_SET (new_reg, and_base);
+	  rtx_insn *new_insn = emit_insn_after (copy, and_insn);
+	  set_block_for_insn (new_insn, BLOCK_FOR_INSN (and_insn));
+	  df_insn_rescan (new_insn);
+
+	  XEXP (mem, 0) = gen_rtx_AND (GET_MODE (and_base), new_reg,
+				       XEXP (and_operation, 1));
 	  SET_SRC (body) = src_reg;
 	  INSN_CODE (insn) = -1; /* Force re-recognition.  */
 	  df_insn_rescan (insn);

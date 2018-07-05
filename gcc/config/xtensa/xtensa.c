@@ -176,6 +176,7 @@ static bool xtensa_member_type_forces_blk (const_tree,
 					   machine_mode mode);
 
 static void xtensa_conditional_register_usage (void);
+static unsigned HOST_WIDE_INT xtensa_asan_shadow_offset (void);
 
 
 
@@ -303,6 +304,9 @@ static void xtensa_conditional_register_usage (void);
 
 #undef TARGET_CONDITIONAL_REGISTER_USAGE
 #define TARGET_CONDITIONAL_REGISTER_USAGE xtensa_conditional_register_usage
+
+#undef TARGET_ASAN_SHADOW_OFFSET
+#define TARGET_ASAN_SHADOW_OFFSET xtensa_asan_shadow_offset
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
@@ -605,6 +609,7 @@ xtensa_mem_offset (unsigned v, machine_mode mode)
     case HImode:
       return xtensa_uimm8x2 (v);
 
+    case DImode:
     case DFmode:
       return (xtensa_uimm8x4 (v) && xtensa_uimm8x4 (v + 4));
 
@@ -2677,6 +2682,30 @@ xtensa_frame_pointer_required (void)
   return false;
 }
 
+HOST_WIDE_INT
+xtensa_initial_elimination_offset (int from, int to)
+{
+  long frame_size = compute_frame_size (get_frame_size ());
+  HOST_WIDE_INT offset;
+
+  switch (from)
+    {
+    case FRAME_POINTER_REGNUM:
+      if (FRAME_GROWS_DOWNWARD)
+	offset = frame_size - (WINDOW_SIZE * UNITS_PER_WORD)
+	  - cfun->machine->callee_save_size;
+      else
+	offset = 0;
+      break;
+    case ARG_POINTER_REGNUM:
+      offset = frame_size;
+      break;
+    default:
+      gcc_unreachable ();
+    }
+
+  return offset;
+}
 
 /* minimum frame = reg save area (4 words) plus static chain (1 word)
    and the total number of words must be a multiple of 128 bits.  */
@@ -4310,6 +4339,14 @@ enum reg_class xtensa_regno_to_class (int regno)
     return GR_REGS;
   else
     return regno_to_class[regno];
+}
+
+/* Implement TARGET_ASAN_SHADOW_OFFSET.  */
+
+static unsigned HOST_WIDE_INT
+xtensa_asan_shadow_offset (void)
+{
+  return HOST_WIDE_INT_UC (0x10000000);
 }
 
 #include "gt-xtensa.h"

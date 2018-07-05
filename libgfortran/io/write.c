@@ -1537,8 +1537,9 @@ select_buffer (st_parameter_dt *dtp, const fnode *f, int precision,
 {
   char *result;
   
-  /* The buffer needs at least one more byte to allow room for normalizing.  */
-  *size = size_from_kind (dtp, f, kind) + precision + 1;
+  /* The buffer needs at least one more byte to allow room for
+     normalizing and 1 to hold null terminator.  */
+  *size = size_from_kind (dtp, f, kind) + precision + 1 + 1;
 
   if (*size > BUF_STACK_SZ)
      result = xmalloc (*size);
@@ -1552,7 +1553,7 @@ select_string (st_parameter_dt *dtp, const fnode *f, char *buf, size_t *size,
 	       int kind)
 {
   char *result;
-  *size = size_from_kind (dtp, f, kind) + f->u.real.d;
+  *size = size_from_kind (dtp, f, kind) + f->u.real.d + 1;
   if (*size > BUF_STACK_SZ)
      result = xmalloc (*size);
   else
@@ -1809,9 +1810,11 @@ write_complex (st_parameter_dt *dtp, const char *source, int kind, size_t size)
                            precision, buf_size, result1, &res_len1);
   get_float_string (dtp, &f, source + size / 2 , kind, 0, buffer,
                            precision, buf_size, result2, &res_len2);
-  lblanks = width - res_len1 - res_len2 - 3;
-
-  write_x (dtp, lblanks, lblanks);
+  if (!dtp->u.p.namelist_mode)
+    {
+      lblanks = width - res_len1 - res_len2 - 3;
+      write_x (dtp, lblanks, lblanks);
+    }
   write_char (dtp, '(');
   write_float_string (dtp, result1, res_len1);
   write_char (dtp, semi_comma);
@@ -2248,11 +2251,6 @@ nml_write_obj (st_parameter_dt *dtp, namelist_info *obj, index_type offset,
 		      child_iomsg_len = IOMSG_LEN;
 		    }
 
-		  /* If writing to an internal unit, stash it to allow
-		     the child procedure to access it.  */
-		  if (is_internal_unit (dtp))
-		    stash_internal_unit (dtp);
-		      
 		  /* Call the user defined formatted WRITE procedure.  */
 		  dtp->u.p.current_unit->child_dtio++;
 		  if (obj->type == BT_DERIVED)

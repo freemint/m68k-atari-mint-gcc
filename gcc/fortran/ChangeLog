@@ -1,3 +1,410 @@
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2018-01-20  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/83900
+    * simplify.c (gfc_simplify_matmul): Set return type correctly.
+
+2018-01019  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/83900
+	* simplify.c (gfc_simplify_matmul): Delete bogus assertion.
+
+2018-01-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport of r250734 from mainline
+	PR fortran/80768
+	* check.c (gfc_check_num_images): Fix typo.
+
+2018-01-18  Harald Anlauf  <anlauf@gmx.de>
+
+	Backport from mainline
+	PR fortran/83864
+	* expr.c (gfc_apply_init): Do not dereference NULL pointer.
+
+2018-01-17  Harald Anlauf  <anlauf@gmx.de>
+
+	Backport from mainline
+	PR fortran/83874
+	* decl.c (add_init_expr_to_sym): Do not dereference NULL pointer.
+
+2018-01-13  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/78814
+	* interface.c (symbol_rank): Check for NULL pointer.
+
+2018-01-10  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/82367
+	* resolve.c (resolve_allocate_expr): Check for NULL pointer.
+
+2018-01-10 Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/83093
+	* resolve.c (resolve_charlen): Check the type of cl->length
+	after resolution.
+
+2018-01-10  Steven G. Kargl  <kargl@kgcc.gnu.org>
+
+	Backport r254555 from trunk
+	PR Fortran/82841
+	* simplify.c(gfc_simplify_transfer): Do not dereference a NULL pointer.
+	Unwrap a short line.
+
+2018-01-04  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR Fortran/83679
+	* simplify.c (gfc_simplify_cshift): Restore early return for zero-sized
+	array.  Update Copyright year while here.
+
+2018-01-02  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/83650
+	* simplify.c (gfc_simplify_cshift): Correct contition for
+	negative shifts.
+
+2017-12-28  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR Fortran/83548
+	* match.c (gfc_match_type_spec): Check for LOGICAL conflict in
+	type-spec versus LOGICAL intrinsic subprogram.
+
+2017-12-15  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-11-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/81304
+	* trans-openmp.c (gfc_trans_omp_array_reduction_or_udr): Set
+	attr.implicit_type in intrinsic_sym to avoid undesirable warning.
+
+	2017-11-23  Dirk Broemmel  <d.broemmel@fz-juelich.de>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/81841
+	* parse.c (parse_spec): Allow ST_OMP_THREADPRIVATE inside of
+	BLOCK DATA.
+
+2017-11-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/83021
+	* resolve.c (resolve_component): Only escape for use assciated
+	vtypes if the current namespace has no proc_name and is most
+	particularly block data.
+
+2017-11-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/79072
+	* trans-expr.c (trans_class_vptr_len_assignment): Set from_len
+	if the temporary is unlimited polymorphic.
+	* trans-stmt.c (trans_associate_var): Use the fake result decl
+	to obtain the 'len' field from an explicit function result when
+	in that function scope.
+
+2017-11-21  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk fix for PR82586
+	PR fortran/78686
+	* resolve.c (resolve_generic_f): Check usage of derived type by
+	calling gfc_use_derived.
+
+2017-11-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/82934
+	* trans-stmt.c (gfc_trans_allocate): Remove the gcc_assert on
+	null string length for assumed length typespec and set
+	expr3_esize to NULL_TREE;
+
+2017-11-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78619
+	* check.c (same_type_check): Introduce a new argument 'assoc'
+	with default value false. If this is true, use the symbol type
+	spec of BT_PROCEDURE expressions.
+	(gfc_check_associated): Set 'assoc' true in the call to
+	'same_type_check'.
+
+2017-11-13  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR 82869
+	* convert.c (truthvalue_conversion): Use logical_type_node.
+	* trans-array.c (gfc_trans_allocate_array_storage): Likewise.
+	(gfc_trans_create_temp_array): Likewise.
+	(gfc_trans_array_ctor_element): Likewise.
+	(gfc_trans_array_constructor_value): Likewise.
+	(trans_array_constructor): Likewise.
+	(trans_array_bound_check): Likewise.
+	(gfc_conv_array_ref): Likewise.
+	(gfc_trans_scalarized_loop_end): Likewise.
+	(gfc_conv_array_extent_dim): Likewise.
+	(gfc_array_init_size): Likewise.
+	(gfc_array_allocate): Likewise.
+	(gfc_trans_array_bounds): Likewise.
+	(gfc_trans_dummy_array_bias): Likewise.
+	(gfc_conv_array_parameter): Likewise.
+	(duplicate_allocatable): Likewise.
+	(duplicate_allocatable_coarray): Likewise.
+	(structure_alloc_comps): Likewise
+	(get_std_lbound): Likewise
+	(gfc_alloc_allocatable_for_assignment): Likewise
+	* trans-decl.c (add_argument_checking): Likewise
+	(gfc_generate_function_code): Likewise
+	* trans-expr.c (gfc_copy_class_to_class): Likewise
+	(gfc_trans_class_array_init_assign): Likewise
+	(gfc_trans_class_init_assign): Likewise
+	(gfc_conv_expr_present): Likewise
+	(gfc_conv_substring): Likewise
+	(gfc_conv_cst_int_power): Likewise
+	(gfc_conv_expr_op): Likewise
+	(gfc_conv_procedure_call): Likewise
+	(fill_with_spaces): Likewise
+	(gfc_trans_string_copy): Likewise
+	(gfc_trans_alloc_subarray_assign): Likewise
+	(gfc_trans_pointer_assignment): Likewise
+	(gfc_trans_scalar_assign): Likewise
+	(fcncall_realloc_result): Likewise
+	(alloc_scalar_allocatable_for_assignment): Likewise
+	(trans_class_assignment): Likewise
+	(gfc_trans_assignment_1): Likewise
+	* trans-intrinsic.c (build_fixbound_expr): Likewise
+	(gfc_conv_intrinsic_aint): Likewise
+	(gfc_trans_same_strlen_check): Likewise
+	(conv_caf_send): Likewise
+	(trans_this_image): Likewise
+	(conv_intrinsic_image_status): Likewise
+	(trans_image_index): Likewise
+	(gfc_conv_intrinsic_bound): Likewise
+	(conv_intrinsic_cobound): Likewise
+	(gfc_conv_intrinsic_mod): Likewise
+	(gfc_conv_intrinsic_dshift): Likewise
+	(gfc_conv_intrinsic_dim): Likewise
+	(gfc_conv_intrinsic_sign): Likewise
+	(gfc_conv_intrinsic_ctime): Likewise
+	(gfc_conv_intrinsic_fdate): Likewise
+	(gfc_conv_intrinsic_ttynam): Likewise
+	(gfc_conv_intrinsic_minmax): Likewise
+	(gfc_conv_intrinsic_minmax_char): Likewise
+	(gfc_conv_intrinsic_anyall): Likewise
+	(gfc_conv_intrinsic_arith): Likewise
+	(gfc_conv_intrinsic_minmaxloc): Likewise
+	(gfc_conv_intrinsic_minmaxval): Likewise
+	(gfc_conv_intrinsic_btest): Likewise
+	(gfc_conv_intrinsic_bitcomp): Likewise
+	(gfc_conv_intrinsic_shift): Likewise
+	(gfc_conv_intrinsic_ishft): Likewise
+	(gfc_conv_intrinsic_ishftc): Likewise
+	(gfc_conv_intrinsic_leadz): Likewise
+	(gfc_conv_intrinsic_trailz): Likewise
+	(gfc_conv_intrinsic_mask): Likewise
+	(gfc_conv_intrinsic_spacing): Likewise
+	(gfc_conv_intrinsic_rrspacing): Likewise
+	(gfc_conv_intrinsic_size): Likewise
+	(gfc_conv_intrinsic_sizeof): Likewise
+	(gfc_conv_intrinsic_transfer): Likewise
+	(gfc_conv_allocated): Likewise
+	(gfc_conv_associated): Likewise
+	(gfc_conv_same_type_as): Likewise
+	(gfc_conv_intrinsic_trim): Likewise
+	(gfc_conv_intrinsic_repeat): Likewise
+	(conv_isocbinding_function): Likewise
+	(conv_intrinsic_ieee_is_normal): Likewise
+	(conv_intrinsic_ieee_is_negative): Likewise
+	(conv_intrinsic_ieee_copy_sign): Likewise
+	(conv_intrinsic_move_alloc): Likewise
+	* trans-io.c (set_parameter_value_chk): Likewise
+	(set_parameter_value_inquire): Likewise
+	(set_string): Likewise
+	* trans-openmp.c (gfc_walk_alloc_comps): Likewise
+	(gfc_omp_clause_default_ctor): Likewise
+	(gfc_omp_clause_copy_ctor): Likewise
+	(gfc_omp_clause_assign_op): Likewise
+	(gfc_omp_clause_dtor): Likewise
+	(gfc_omp_finish_clause): Likewise
+	(gfc_trans_omp_clauses): Likewise
+	(gfc_trans_omp_do): Likewise
+	* trans-stmt.c (gfc_trans_goto): Likewise
+	(gfc_trans_sync): Likewise
+	(gfc_trans_arithmetic_if): Likewise
+	(gfc_trans_simple_do): Likewise
+	(gfc_trans_do): Likewise
+	(gfc_trans_forall_loop): Likewise
+	(gfc_trans_where_2): Likewise
+	(gfc_trans_allocate): Likewise
+	(gfc_trans_deallocate): Likewise
+	* trans-types.c (gfc_init_types): Initialize logical_type_node and
+	their true/false trees.
+	(gfc_get_array_descr_info): Use logical_type_node.
+	* trans-types.h (logical_type_node): New tree.
+	(logical_true_node): Likewise.
+	(logical_false_node): Likewise.
+	* trans.c (gfc_trans_runtime_check): Use logical_type_node.
+	(gfc_call_malloc): Likewise
+	(gfc_allocate_using_malloc): Likewise
+	(gfc_allocate_allocatable): Likewise
+	(gfc_add_comp_finalizer_call): Likewise
+	(gfc_add_finalizer_call): Likewise
+	(gfc_deallocate_with_status): Likewise
+	(gfc_deallocate_scalar_with_status): Likewise
+	(gfc_call_realloc): Likewise
+
+2017-11-06  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/78641
+	* resolve.c (resolve_ordinary_assign): Do not add the _data
+	component for class valued array constructors being assigned
+	to derived type arrays.
+	* trans-array.c (gfc_trans_array_ctor_element): Take the _data
+	of class valued elements for assignment to derived type arrays.
+
+2017-11-06  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/69739
+	* trans-expr.c (gfc_map_intrinsic_function): Return false for
+	bounds without the DIM argument instead of ICEing.
+
+2017-11-04  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/82796
+	* resolve.c (resolve_equivalence): An entity in a common block within
+ 	a module cannot appear in an equivalence statement if the entity is
+	with a pure procedure.
+
+2017-11-04  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	* trans-expr.c (gfc_trans_assignment_1): Character kind conversion may
+	create a loop variant temporary, too.
+	* trans-intrinsic.c (conv_caf_send): Treat char arrays as arrays and
+	not as scalars.
+	* trans.c (get_array_span): Take the character kind into account when
+	doing pointer arithmetic.
+
+2017-11-03  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/81735
+	* trans-decl.c (gfc_trans_deferred_vars): Correct case where
+	'tmp' can be used unititialized.
+
+2017-11-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/80554
+	* decl.c (build_sym): In a submodule allow overriding of host
+	associated symbols from the ancestor module with a new
+	declaration.
+
+2017-11-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80850
+	* trans_expr.c (gfc_conv_procedure_call): When passing a class
+	argument to an unlimited polymorphic dummy, it is wrong to cast
+	the passed expression as unlimited, unless it is unlimited. The
+	correct way is to assign to each of the fields and set the _len
+	field to zero.
+
+2017-10-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	* check.c (gfc_check_co_reduce): Clarify error message.
+
+2017-10-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/81758
+	* trans-expr.c (trans_class_vptr_len_assignment): 'vptr_expr'
+	must only be set if the right hand side expression is of type
+	class.
+
+2017-10-21  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/82312
+	* resolve.c (gfc_resolve_code): Simplify condition for class
+	pointer assignments becoming regular assignments by asserting
+	that only class valued targets are permitted.
+	* trans-expr.c (trans_class_pointer_fcn): New function using a
+	block of code from gfc_trans_pointer_assignment.
+	(gfc_trans_pointer_assignment): Call the new function. Tidy up
+	a minor whitespace issue.
+
+2017-10-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/79795
+	* resolve.c (resovle_symbol): Change gcc_assert to
+	sensible error message.
+
+2017-10-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/52832
+	* match.c (gfc_match_associate): Before failing the association
+	try again, allowing a proc pointer selector.
+
+	PR fortran/80120
+	PR fortran/81903
+	PR fortran/82121
+	* primary.c (gfc_match_varspec): Introduce 'tgt_expr', which
+	points to the associate selector, if any. Go through selector
+	references, after resolution for variables, to catch any full
+	or section array references. If a class associate name does
+	not have the same declared type as the selector, resolve the
+	selector and copy the declared type to the associate name.
+	Before throwing a no implicit type error, resolve all allowed
+	selector expressions, and copy the resulting typespec.
+
+	PR fortran/67543
+	* resolve.c (resolve_assoc_var): Selector must cannot be the
+	NULL expression and it must have a type.
+
+	PR fortran/78152
+	* resolve.c (resolve_symbol): Allow associate names to be
+	coarrays.
+
+2017-10-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/81048
+	* resolve.c (resolve_symbol): Ensure that derived type array
+	results get default initialization.
+
+2017-10-03  Thomas Koenig  <tkoenig@gcc.gnu.org>
+	    Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80118
+	* expr.c (gfc_get_full_arrayspec_from_expr): If there is
+	no symtree, set array spec to NULL.
+
+2017-09-02  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/81770
+	* expr.c (gfc_check_pointer_assign): Improve the check whether pointer
+	may outlive pointer target.
+
+2017-08-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/81296
+	* trans-io.c (get_dtio_proc): Add check for format label and set
+	formatted flag accordingly. Reorganize the code a little.
+
+2017-08-18  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80164
+	* trans-stmt.c (gfc_trans_call): If no code expr, use code->loc
+	as warning/error locus.
+
 2017-08-14  Release Manager
 
 	* GCC 7.2.0 released.

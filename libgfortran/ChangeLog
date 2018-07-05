@@ -1,3 +1,121 @@
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2018-01-14  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/83811
+	* write.c (select_buffer): Adjust buffer size up by 1.
+
+2018-01-03  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/83649
+	* io/unix.c (MAX_CHUNK): New define.
+	(raw_read): For reads larger than MAX_CHUNK, loop.
+	(raw_write): Write no more than MAX_CHUNK bytes per iteration.
+
+2017-12-29  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/83613
+	* io/unit.c (init_units): Don't forget to unlock the unit locks
+	after being inserted.
+
+2017-12-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/81937
+	* io/list_read.c (next_char_internal): Don't attempt to read
+	from the internal unit stream if no bytes are left. Decrement
+	bytes_left in the right place.
+
+2017-12-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/78549
+	* io/inquire.c (inquire_via_unit): Adjust test for existence for
+	pre-connected internal units.
+	* io/transfer.c (finalize_transfer): When done with a transfer
+	to internal units, free the format buffer and close the stream.
+	(st_read_done): Delete freeing the stream, now handled using
+	sclose in finalize_transfer. (st_write_done): Likewise.
+	* io/unit.c (get_unit): Return NULL for special reserved unit
+	numbers, signifying not accessible to the user.
+	(init_units): Insert the two special internal units into the
+	unit treap. This makes these unit structures available without
+	further allocations for later use by internal unit I/O. These
+	units are automatically deleted by normal program termination.
+	* io/unix.c (mem_close): Add a guard check to protect from double free.
+
+2017-12-03  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/83168
+	* io/write.c (select_string): Bump size by one to avoid
+	overrun.
+
+2017-12-03  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from trunk
+	PR libgfortran/83191
+	* io/transfer.c (list_formatted_read_scalar): Do not set
+	namelist_mode bit here. (namelist_read): Likewise.
+	(data_transfer_init): Clear the mode bit here.
+	(finalize_transfer): Do set the mode bit just before any calls
+	to namelist_read or namelist_write. It can now be referred to
+	in complex_write.
+	* io/write.c (write_complex): Suppress the leading blanks when
+	namelist_mode bit is not set to 1.
+
+2017-12-02  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/83225
+	* io/io.h (is_internal_unit): Use the unit_is_internal bit.
+	* io/transfer.c (data_transfer_init): Set the bit to true for
+	internal units. Use that bit for checks for internal unit
+	initializations.
+	* io/unit.c (insert_unit): As a precaution, set the
+	internal_unit_kind to zero when a unit structure is first created.
+
+2017-11-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/78549
+	* io/io.h (newunit_free): Add declaration. Clean some whitespace.
+	* io/transfer.c (st_read_done, st_write_done): Call newunit_free.
+	* io/unit.c (newunit_free): Change type from static void to void.
+
+2017-10-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+	    Rimvydas (RJ)
+
+	Backport from trunk
+	PR libgfortran/81938
+	io/format.c (free_format_data): Don't try to free vlist
+	descriptors past the end of the fnode array.
+
+2017-10-19  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR libfortran/82233
+	* intrinsics/execute_command_line.c (execute_command_line):
+	No call to runtime_error if cmdstat is present.
+
+2017-09-19  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/78387
+	* io/list_read.c (nml_read_obj): Remove use of stash.
+	* io/transfer.c (st_read_done, st_write_done): Likewise.
+	* io/unit.c (stash_internal_unit): Delete function.
+	(get_unit): Remove use of stash.
+	(init_units): Likewise.
+	(close_units): Likewise.
+	* io/write.c (nml_write_obj): Likewise:
+
 2017-08-14  Release Manager
 
 	* GCC 7.2.0 released.

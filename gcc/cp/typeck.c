@@ -5927,6 +5927,7 @@ cp_build_unary_op (enum tree_code code, tree xarg, bool noconvert,
 	{
 	  /* Warn if the expression has boolean value.  */
 	  if (TREE_CODE (TREE_TYPE (arg)) == BOOLEAN_TYPE
+	      && (complain & tf_warning)
 	      && warning_at (location, OPT_Wbool_operation,
 			     "%<~%> on an expression of type bool"))
 	    inform (location, "did you mean to use logical not (%<!%>)?");
@@ -8413,7 +8414,10 @@ convert_for_assignment (tree type, tree rhs,
     {
       tree elt = CONSTRUCTOR_ELT (rhs, 0)->value;
       if (check_narrowing (ENUM_UNDERLYING_TYPE (type), elt, complain))
-	rhs = cp_build_c_cast (type, elt, complain);
+	{
+	  warning_sentinel w (warn_useless_cast);
+	  rhs = cp_build_c_cast (type, elt, complain);
+	}
       else
 	rhs = error_mark_node;
     }

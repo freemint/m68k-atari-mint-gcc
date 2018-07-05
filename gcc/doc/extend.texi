@@ -5540,6 +5540,25 @@ Specify which floating-point unit to use.  You must specify the
 @code{target("fpmath=sse,387")} option as
 @code{target("fpmath=sse+387")} because the comma would separate
 different options.
+
+@item indirect_branch("@var{choice}")
+@cindex @code{indirect_branch} function attribute, x86
+On x86 targets, the @code{indirect_branch} attribute causes the compiler
+to convert indirect call and jump with @var{choice}.  @samp{keep}
+keeps indirect call and jump unmodified.  @samp{thunk} converts indirect
+call and jump to call and return thunk.  @samp{thunk-inline} converts
+indirect call and jump to inlined call and return thunk.
+@samp{thunk-extern} converts indirect call and jump to external call
+and return thunk provided in a separate object file.
+
+@item function_return("@var{choice}")
+@cindex @code{function_return} function attribute, x86
+On x86 targets, the @code{function_return} attribute causes the compiler
+to convert function return with @var{choice}.  @samp{keep} keeps function
+return unmodified.  @samp{thunk} converts function return to call and
+return thunk.  @samp{thunk-inline} converts function return to inlined
+call and return thunk.  @samp{thunk-extern} converts function return to
+external call and return thunk provided in a separate object file.
 @end table
 
 On the x86, the inliner does not inline a
@@ -8759,6 +8778,9 @@ The table below shows the list of supported modifiers and their effects.
 @tab @code{2}
 @end multitable
 
+@code{V} is a special modifier which prints the name of the full integer
+register without @code{%}.
+
 @anchor{x86floatingpointasmoperands}
 @subsubsection x86 Floating-Point @code{asm} Operands
 
@@ -9473,6 +9495,7 @@ For mixed operations between a scalar @code{s} and a vector @code{v},
 @code{s && v} is equivalent to @code{s?v!=0:0} (the evaluation is
 short-circuit) and @code{v && s} is equivalent to @code{v!=0 & (s?-1:0)}.
 
+@findex __builtin_shuffle
 Vector shuffling is available using functions
 @code{__builtin_shuffle (vec, mask)} and
 @code{__builtin_shuffle (vec0, vec1, mask)}.
@@ -19476,8 +19499,11 @@ AMD Family 15h Bulldozer version 4.
 @item btver2
 AMD Family 16h CPU.
 
-@item znver1
+@item amdfam17h
 AMD Family 17h CPU.
+
+@item znver1
+AMD Family 17h Zen version 1.
 @end table
 
 Here is an example:
@@ -20635,7 +20661,7 @@ unsigned long long _pext_u64 (unsigned long long, unsigned long long)
 The following built-in functions are available when @option{-mlzcnt} is used.
 All of them generate the machine instruction that is part of the name.
 @smallexample
-unsigned short __builtin_ia32_lzcnt_16(unsigned short);
+unsigned short __builtin_ia32_lzcnt_u16(unsigned short);
 unsigned int __builtin_ia32_lzcnt_u32(unsigned int);
 unsigned long long __builtin_ia32_lzcnt_u64 (unsigned long long);
 @end smallexample
