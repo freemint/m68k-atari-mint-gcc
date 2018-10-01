@@ -1977,7 +1977,7 @@ m68k-*-mint*)
 	default_cf_cpu=5475
 	tm_file="${tm_file} m68k/mint.h"
 	tm_defines="${tm_defines} MOTOROLA=1"
-	tmake_file="m68k/t-floatlib m68k/t-mint"
+	tmake_file="m68k/t-floatlib m68k/t-mint m68k/t-mlibs"
 	gas=yes
 	gnu_ld=yes
 	;;
