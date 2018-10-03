@@ -51,7 +51,7 @@ endif
 # by older binutils.
 CANONICALIZE_OPTIONS = -e 's|mcpu=68|m68|g' -e 's|mcpu=cpu32|mcpu32|g'
 
-MULTILIB_DIRNAMES := $(filter-out m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS))
+MULTILIB_DIRNAMES := $(subst m68020,m68020-60,$(filter-out m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)))
 MULTILIB_OPTIONS := $(shell echo $(MULTILIB_DIRNAMES:m%=mcpu=%) \
 		      | sed -e 's| |/|g' $(CANONICALIZE_OPTIONS))
 
@@ -65,10 +65,11 @@ ifneq ($(M68K_ARCH),cf)
 # Map the new-style options to the legacy m68k ones.
 MULTILIB_MATCHES += m68000=mcpu?68000 m68000=march?68000 m68000=mc68000 \
 		    m68000=m68302 \
-		    m68020=mcpu?68020 m68020=march?68020 m68020=mc68020 \
-		    m68030=mcpu?68030 m68030=march?68030 \
-		    m68040=mcpu?68040 m68040=march?68040 \
-		    m68060=mcpu?68060 m68060=march?68060 \
+		    m68020-60=m68881 m68020-60=m68020 m68020-60=m68020-40 m68020-60=m68030 m68020-60=m68040 m68020-60=m68060 \
+		    m68020-60=mcpu?68020 m68020-60=march?68020 m68020-60=mc68020 \
+		    m68020-60=mcpu?68030 m68020-60=march?68030 \
+		    m68020-60=mcpu?68040 m68020-60=march?68040 \
+		    m68020-60=mcpu?68060 m68020-60=march?68060 \
 		    mcpu32=mcpu?cpu32 mcpu32=march?cpu32 mcpu32=m68332
 endif
 
@@ -81,6 +82,20 @@ MULTILIB_MATCHES += mcpu?5206=m5200 mcpu?5206e=m5206e mcpu?5208=m528x \
 # Map -march=* options to the representative -mcpu=* option.
 MULTILIB_MATCHES += mcpu?5206e=march?isaa mcpu?5208=march?isaaplus \
 		    mcpu?5407=march?isab
+
+MULTILIB_MATCHES += mcpu?5475=mcpu?5470 \
+		    mcpu?5475=mcpu?5471 \
+		    mcpu?5475=mcpu?5472 \
+		    mcpu?5475=mcpu?5473 \
+		    mcpu?5475=mcpu?5474 \
+		    mcpu?5475=mcpu?547x \
+		    mcpu?5475=mcpu?5480 \
+		    mcpu?5475=mcpu?5481 \
+		    mcpu?5475=mcpu?5482 \
+		    mcpu?5475=mcpu?5483 \
+		    mcpu?5475=mcpu?5484 \
+		    mcpu?5475=mcpu?5485 \
+		    mcpu?5475=mcpu?548x
 endif
 
 # Match non-representative -mcpu options to their representative option.
