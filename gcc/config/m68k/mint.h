@@ -19,11 +19,6 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
-/* for 68k machines this only needs to be TRUE for the 68000 */
-
-#undef STRICT_ALIGNMENT
-#define STRICT_ALIGNMENT 0
-
 /* Here are four prefixes that are used by asm_fprintf to
    facilitate customization for alternate assembler syntaxes.
    Machines with no likelihood of an alternate syntax need not
