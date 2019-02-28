@@ -1125,10 +1125,6 @@ static void
 asan_poison_variable (tree decl, bool poison, gimple_stmt_iterator *it,
 		      bool before)
 {
-  /* When within an OMP context, do not emit ASAN_MARK internal fns.  */
-  if (gimplify_omp_ctxp)
-    return;
-
   tree unit_size = DECL_SIZE_UNIT (decl);
   tree base = build_fold_addr_expr (decl);
 
@@ -1640,7 +1636,8 @@ gimplify_decl_expr (tree *stmt_p, gimple_seq *seq_p)
 	  && TREE_ADDRESSABLE (decl)
 	  && !TREE_STATIC (decl)
 	  && !DECL_HAS_VALUE_EXPR_P (decl)
-	  && dbg_cnt (asan_use_after_scope))
+	  && dbg_cnt (asan_use_after_scope)
+	  && !gimplify_omp_ctxp)
 	{
 	  asan_poisoned_variables->add (decl);
 	  asan_poison_variable (decl, false, seq_p);
@@ -4684,7 +4681,7 @@ gimplify_init_constructor (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	     objects.  Initializers for such objects must explicitly set
 	     every field that needs to be set.  */
 	  cleared = false;
-	else if (!complete_p && !CONSTRUCTOR_NO_CLEARING (ctor))
+	else if (!complete_p)
 	  /* If the constructor isn't complete, clear the whole object
 	     beforehand, unless CONSTRUCTOR_NO_CLEARING is set on it.
 
@@ -4693,7 +4690,7 @@ gimplify_init_constructor (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	     we'd need to *find* the elements that are not present, and that
 	     requires trickery to avoid quadratic compile-time behavior in
 	     large cases or excessive memory use in small cases.  */
-	  cleared = true;
+	  cleared = !CONSTRUCTOR_NO_CLEARING (ctor);
 	else if (num_ctor_elements - num_nonzero_elements
 		 > CLEAR_RATIO (optimize_function_for_speed_p (cfun))
 		 && num_nonzero_elements < num_ctor_elements / 4)
@@ -5776,8 +5773,11 @@ gimplify_save_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 	}
       else
 	/* The temporary may not be an SSA name as later abnormal and EH
-	   control flow may invalidate use/def domination.  */
-	val = get_initialized_tmp_var (val, pre_p, post_p, false);
+	   control flow may invalidate use/def domination.  When in SSA
+	   form then assume there are no such issues and SAVE_EXPRs only
+	   appear via GENERIC foldings.  */
+	val = get_initialized_tmp_var (val, pre_p, post_p,
+				       gimple_in_ssa_p (cfun));
 
       TREE_OPERAND (*expr_p, 0) = val;
       SAVE_EXPR_RESOLVED_P (*expr_p) = 1;
@@ -6458,7 +6458,8 @@ gimplify_target_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 	      clobber = build2 (MODIFY_EXPR, TREE_TYPE (temp), temp, clobber);
 	      gimple_push_cleanup (temp, clobber, false, pre_p, true);
 	    }
-	  if (asan_poisoned_variables && dbg_cnt (asan_use_after_scope))
+	  if (asan_poisoned_variables && dbg_cnt (asan_use_after_scope)
+	      && !gimplify_omp_ctxp)
 	    {
 	      tree asan_cleanup = build_asan_poison_call_expr (temp);
 	      if (asan_cleanup)
@@ -9546,9 +9547,26 @@ gimplify_omp_for (tree *expr_p, gimple_seq *pre_p)
 	  t = TREE_VEC_ELT (OMP_FOR_INIT (for_stmt), i);
 	  if (!is_gimple_constant (TREE_OPERAND (t, 1)))
 	    {
+	      tree type = TREE_TYPE (TREE_OPERAND (t, 0));
 	      TREE_OPERAND (t, 1)
 		= get_initialized_tmp_var (TREE_OPERAND (t, 1),
-					   pre_p, NULL, false);
+					   gimple_seq_empty_p (for_pre_body)
+					   ? pre_p : &for_pre_body, NULL,
+					   false);
+	      /* Reference to pointer conversion is considered useless,
+		 but is significant for firstprivate clause.  Force it
+		 here.  */
+	      if (TREE_CODE (type) == POINTER_TYPE
+		  && (TREE_CODE (TREE_TYPE (TREE_OPERAND (t, 1)))
+		      == REFERENCE_TYPE))
+		{
+		  tree v = create_tmp_var (TYPE_MAIN_VARIANT (type));
+		  tree m = build2 (INIT_EXPR, TREE_TYPE (v), v,
+				   TREE_OPERAND (t, 1));
+		  gimplify_and_add (m, gimple_seq_empty_p (for_pre_body)
+				       ? pre_p : &for_pre_body);
+		  TREE_OPERAND (t, 1) = v;
+		}
 	      tree c = build_omp_clause (input_location,
 					 OMP_CLAUSE_FIRSTPRIVATE);
 	      OMP_CLAUSE_DECL (c) = TREE_OPERAND (t, 1);
@@ -9560,11 +9578,26 @@ gimplify_omp_for (tree *expr_p, gimple_seq *pre_p)
 	  t = TREE_VEC_ELT (OMP_FOR_COND (for_stmt), i);
 	  if (!is_gimple_constant (TREE_OPERAND (t, 1)))
 	    {
+	      tree type = TREE_TYPE (TREE_OPERAND (t, 0));
 	      TREE_OPERAND (t, 1)
 		= get_initialized_tmp_var (TREE_OPERAND (t, 1),
 					   gimple_seq_empty_p (for_pre_body)
 					   ? pre_p : &for_pre_body, NULL,
 					   false);
+	      /* Reference to pointer conversion is considered useless,
+		 but is significant for firstprivate clause.  Force it
+		 here.  */
+	      if (TREE_CODE (type) == POINTER_TYPE
+		  && (TREE_CODE (TREE_TYPE (TREE_OPERAND (t, 1)))
+		      == REFERENCE_TYPE))
+		{
+		  tree v = create_tmp_var (TYPE_MAIN_VARIANT (type));
+		  tree m = build2 (INIT_EXPR, TREE_TYPE (v), v,
+				   TREE_OPERAND (t, 1));
+		  gimplify_and_add (m, gimple_seq_empty_p (for_pre_body)
+				       ? pre_p : &for_pre_body);
+		  TREE_OPERAND (t, 1) = v;
+		}
 	      tree c = build_omp_clause (input_location,
 					 OMP_CLAUSE_FIRSTPRIVATE);
 	      OMP_CLAUSE_DECL (c) = TREE_OPERAND (t, 1);

@@ -157,6 +157,22 @@
 			 (TF	"wp")
 			 (KF	"wq")])
 
+;; A mode attribute to disparage use of GPR registers, except for scalar
+;; interger modes.
+(define_mode_attr ??r	[(V16QI "??r")
+			 (V8HI  "??r")
+			 (V4SI  "??r")
+			 (V4SF  "??r")
+			 (V2DI  "??r")
+			 (V2DF  "??r")
+			 (DI    "r")
+			 (DF    "??r")
+			 (SF    "??r")
+			 (V1TI  "??r")
+			 (TI    "r")
+			 (TF    "??r")
+			 (KF    "??r")])
+
 ;; Same size integer type for floating point data
 (define_mode_attr VSi [(V4SF  "v4si")
 		       (V2DF  "v2di")
@@ -385,7 +401,7 @@
 ;; VSX moves so they match first.
 (define_insn_and_split "*vsx_le_perm_load_<mode>"
   [(set (match_operand:VSX_D 0 "vsx_register_operand" "=<VSa>")
-        (match_operand:VSX_D 1 "memory_operand" "Z"))]
+        (match_operand:VSX_D 1 "indexed_or_indirect_operand" "Z"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
@@ -408,7 +424,7 @@
 
 (define_insn_and_split "*vsx_le_perm_load_<mode>"
   [(set (match_operand:VSX_W 0 "vsx_register_operand" "=<VSa>")
-        (match_operand:VSX_W 1 "memory_operand" "Z"))]
+        (match_operand:VSX_W 1 "indexed_or_indirect_operand" "Z"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
@@ -433,7 +449,7 @@
 
 (define_insn_and_split "*vsx_le_perm_load_v8hi"
   [(set (match_operand:V8HI 0 "vsx_register_operand" "=wa")
-        (match_operand:V8HI 1 "memory_operand" "Z"))]
+        (match_operand:V8HI 1 "indexed_or_indirect_operand" "Z"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
@@ -462,7 +478,7 @@
 
 (define_insn_and_split "*vsx_le_perm_load_v16qi"
   [(set (match_operand:V16QI 0 "vsx_register_operand" "=wa")
-        (match_operand:V16QI 1 "memory_operand" "Z"))]
+        (match_operand:V16QI 1 "indexed_or_indirect_operand" "Z"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
@@ -498,7 +514,7 @@
    (set_attr "length" "8")])
 
 (define_insn "*vsx_le_perm_store_<mode>"
-  [(set (match_operand:VSX_D 0 "memory_operand" "=Z")
+  [(set (match_operand:VSX_D 0 "indexed_or_indirect_operand" "=Z")
         (match_operand:VSX_D 1 "vsx_register_operand" "+<VSa>"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
@@ -506,7 +522,7 @@
    (set_attr "length" "12")])
 
 (define_split
-  [(set (match_operand:VSX_D 0 "memory_operand" "")
+  [(set (match_operand:VSX_D 0 "indexed_or_indirect_operand" "")
         (match_operand:VSX_D 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && !reload_completed"
   [(set (match_dup 2)
@@ -525,7 +541,7 @@
 ;; The post-reload split requires that we re-permute the source
 ;; register in case it is still live.
 (define_split
-  [(set (match_operand:VSX_D 0 "memory_operand" "")
+  [(set (match_operand:VSX_D 0 "indexed_or_indirect_operand" "")
         (match_operand:VSX_D 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && reload_completed"
   [(set (match_dup 1)
@@ -543,7 +559,7 @@
   "")
 
 (define_insn "*vsx_le_perm_store_<mode>"
-  [(set (match_operand:VSX_W 0 "memory_operand" "=Z")
+  [(set (match_operand:VSX_W 0 "indexed_or_indirect_operand" "=Z")
         (match_operand:VSX_W 1 "vsx_register_operand" "+<VSa>"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
@@ -551,7 +567,7 @@
    (set_attr "length" "12")])
 
 (define_split
-  [(set (match_operand:VSX_W 0 "memory_operand" "")
+  [(set (match_operand:VSX_W 0 "indexed_or_indirect_operand" "")
         (match_operand:VSX_W 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && !reload_completed"
   [(set (match_dup 2)
@@ -572,7 +588,7 @@
 ;; The post-reload split requires that we re-permute the source
 ;; register in case it is still live.
 (define_split
-  [(set (match_operand:VSX_W 0 "memory_operand" "")
+  [(set (match_operand:VSX_W 0 "indexed_or_indirect_operand" "")
         (match_operand:VSX_W 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && reload_completed"
   [(set (match_dup 1)
@@ -593,7 +609,7 @@
   "")
 
 (define_insn "*vsx_le_perm_store_v8hi"
-  [(set (match_operand:V8HI 0 "memory_operand" "=Z")
+  [(set (match_operand:V8HI 0 "indexed_or_indirect_operand" "=Z")
         (match_operand:V8HI 1 "vsx_register_operand" "+wa"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
@@ -601,7 +617,7 @@
    (set_attr "length" "12")])
 
 (define_split
-  [(set (match_operand:V8HI 0 "memory_operand" "")
+  [(set (match_operand:V8HI 0 "indexed_or_indirect_operand" "")
         (match_operand:V8HI 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && !reload_completed"
   [(set (match_dup 2)
@@ -626,7 +642,7 @@
 ;; The post-reload split requires that we re-permute the source
 ;; register in case it is still live.
 (define_split
-  [(set (match_operand:V8HI 0 "memory_operand" "")
+  [(set (match_operand:V8HI 0 "indexed_or_indirect_operand" "")
         (match_operand:V8HI 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && reload_completed"
   [(set (match_dup 1)
@@ -653,7 +669,7 @@
   "")
 
 (define_insn "*vsx_le_perm_store_v16qi"
-  [(set (match_operand:V16QI 0 "memory_operand" "=Z")
+  [(set (match_operand:V16QI 0 "indexed_or_indirect_operand" "=Z")
         (match_operand:V16QI 1 "vsx_register_operand" "+wa"))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR"
   "#"
@@ -661,7 +677,7 @@
    (set_attr "length" "12")])
 
 (define_split
-  [(set (match_operand:V16QI 0 "memory_operand" "")
+  [(set (match_operand:V16QI 0 "indexed_or_indirect_operand" "")
         (match_operand:V16QI 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && !reload_completed"
   [(set (match_dup 2)
@@ -694,7 +710,7 @@
 ;; The post-reload split requires that we re-permute the source
 ;; register in case it is still live.
 (define_split
-  [(set (match_operand:V16QI 0 "memory_operand" "")
+  [(set (match_operand:V16QI 0 "indexed_or_indirect_operand" "")
         (match_operand:V16QI 1 "vsx_register_operand" ""))]
   "!BYTES_BIG_ENDIAN && TARGET_VSX && !TARGET_P9_VECTOR && reload_completed"
   [(set (match_dup 1)
@@ -961,7 +977,7 @@
 (define_insn "*vsx_mov<mode>_64bit"
   [(set (match_operand:VSX_M 0 "nonimmediate_operand"
                "=ZwO,      <VSa>,     <VSa>,     r,         we,        ?wQ,
-                ?&r,       ??r,       ??Y,       ??r,       wo,        v,
+                ?&r,       ??r,       ??Y,       <??r>,     wo,        v,
                 ?<VSa>,    *r,        v,         ??r,       wZ,        v")
 
 	(match_operand:VSX_M 1 "input_operand" 
@@ -990,7 +1006,7 @@
 ;;              LVX (VMX)  STVX (VMX)
 (define_insn "*vsx_mov<mode>_32bit"
   [(set (match_operand:VSX_M 0 "nonimmediate_operand"
-               "=ZwO,      <VSa>,     <VSa>,     ??r,       ??Y,       ??r,
+               "=ZwO,      <VSa>,     <VSa>,     ??r,       ??Y,       <??r>,
                 wo,        v,         ?<VSa>,    *r,        v,         ??r,
                 wZ,        v")
 
@@ -3930,7 +3946,7 @@
 	  (match_operand:DI 2 "register_operand" "+r")]
 	 UNSPEC_STXVL))]
   "TARGET_P9_VECTOR && TARGET_64BIT"
-  "sldi %2,%2\;stxvl %x0,%1,%2"
+  "sldi %2,%2,56\;stxvl %x0,%1,%2"
   [(set_attr "length" "8")
    (set_attr "type" "vecstore")])
 
@@ -4084,7 +4100,48 @@
 
 ;; Vector insert/extract word at arbitrary byte values.  Note, the little
 ;; endian version needs to adjust the byte number, and the V4SI element in
-;; vinsert4b.
+;; insert4b.
+(define_insn "extract4b"
+  [(set (match_operand:V2DI 0 "vsx_register_operand")
+       (unspec:V2DI [(match_operand:V16QI 1 "vsx_register_operand" "wa")
+                     (match_operand:QI 2 "const_0_to_12_operand" "n")]
+                    UNSPEC_XXEXTRACTUW))]
+  "TARGET_P9_VECTOR"
+{
+  if (!VECTOR_ELT_ORDER_BIG)
+    operands[2] = GEN_INT (12 - INTVAL (operands[2]));
+
+  return "xxextractuw %x0,%x1,%2";
+})
+
+(define_expand "insert4b"
+  [(set (match_operand:V16QI 0 "vsx_register_operand")
+	(unspec:V16QI [(match_operand:V4SI 1 "vsx_register_operand")
+		       (match_operand:V16QI 2 "vsx_register_operand")
+		       (match_operand:QI 3 "const_0_to_12_operand")]
+		   UNSPEC_XXINSERTW))]
+  "TARGET_P9_VECTOR"
+{
+  if (!VECTOR_ELT_ORDER_BIG)
+    {
+      rtx op1 = operands[1];
+      rtx v4si_tmp = gen_reg_rtx (V4SImode);
+      emit_insn (gen_vsx_xxpermdi_v4si_be (v4si_tmp, op1, op1, const1_rtx));
+      operands[1] = v4si_tmp;
+      operands[3] = GEN_INT (12 - INTVAL (operands[3]));
+    }
+})
+
+(define_insn "*insert4b_internal"
+  [(set (match_operand:V16QI 0 "vsx_register_operand" "=wa")
+	(unspec:V16QI [(match_operand:V4SI 1 "vsx_register_operand" "wa")
+		       (match_operand:V16QI 2 "vsx_register_operand" "0")
+		       (match_operand:QI 3 "const_0_to_12_operand" "n")]
+		   UNSPEC_XXINSERTW))]
+  "TARGET_P9_VECTOR"
+  "xxinsertw %x0,%x1,%3"
+  [(set_attr "type" "vecperm")])
+
 (define_expand "vextract4b"
   [(set (match_operand:DI 0 "gpc_reg_operand")
 	(unspec:DI [(match_operand:V16QI 1 "vsx_register_operand")
@@ -4121,56 +4178,6 @@
     emit_insn (gen_vextuwrx (op0_si, op0_si, op1_v4si));
   DONE;
 }
-  [(set_attr "type" "vecperm")])
-
-(define_expand "vinsert4b"
-  [(set (match_operand:V16QI 0 "vsx_register_operand")
-	(unspec:V16QI [(match_operand:V4SI 1 "vsx_register_operand")
-		       (match_operand:V16QI 2 "vsx_register_operand")
-		       (match_operand:QI 3 "const_0_to_12_operand")]
-		   UNSPEC_XXINSERTW))]
-  "TARGET_P9_VECTOR"
-{
-  if (!VECTOR_ELT_ORDER_BIG)
-    {
-      rtx op1 = operands[1];
-      rtx v4si_tmp = gen_reg_rtx (V4SImode);
-      emit_insn (gen_vsx_xxpermdi_v4si_be (v4si_tmp, op1, op1, const1_rtx));
-      operands[1] = v4si_tmp;
-      operands[3] = GEN_INT (12 - INTVAL (operands[3]));
-    }
-})
-
-(define_insn "*vinsert4b_internal"
-  [(set (match_operand:V16QI 0 "vsx_register_operand" "=wa")
-	(unspec:V16QI [(match_operand:V4SI 1 "vsx_register_operand" "wa")
-		       (match_operand:V16QI 2 "vsx_register_operand" "0")
-		       (match_operand:QI 3 "const_0_to_12_operand" "n")]
-		   UNSPEC_XXINSERTW))]
-  "TARGET_P9_VECTOR"
-  "xxinsertw %x0,%x1,%3"
-  [(set_attr "type" "vecperm")])
-
-(define_expand "vinsert4b_di"
-  [(set (match_operand:V16QI 0 "vsx_register_operand")
-	(unspec:V16QI [(match_operand:DI 1 "vsx_register_operand")
-		       (match_operand:V16QI 2 "vsx_register_operand")
-		       (match_operand:QI 3 "const_0_to_12_operand")]
-		   UNSPEC_XXINSERTW))]
-  "TARGET_P9_VECTOR"
-{
-  if (!VECTOR_ELT_ORDER_BIG)
-    operands[3] = GEN_INT (12 - INTVAL (operands[3]));
-})
-
-(define_insn "*vinsert4b_di_internal"
-  [(set (match_operand:V16QI 0 "vsx_register_operand" "=wa")
-	(unspec:V16QI [(match_operand:DI 1 "vsx_register_operand" "wj")
-		       (match_operand:V16QI 2 "vsx_register_operand" "0")
-		       (match_operand:QI 3 "const_0_to_12_operand" "n")]
-		   UNSPEC_XXINSERTW))]
-  "TARGET_P9_VECTOR"
-  "xxinsertw %x0,%x1,%3"
   [(set_attr "type" "vecperm")])
 
 

@@ -257,7 +257,7 @@ Objective-C and Objective-C++ Dialects}.
 @xref{Warning Options,,Options to Request or Suppress Warnings}.
 @gccoptlist{-fsyntax-only  -fmax-errors=@var{n}  -Wpedantic @gol
 -pedantic-errors @gol
--w  -Wextra  -Wall  -Waddress  -Waggregate-return  @gol
+-w  -Wextra  -Wall  -Waddress  -Waggregate-return  -Waligned-new @gol
 -Walloc-zero  -Walloc-size-larger-than=@var{n}
 -Walloca  -Walloca-larger-than=@var{n} @gol
 -Wno-aggressive-loop-optimizations  -Warray-bounds  -Warray-bounds=@var{n} @gol
@@ -1025,7 +1025,7 @@ See RS/6000 and PowerPC Options.
 -mfloat-gprs=yes  -mfloat-gprs=no  -mfloat-gprs=single  -mfloat-gprs=double @gol
 -mprototype  -mno-prototype @gol
 -msim  -mmvme  -mads  -myellowknife  -memb  -msdata @gol
--msdata=@var{opt}  -mvxworks  -G @var{num} @gol
+-msdata=@var{opt}  -mreadonly-in-sdata  -mvxworks  -G @var{num} @gol
 -mrecip  -mrecip=@var{opt}  -mno-recip  -mrecip-precision @gol
 -mno-recip-precision @gol
 -mveclibabi=@var{type}  -mfriz  -mno-friz @gol
@@ -1211,7 +1211,7 @@ See RS/6000 and PowerPC Options.
 -mavx256-split-unaligned-load  -mavx256-split-unaligned-store @gol
 -malign-data=@var{type}  -mstack-protector-guard=@var{guard} @gol
 -mmitigate-rop  -mgeneral-regs-only @gol
--mindirect-branch=@var{choice} -mfunction-return==@var{choice} @gol
+-mindirect-branch=@var{choice} -mfunction-return=@var{choice} @gol
 -mindirect-branch-register}
 
 @emph{x86 Windows Options}
@@ -5171,6 +5171,9 @@ precision would exceed @code{SIZE_MAX / 2}.  The option argument @var{n}
 may end in one of the standard suffixes designating a multiple of bytes
 such as @code{kB} and @code{KiB} for kilobyte and kibibyte, respectively,
 @code{MB} and @code{MiB} for megabyte and mebibyte, and so on.
+@option{-Walloc-size-larger-than=}@var{PTRDIFF_MAX} is enabled by default.
+Warnings controlled by the option can be disabled by specifying @var{n}
+of @var{SIZE_MAX} or more.
 @xref{Function Attributes}.
 
 @item -Walloca
@@ -8132,7 +8135,7 @@ This flag is enabled by default at @option{-O2} and higher and depends on
 
 @item -fisolate-erroneous-paths-attribute
 @opindex fisolate-erroneous-paths-attribute
-Detect paths that trigger erroneous or undefined behavior due a null value
+Detect paths that trigger erroneous or undefined behavior due to a null value
 being used in a way forbidden by a @code{returns_nonnull} or @code{nonnull}
 attribute.  Isolate those paths from the main control flow and turn the
 statement with erroneous or undefined behavior into a trap.  This is not
@@ -8690,6 +8693,7 @@ Some assemblers only support this flag when @var{n} is a power of two;
 in that case, it is rounded up.
 
 If @var{n} is not specified or is zero, use a machine-dependent default.
+The maximum allowed @var{n} option value is 65536.
 
 Enabled at levels @option{-O2}, @option{-O3}.
 
@@ -8715,6 +8719,7 @@ are greater than this value, then their values are used instead.
 
 If @var{n} is not specified or is zero, use a machine-dependent default
 which is very likely to be @samp{1}, meaning no alignment.
+The maximum allowed @var{n} option value is 65536.
 
 Enabled at levels @option{-O2}, @option{-O3}.
 
@@ -8728,6 +8733,7 @@ operations.
 
 @option{-fno-align-loops} and @option{-falign-loops=1} are
 equivalent and mean that loops are not aligned.
+The maximum allowed @var{n} option value is 65536.
 
 If @var{n} is not specified or is zero, use a machine-dependent default.
 
@@ -8745,6 +8751,7 @@ need be executed.
 equivalent and mean that loops are not aligned.
 
 If @var{n} is not specified or is zero, use a machine-dependent default.
+The maximum allowed @var{n} option value is 65536.
 
 Enabled at levels @option{-O2}, @option{-O3}.
 
@@ -11684,9 +11691,9 @@ of these is when the application wishes to throw and catch exceptions
 across different shared libraries.  In that case, each of the libraries
 as well as the application itself should use the shared @file{libgcc}.
 
-Therefore, the G++ and driver automatically adds @option{-shared-libgcc}
- whenever you build a shared library or a main executable, because C++
- programs typically use exceptions, so this is the right thing to do.
+Therefore, the G++ driver automatically adds @option{-shared-libgcc}
+whenever you build a shared library or a main executable, because C++
+programs typically use exceptions, so this is the right thing to do.
 
 If, instead, you use the GCC driver to create shared libraries, you may
 find that they are not always linked with the shared @file{libgcc}.
@@ -11700,8 +11707,7 @@ propagate through such shared libraries, without incurring relocation
 costs at library load time.
 
 However, if a library or main executable is supposed to throw or catch
-exceptions, you must link it using the G++ driver, as appropriate
-for the languages used in the program, or using the option
+exceptions, you must link it using the G++ driver, or using the option
 @option{-shared-libgcc}, such that it is linked with the shared
 @file{libgcc}.
 
@@ -22070,6 +22076,13 @@ On embedded PowerPC systems, put all initialized global and static data
 in the @code{.data} section, and all uninitialized data in the
 @code{.bss} section.
 
+@item -mreadonly-in-sdata
+@itemx -mreadonly-in-sdata
+@opindex mreadonly-in-sdata
+@opindex mno-readonly-in-sdata
+Put read-only objects in the @code{.sdata} section as well.  This is the
+default.
+
 @item -mblock-move-inline-limit=@var{num}
 @opindex mblock-move-inline-limit
 Inline all block moves (such as calls to @code{memcpy} or structure
@@ -22689,8 +22702,8 @@ Generate code that runs on @var{cpu-type}, which is the name of a
 system representing a certain processor type.  Possible values for
 @var{cpu-type} are @samp{z900}/@samp{arch5}, @samp{z990}/@samp{arch6},
 @samp{z9-109}, @samp{z9-ec}/@samp{arch7}, @samp{z10}/@samp{arch8},
-@samp{z196}/@samp{arch9}, @samp{zEC12}, @samp{z13}/@samp{arch11}, and
-@samp{native}.
+@samp{z196}/@samp{arch9}, @samp{zEC12}, @samp{z13}/@samp{arch11},
+@samp{z14}/@samp{arch12}, and @samp{native}.
 
 The default is @option{-march=z900}.  @samp{g5}/@samp{arch3} and
 @samp{g6} are deprecated and will be removed with future releases.
@@ -25091,8 +25104,8 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 @itemx -mpclmul
 @opindex mpclmul
 @need 200
-@itemx -mclfushopt
-@opindex mclfushopt
+@itemx -mclflushopt
+@opindex mclflushopt
 @need 200
 @itemx -mfsgsbase
 @opindex mfsgsbase

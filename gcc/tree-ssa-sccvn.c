@@ -1245,7 +1245,9 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
 	  return true;
 	}
       if (!addr_base
-	  || TREE_CODE (addr_base) != MEM_REF)
+	  || TREE_CODE (addr_base) != MEM_REF
+	  || (TREE_CODE (TREE_OPERAND (addr_base, 0)) == SSA_NAME
+	      && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (TREE_OPERAND (addr_base, 0))))
 	return false;
 
       off += addr_offset;
@@ -1258,6 +1260,7 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
       ptr = gimple_assign_rhs1 (def_stmt);
       ptroff = gimple_assign_rhs2 (def_stmt);
       if (TREE_CODE (ptr) != SSA_NAME
+	  || SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ptr)
 	  || TREE_CODE (ptroff) != INTEGER_CST)
 	return false;
 
@@ -1933,6 +1936,7 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
       base2 = get_ref_base_and_extent (gimple_assign_lhs (def_stmt),
 				       &offset2, &size2, &maxsize2, &reverse);
       if (maxsize2 != -1
+	  && maxsize2 == size2
 	  && operand_equal_p (base, base2, 0)
 	  && offset2 <= offset
 	  && offset2 + size2 >= offset + maxsize)
@@ -1978,8 +1982,9 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 	  if (TREE_CODE (rhs) == SSA_NAME)
 	    rhs = SSA_VAL (rhs);
 	  len = native_encode_expr (gimple_assign_rhs1 (def_stmt),
-				    buffer, sizeof (buffer));
-	  if (len > 0)
+				    buffer, sizeof (buffer),
+				    (offset - offset2) / BITS_PER_UNIT);
+	  if (len > 0 && len * BITS_PER_UNIT >= ref->size)
 	    {
 	      tree type = vr->type;
 	      /* Make sure to interpret in a type that has a range
@@ -1988,10 +1993,7 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 		  && ref->size != TYPE_PRECISION (vr->type))
 		type = build_nonstandard_integer_type (ref->size,
 						       TYPE_UNSIGNED (type));
-	      tree val = native_interpret_expr (type,
-						buffer
-						+ ((offset - offset2)
-						   / BITS_PER_UNIT),
+	      tree val = native_interpret_expr (type, buffer,
 						ref->size / BITS_PER_UNIT);
 	      /* If we chop off bits because the types precision doesn't
 		 match the memory access size this is ok when optimizing

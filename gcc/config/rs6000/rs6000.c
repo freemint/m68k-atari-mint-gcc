@@ -1,5 +1,5 @@
 /* Subroutines used for code generation on IBM RS/6000.
-   Copyright (C) 1991-2017 Free Software Foundation, Inc.
+   Copyright (C) 1991-2018 Free Software Foundation, Inc.
    Contributed by Richard Kenner (kenner@vlsi1.ultra.nyu.edu)
 
    This file is part of GCC.
@@ -1372,6 +1372,7 @@ static rtx rs6000_debug_legitimize_reload_address (rtx, machine_mode, int,
 						   int, int, int *);
 static bool rs6000_mode_dependent_address (const_rtx);
 static bool rs6000_debug_mode_dependent_address (const_rtx);
+static bool rs6000_offsettable_memref_p (rtx, machine_mode, bool);
 static enum reg_class rs6000_secondary_reload_class (enum reg_class,
 						     machine_mode, rtx);
 static enum reg_class rs6000_debug_secondary_reload_class (enum reg_class,
@@ -3890,6 +3891,7 @@ rs6000_builtin_mask_calculate (void)
 	  | ((TARGET_P9_MISC)		    ? RS6000_BTM_P9_MISC   : 0)
 	  | ((TARGET_MODULO)		    ? RS6000_BTM_MODULO    : 0)
 	  | ((TARGET_64BIT)		    ? RS6000_BTM_64BIT     : 0)
+	  | ((TARGET_POWERPC64)		    ? RS6000_BTM_POWERPC64 : 0)
 	  | ((TARGET_CRYPTO)		    ? RS6000_BTM_CRYPTO	   : 0)
 	  | ((TARGET_HTM)		    ? RS6000_BTM_HTM	   : 0)
 	  | ((TARGET_DFP)		    ? RS6000_BTM_DFP	   : 0)
@@ -5562,6 +5564,11 @@ rs6000_option_override_internal (bool global_init_p)
      extra blr's required to preserve the link stack on some cpus (eg, 476).  */
   if (TARGET_LINK_STACK == -1)
     SET_TARGET_LINK_STACK (rs6000_cpu == PROCESSOR_PPC476 && flag_pic);
+
+  /* Deprecate use of -mno-speculate-indirect-jumps.  */
+  if (!rs6000_speculate_indirect_jumps)
+    warning (0, "%qs is deprecated and not recommended in any circumstances",
+	     "-mno-speculate-indirect-jumps");
 
   return ret;
 }
@@ -8558,6 +8565,17 @@ mem_operand_gpr (rtx op, machine_mode mode)
   int extra;
   rtx addr = XEXP (op, 0);
 
+  /* PR85755: Allow PRE_INC and PRE_DEC addresses.  */
+  if (TARGET_UPDATE
+      && (GET_CODE (addr) == PRE_INC || GET_CODE (addr) == PRE_DEC)
+      && mode_supports_pre_incdec_p (mode)
+      && legitimate_indirect_address_p (XEXP (addr, 0), false))
+    return true;
+
+  /* Don't allow non-offsettable addresses.  See PRs 83969 and 84279.  */
+  if (!rs6000_offsettable_memref_p (op, mode, false))
+    return false;
+
   op = address_offset (addr);
   if (op == NULL_RTX)
     return true;
@@ -8822,7 +8840,9 @@ toc_relative_expr_p (const_rtx op, bool strict)
     }
 
   return (GET_CODE (tocrel_base) == UNSPEC
-	  && XINT (tocrel_base, 1) == UNSPEC_TOCREL);
+	  && XINT (tocrel_base, 1) == UNSPEC_TOCREL
+	  && REG_P (XVECEXP (tocrel_base, 0, 1))
+	  && REGNO (XVECEXP (tocrel_base, 0, 1)) == TOC_REGISTER);
 }
 
 /* Return true if X is a constant pool address, and also for cmodel=medium
@@ -10328,7 +10348,7 @@ rs6000_find_base_term (rtx op)
    in 32-bit mode, that the recog predicate rejects.  */
 
 static bool
-rs6000_offsettable_memref_p (rtx op, machine_mode reg_mode)
+rs6000_offsettable_memref_p (rtx op, machine_mode reg_mode, bool strict)
 {
   bool worst_case;
 
@@ -10336,7 +10356,7 @@ rs6000_offsettable_memref_p (rtx op, machine_mode reg_mode)
     return false;
 
   /* First mimic offsettable_memref_p.  */
-  if (offsettable_address_p (true, GET_MODE (op), XEXP (op, 0)))
+  if (offsettable_address_p (strict, GET_MODE (op), XEXP (op, 0)))
     return true;
 
   /* offsettable_address_p invokes rs6000_mode_dependent_address, but
@@ -10350,7 +10370,7 @@ rs6000_offsettable_memref_p (rtx op, machine_mode reg_mode)
   worst_case = ((TARGET_POWERPC64 && GET_MODE_CLASS (reg_mode) == MODE_INT)
 		|| GET_MODE_SIZE (reg_mode) == 4);
   return rs6000_legitimate_offset_address_p (GET_MODE (op), XEXP (op, 0),
-					     true, worst_case);
+					     strict, worst_case);
 }
 
 /* Determine the reassociation width to be used in reassociate_bb.
@@ -11574,12 +11594,12 @@ rs6000_discover_homogeneous_aggregate (machine_mode mode, const_tree type,
 
       if (field_count > 0)
 	{
-	  int n_regs = (SCALAR_FLOAT_MODE_P (field_mode) ?
-			(GET_MODE_SIZE (field_mode) + 7) >> 3 : 1);
+	  int reg_size = ALTIVEC_OR_VSX_VECTOR_MODE (field_mode) ? 16 : 8;
+	  int field_size = ROUND_UP (GET_MODE_SIZE (field_mode), reg_size);
 
 	  /* The ELFv2 ABI allows homogeneous aggregates to occupy
 	     up to AGGR_ARG_NUM_REG registers.  */
-	  if (field_count * n_regs <= AGGR_ARG_NUM_REG)
+	  if (field_count * field_size <= AGGR_ARG_NUM_REG * reg_size)
 	    {
 	      if (elt_mode)
 		*elt_mode = field_mode;
@@ -14106,6 +14126,7 @@ rs6000_gimplify_va_arg (tree valist, tree type, gimple_seq *pre_p,
 
       tree copy = build_call_expr (builtin_decl_implicit (BUILT_IN_MEMCPY),
 				   3, dest_addr, addr, size_int (rsize * 4));
+      TREE_ADDRESSABLE (tmp) = 1;
 
       gimplify_and_add (copy, pre_p);
       addr = dest_addr;
@@ -15087,12 +15108,12 @@ altivec_expand_lv_builtin (enum insn_code icode, tree exp, rtx target, bool blk)
   /* For LVX, express the RTL accurately by ANDing the address with -16.
      LVXL and LVE*X expand to use UNSPECs to hide their special behavior,
      so the raw address is fine.  */
-  if (icode == CODE_FOR_altivec_lvx_v2df_2op
-      || icode == CODE_FOR_altivec_lvx_v2di_2op
-      || icode == CODE_FOR_altivec_lvx_v4sf_2op
-      || icode == CODE_FOR_altivec_lvx_v4si_2op
-      || icode == CODE_FOR_altivec_lvx_v8hi_2op
-      || icode == CODE_FOR_altivec_lvx_v16qi_2op)
+  if (icode == CODE_FOR_altivec_lvx_v2df
+      || icode == CODE_FOR_altivec_lvx_v2di
+      || icode == CODE_FOR_altivec_lvx_v4sf
+      || icode == CODE_FOR_altivec_lvx_v4si
+      || icode == CODE_FOR_altivec_lvx_v8hi
+      || icode == CODE_FOR_altivec_lvx_v16qi)
     {
       rtx rawaddr;
       if (op0 == const0_rtx)
@@ -15278,12 +15299,12 @@ altivec_expand_stv_builtin (enum insn_code icode, tree exp)
   /* For STVX, express the RTL accurately by ANDing the address with -16.
      STVXL and STVE*X expand to use UNSPECs to hide their special behavior,
      so the raw address is fine.  */
-  if (icode == CODE_FOR_altivec_stvx_v2df_2op
-      || icode == CODE_FOR_altivec_stvx_v2di_2op
-      || icode == CODE_FOR_altivec_stvx_v4sf_2op
-      || icode == CODE_FOR_altivec_stvx_v4si_2op
-      || icode == CODE_FOR_altivec_stvx_v8hi_2op
-      || icode == CODE_FOR_altivec_stvx_v16qi_2op)
+  if (icode == CODE_FOR_altivec_stvx_v2df
+      || icode == CODE_FOR_altivec_stvx_v2di
+      || icode == CODE_FOR_altivec_stvx_v4sf
+      || icode == CODE_FOR_altivec_stvx_v4si
+      || icode == CODE_FOR_altivec_stvx_v8hi
+      || icode == CODE_FOR_altivec_stvx_v16qi)
     {
       if (op1 == const0_rtx)
 	rawaddr = op2;
@@ -16184,18 +16205,18 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
   switch (fcode)
     {
     case ALTIVEC_BUILTIN_STVX_V2DF:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v2df_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v2df, exp);
     case ALTIVEC_BUILTIN_STVX_V2DI:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v2di_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v2di, exp);
     case ALTIVEC_BUILTIN_STVX_V4SF:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v4sf_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v4sf, exp);
     case ALTIVEC_BUILTIN_STVX:
     case ALTIVEC_BUILTIN_STVX_V4SI:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v4si_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v4si, exp);
     case ALTIVEC_BUILTIN_STVX_V8HI:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v8hi_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v8hi, exp);
     case ALTIVEC_BUILTIN_STVX_V16QI:
-      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v16qi_2op, exp);
+      return altivec_expand_stv_builtin (CODE_FOR_altivec_stvx_v16qi, exp);
     case ALTIVEC_BUILTIN_STVEBX:
       return altivec_expand_stv_builtin (CODE_FOR_altivec_stvebx, exp);
     case ALTIVEC_BUILTIN_STVEHX:
@@ -16374,6 +16395,7 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
 
     case P9V_BUILTIN_VEXTRACT4B:
     case P9V_BUILTIN_VEC_VEXTRACT4B:
+    case P9V_BUILTIN_VEC_EXTRACT4B:
       arg1 = CALL_EXPR_ARG (exp, 1);
       STRIP_NOPS (arg1);
 
@@ -16388,9 +16410,7 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
 	}
       break;
 
-    case P9V_BUILTIN_VINSERT4B:
-    case P9V_BUILTIN_VINSERT4B_DI:
-    case P9V_BUILTIN_VEC_VINSERT4B:
+    case P9V_BUILTIN_VEC_INSERT4B:
       arg2 = CALL_EXPR_ARG (exp, 2);
       STRIP_NOPS (arg2);
 
@@ -16400,7 +16420,7 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
 
       if (TREE_CODE (arg2) != INTEGER_CST || TREE_INT_CST_LOW (arg2) > 12)
 	{
-	  error ("third argument to vec_vinsert4b must be 0..12");
+	  error ("third argument to vec_insert4b must be 0..12");
 	  return expand_call (exp, target, false);
 	}
       break;
@@ -16460,23 +16480,23 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
       return altivec_expand_lv_builtin (CODE_FOR_altivec_lvxl_v16qi,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX_V2DF:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v2df_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v2df,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX_V2DI:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v2di_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v2di,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX_V4SF:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v4sf_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v4sf,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX:
     case ALTIVEC_BUILTIN_LVX_V4SI:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v4si_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v4si,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX_V8HI:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v8hi_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v8hi,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVX_V16QI:
-      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v16qi_2op,
+      return altivec_expand_lv_builtin (CODE_FOR_altivec_lvx_v16qi,
 					exp, target, false);
     case ALTIVEC_BUILTIN_LVLX:
       return altivec_expand_lv_builtin (CODE_FOR_altivec_lvlx,
@@ -17040,6 +17060,11 @@ rs6000_invalid_builtin (enum rs6000_builtins fncode)
     error ("Builtin function %s requires the -mhard-float option", name);
   else if ((fnmask & RS6000_BTM_FLOAT128) != 0)
     error ("Builtin function %s requires the -mfloat128 option", name);
+  else if ((fnmask & (RS6000_BTM_POPCNTD | RS6000_BTM_POWERPC64))
+	   == (RS6000_BTM_POPCNTD | RS6000_BTM_POWERPC64))
+    error ("builtin function %qs requires the %qs (or newer), and "
+	   "%qs or %qs options",
+	   name, "-mcpu=power7", "-m64", "-mpowerpc64");
   else
     error ("Builtin function %s is not supported with the current options",
 	   name);
@@ -18804,9 +18829,7 @@ builtin_function_type (machine_mode mode_ret, machine_mode mode_arg0,
     case CRYPTO_BUILTIN_VPMSUM:
     case MISC_BUILTIN_ADDG6S:
     case MISC_BUILTIN_DIVWEU:
-    case MISC_BUILTIN_DIVWEUO:
     case MISC_BUILTIN_DIVDEU:
-    case MISC_BUILTIN_DIVDEUO:
       h.uns_p[0] = 1;
       h.uns_p[1] = 1;
       h.uns_p[2] = 1;
@@ -23267,7 +23290,7 @@ rs6000_output_move_128bit (rtx operands[])
 	}
 
       else if (TARGET_ALTIVEC && src_vmx_p
-	       && altivec_indexed_or_indirect_operand (src, mode))
+	       && altivec_indexed_or_indirect_operand (dest, mode))
 	return "stvx %1,%y0";
 
       else if (TARGET_VSX && src_vsx_p)
@@ -23980,7 +24003,7 @@ print_operand (FILE *file, rtx x, int code)
 
 	    /* Fall through.  Must be [reg+reg].  */
 	  }
-	if (VECTOR_MEM_ALTIVEC_P (GET_MODE (x))
+	if (VECTOR_MEM_ALTIVEC_OR_VSX_P (GET_MODE (x))
 	    && GET_CODE (tmp) == AND
 	    && GET_CODE (XEXP (tmp, 1)) == CONST_INT
 	    && INTVAL (XEXP (tmp, 1)) == -16)
@@ -25907,49 +25930,6 @@ rs6000_emit_minmax (rtx dest, enum rtx_code code, rtx op0, rtx op1)
     emit_move_insn (dest, target);
 }
 
-/* Split a signbit operation on 64-bit machines with direct move.  Also allow
-   for the value to come from memory or if it is already loaded into a GPR.  */
-
-void
-rs6000_split_signbit (rtx dest, rtx src)
-{
-  machine_mode d_mode = GET_MODE (dest);
-  machine_mode s_mode = GET_MODE (src);
-  rtx dest_di = (d_mode == DImode) ? dest : gen_lowpart (DImode, dest);
-  rtx shift_reg = dest_di;
-
-  gcc_assert (FLOAT128_IEEE_P (s_mode) && TARGET_POWERPC64);
-
-  if (MEM_P (src))
-    {
-      rtx mem = (WORDS_BIG_ENDIAN
-		 ? adjust_address (src, DImode, 0)
-		 : adjust_address (src, DImode, 8));
-      emit_insn (gen_rtx_SET (dest_di, mem));
-    }
-
-  else
-    {
-      unsigned int r = reg_or_subregno (src);
-
-      if (INT_REGNO_P (r))
-	shift_reg = gen_rtx_REG (DImode, r + (BYTES_BIG_ENDIAN == 0));
-
-      else
-	{
-	  /* Generate the special mfvsrd instruction to get it in a GPR.  */
-	  gcc_assert (VSX_REGNO_P (r));
-	  if (s_mode == KFmode)
-	    emit_insn (gen_signbitkf2_dm2 (dest_di, src));
-	  else
-	    emit_insn (gen_signbittf2_dm2 (dest_di, src));
-	}
-    }
-
-  emit_insn (gen_lshrdi3 (dest_di, shift_reg, GEN_INT (63)));
-  return;
-}
-
 /* A subroutine of the atomic operation splitters.  Jump to LABEL if
    COND is true.  Mark the jump as unlikely to be taken.  */
 
@@ -26588,7 +26568,7 @@ rs6000_split_multireg_move (rtx dst, rtx src)
 	      emit_insn (gen_add3_insn (breg, breg, delta_rtx));
 	      src = replace_equiv_address (src, breg);
 	    }
-	  else if (! rs6000_offsettable_memref_p (src, reg_mode))
+	  else if (! rs6000_offsettable_memref_p (src, reg_mode, true))
 	    {
 	      if (GET_CODE (XEXP (src, 0)) == PRE_MODIFY)
 		{
@@ -26655,7 +26635,7 @@ rs6000_split_multireg_move (rtx dst, rtx src)
 		emit_insn (gen_add3_insn (breg, breg, delta_rtx));
 	      dst = replace_equiv_address (dst, breg);
 	    }
-	  else if (!rs6000_offsettable_memref_p (dst, reg_mode)
+	  else if (!rs6000_offsettable_memref_p (dst, reg_mode, true)
 		   && GET_CODE (XEXP (dst, 0)) != LO_SUM)
 	    {
 	      if (GET_CODE (XEXP (dst, 0)) == PRE_MODIFY)
@@ -26694,7 +26674,7 @@ rs6000_split_multireg_move (rtx dst, rtx src)
 		}
 	    }
 	  else if (GET_CODE (XEXP (dst, 0)) != LO_SUM)
-	    gcc_assert (rs6000_offsettable_memref_p (dst, reg_mode));
+	    gcc_assert (rs6000_offsettable_memref_p (dst, reg_mode, true));
 	}
 
       for (i = 0; i < nregs; i++)
@@ -27812,6 +27792,12 @@ static bool
 rs6000_function_ok_for_sibcall (tree decl, tree exp)
 {
   tree fntype;
+
+  /* The sibcall epilogue may clobber the static chain register.
+     ??? We could work harder and avoid that, but it's probably
+     not worth the hassle in practice.  */
+  if (CALL_EXPR_STATIC_CHAIN (exp))
+    return false;
 
   if (decl)
     fntype = TREE_TYPE (decl);
@@ -31988,8 +31974,9 @@ rs6000_internal_arg_pointer (void)
 	  emit_insn_after (pat, get_insns ());
 	  pop_topmost_sequence ();
 	}
-      return plus_constant (Pmode, cfun->machine->split_stack_arg_pointer,
-			    FIRST_PARM_OFFSET (current_function_decl));
+      rtx ret = plus_constant (Pmode, cfun->machine->split_stack_arg_pointer,
+			       FIRST_PARM_OFFSET (current_function_decl));
+      return copy_to_reg (ret);
     }
   return virtual_incoming_args_rtx;
 }
@@ -35647,6 +35634,11 @@ rs6000_elf_in_small_data_p (const_tree decl)
     }
   else
     {
+      /* If we are told not to put readonly data in sdata, then don't.  */
+      if (TREE_READONLY (decl) && rs6000_sdata != SDATA_EABI
+	  && !rs6000_readonly_in_sdata)
+	return false;
+
       HOST_WIDE_INT size = int_size_in_bytes (TREE_TYPE (decl));
 
       if (size > 0
@@ -39167,6 +39159,7 @@ static struct rs6000_opt_mask const rs6000_builtin_mask_names[] =
   { "hard-dfp",		 RS6000_BTM_DFP,	false, false },
   { "hard-float",	 RS6000_BTM_HARD_FLOAT,	false, false },
   { "long-double-128",	 RS6000_BTM_LDBL128,	false, false },
+  { "powerpc64",	 RS6000_BTM_POWERPC64,  false, false },
   { "float128",		 RS6000_BTM_FLOAT128,   false, false },
 };
 
@@ -41657,6 +41650,38 @@ insn_is_swap_p (rtx insn)
   return 1;
 }
 
+/* Return 1 iff UID, known to reference a swap, is both fed by a load
+   and a feeder of a store.  */
+static unsigned int
+swap_feeds_both_load_and_store (swap_web_entry *insn_entry)
+{
+  rtx insn = insn_entry->insn;
+  struct df_insn_info *insn_info = DF_INSN_INFO_GET (insn);
+  df_ref def, use;
+  struct df_link *link = 0;
+  rtx_insn *load = 0, *store = 0;
+  bool fed_by_load = 0;
+  bool feeds_store = 0;
+
+  FOR_EACH_INSN_INFO_USE (use, insn_info)
+    {
+      link = DF_REF_CHAIN (use);
+      load = DF_REF_INSN (link->ref);
+      if (insn_is_load_p (load) && insn_is_swap_p (load))
+	fed_by_load = 1;
+    }
+
+  FOR_EACH_INSN_INFO_DEF (def, insn_info)
+    {
+      link = DF_REF_CHAIN (def);
+      store = DF_REF_INSN (link->ref);
+      if (insn_is_store_p (store) && insn_is_swap_p (store))
+	feeds_store = 1;
+    }
+
+  return fed_by_load && feeds_store;
+}
+
 /* Return TRUE if insn is a swap fed by a load from the constant pool.  */
 static bool
 const_load_sequence_p (swap_web_entry *insn_entry, rtx insn)
@@ -41860,6 +41885,7 @@ rtx_is_swappable_p (rtx op, unsigned int *special)
 	  {
 	  default:
 	    break;
+	  case UNSPEC_VBPERMQ:
 	  case UNSPEC_VMRGH_DIRECT:
 	  case UNSPEC_VMRGL_DIRECT:
 	  case UNSPEC_VPACK_SIGN_SIGN_SAT:
@@ -41871,6 +41897,7 @@ rtx_is_swappable_p (rtx op, unsigned int *special)
 	  case UNSPEC_VPERM_UNS:
 	  case UNSPEC_VPERMHI:
 	  case UNSPEC_VPERMSI:
+	  case UNSPEC_VPERMXOR:
 	  case UNSPEC_VPKPX:
 	  case UNSPEC_VSLDOI:
 	  case UNSPEC_VSLO:
@@ -43127,6 +43154,14 @@ rs6000_analyze_swaps (function *fun)
 	 optimization isn't appropriate.  */
       else if ((insn_entry[i].is_load || insn_entry[i].is_store)
 	  && !insn_entry[i].is_swap && !insn_entry[i].is_swappable)
+	root->web_not_optimizable = 1;
+
+      /* If we have a swap that is both fed by a permuting load
+	 and a feeder of a permuting store, then the optimization
+	 isn't appropriate.  (Consider vec_xl followed by vec_xst_be.)  */
+      else if (insn_entry[i].is_swap && !insn_entry[i].is_load
+	       && !insn_entry[i].is_store
+	       && swap_feeds_both_load_and_store (&insn_entry[i]))
 	root->web_not_optimizable = 1;
 
       /* If we have permuting loads or stores that are not accompanied

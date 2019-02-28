@@ -17367,7 +17367,11 @@ arm_reorg (void)
 
   if (use_cmse)
     cmse_nonsecure_call_clear_caller_saved ();
-  if (TARGET_THUMB1)
+
+  /* We cannot run the Thumb passes for thunks because there is no CFG.  */
+  if (cfun->is_thunk)
+    ;
+  else if (TARGET_THUMB1)
     thumb1_reorg ();
   else if (TARGET_THUMB2)
     thumb2_reorg ();
@@ -18187,12 +18191,18 @@ output_move_double (rtx *operands, bool emit, int *count)
       gcc_assert ((REGNO (operands[1]) != IP_REGNUM)
                   || (TARGET_ARM && TARGET_LDRD));
 
+      /* For TARGET_ARM the first source register of an STRD
+	 must be even.  This is usually the case for double-word
+	 values but user assembly constraints can force an odd
+	 starting register.  */
+      bool allow_strd = TARGET_LDRD
+			 && !(TARGET_ARM && (REGNO (operands[1]) & 1) == 1);
       switch (GET_CODE (XEXP (operands[0], 0)))
         {
 	case REG:
 	  if (emit)
 	    {
-	      if (TARGET_LDRD)
+	      if (allow_strd)
 		output_asm_insn ("strd%?\t%1, [%m0]", operands);
 	      else
 		output_asm_insn ("stm%?\t%m0, %M1", operands);
@@ -18200,7 +18210,7 @@ output_move_double (rtx *operands, bool emit, int *count)
 	  break;
 
         case PRE_INC:
-	  gcc_assert (TARGET_LDRD);
+	  gcc_assert (allow_strd);
 	  if (emit)
 	    output_asm_insn ("strd%?\t%1, [%m0, #8]!", operands);
 	  break;
@@ -18208,7 +18218,7 @@ output_move_double (rtx *operands, bool emit, int *count)
         case PRE_DEC:
 	  if (emit)
 	    {
-	      if (TARGET_LDRD)
+	      if (allow_strd)
 		output_asm_insn ("strd%?\t%1, [%m0, #-8]!", operands);
 	      else
 		output_asm_insn ("stmdb%?\t%m0!, %M1", operands);
@@ -18218,7 +18228,7 @@ output_move_double (rtx *operands, bool emit, int *count)
         case POST_INC:
 	  if (emit)
 	    {
-	      if (TARGET_LDRD)
+	      if (allow_strd)
 		output_asm_insn ("strd%?\t%1, [%m0], #8", operands);
 	      else
 		output_asm_insn ("stm%?\t%m0!, %M1", operands);
@@ -18226,7 +18236,7 @@ output_move_double (rtx *operands, bool emit, int *count)
 	  break;
 
         case POST_DEC:
-	  gcc_assert (TARGET_LDRD);
+	  gcc_assert (allow_strd);
 	  if (emit)
 	    output_asm_insn ("strd%?\t%1, [%m0], #-8", operands);
 	  break;
@@ -18237,8 +18247,8 @@ output_move_double (rtx *operands, bool emit, int *count)
 	  otherops[1] = XEXP (XEXP (XEXP (operands[0], 0), 1), 0);
 	  otherops[2] = XEXP (XEXP (XEXP (operands[0], 0), 1), 1);
 
-	  /* IWMMXT allows offsets larger than ldrd can handle,
-	     fix these up with a pair of ldr.  */
+	  /* IWMMXT allows offsets larger than strd can handle,
+	     fix these up with a pair of str.  */
 	  if (!TARGET_THUMB2
 	      && CONST_INT_P (otherops[2])
 	      && (INTVAL(otherops[2]) <= -256
@@ -18303,7 +18313,7 @@ output_move_double (rtx *operands, bool emit, int *count)
 		  return "";
 		}
 	    }
-	  if (TARGET_LDRD
+	  if (allow_strd
 	      && (REG_P (otherops[2])
 		  || TARGET_THUMB2
 		  || (CONST_INT_P (otherops[2])
@@ -19097,6 +19107,11 @@ arm_r3_live_at_start_p (void)
 static int
 arm_compute_static_chain_stack_bytes (void)
 {
+  /* Once the value is updated from the init value of -1, do not
+     re-compute.  */
+  if (cfun->machine->static_chain_stack_bytes != -1)
+    return cfun->machine->static_chain_stack_bytes;
+
   /* See the defining assertion in arm_expand_prologue.  */
   if (IS_NESTED (arm_current_func_type ())
       && ((TARGET_APCS_FRAME && frame_pointer_needed && TARGET_ARM)
@@ -21394,6 +21409,11 @@ arm_expand_prologue (void)
 	 handling of SP as restoring from the CFA.  */
       emit_insn (gen_movsi (stack_pointer_rtx, r1));
     }
+
+  /* Let's compute the static_chain_stack_bytes required and store it.  Right
+     now the value must the -1 as stored by arm_init_machine_status ().  */
+  cfun->machine->static_chain_stack_bytes
+    = arm_compute_static_chain_stack_bytes ();
 
   /* The static chain register is the same as the IP register.  If it is
      clobbered when creating the frame, we need to save and restore it.  */
@@ -24542,6 +24562,7 @@ arm_init_machine_status (void)
 #if ARM_FT_UNKNOWN != 0
   machine->func_type = ARM_FT_UNKNOWN;
 #endif
+  machine->static_chain_stack_bytes = -1;
   return machine;
 }
 
@@ -26412,6 +26433,8 @@ static void
 arm32_output_mi_thunk (FILE *file, tree, HOST_WIDE_INT delta,
 		       HOST_WIDE_INT vcall_offset, tree function)
 {
+  const bool long_call_p = arm_is_long_call_p (function);
+
   /* On ARM, this_regno is R0 or R1 depending on
      whether the function returns an aggregate or not.
   */
@@ -26449,9 +26472,22 @@ arm32_output_mi_thunk (FILE *file, tree, HOST_WIDE_INT delta,
       TREE_USED (function) = 1;
     }
   rtx funexp = XEXP (DECL_RTL (function), 0);
+  if (long_call_p)
+    {
+      emit_move_insn (temp, funexp);
+      funexp = temp;
+    }
   funexp = gen_rtx_MEM (FUNCTION_MODE, funexp);
-  rtx_insn * insn = emit_call_insn (gen_sibcall (funexp, const0_rtx, NULL_RTX));
+  rtx_insn *insn = emit_call_insn (gen_sibcall (funexp, const0_rtx, NULL_RTX));
   SIBLING_CALL_P (insn) = 1;
+  emit_barrier ();
+
+  /* Indirect calls require a bit of fixup in PIC mode.  */
+  if (long_call_p)
+    {
+      split_all_insns_noflow ();
+      arm_reorg ();
+    }
 
   insn = get_insns ();
   shorten_branches (insn);
@@ -26853,7 +26889,10 @@ static bool
 arm_array_mode_supported_p (machine_mode mode,
 			    unsigned HOST_WIDE_INT nelems)
 {
-  if (TARGET_NEON
+  /* We don't want to enable interleaved loads and stores for BYTES_BIG_ENDIAN
+     for now, as the lane-swapping logic needs to be extended in the expanders.
+     See PR target/82518.  */
+  if (TARGET_NEON && !BYTES_BIG_ENDIAN
       && (VALID_NEON_DREG_MODE (mode) || VALID_NEON_QREG_MODE (mode))
       && (nelems >= 2 && nelems <= 4))
     return true;

@@ -1,3 +1,60 @@
+2018-12-06  Release Manager
+
+	* GCC 7.4.0 released.
+
+2018-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/86210
+	* c-common.c (check_nonnull_arg): Use fold_for_warn.  Adjust obsolete
+	comment.
+
+	2018-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/85696
+	* c-omp.c (c_omp_predetermined_sharing): Return
+	OMP_CLAUSE_DEFAULT_SHARED for artificial vars with integral type.
+
+	2018-05-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/85662
+	* c-common.h (fold_offsetof_1): Removed.
+	(fold_offsetof): Add TYPE argument defaulted to size_type_node and
+	CTX argument defaulted to ERROR_MARK.
+	* c-common.c (fold_offsetof_1): Renamed to ...
+	(fold_offsetof): ... this.  Remove wrapper function.  Add TYPE
+	argument, convert the pointer constant to TYPE and use size_binop
+	with PLUS_EXPR instead of fold_build_pointer_plus if type is not
+	a pointer type.  Adjust recursive calls.
+
+2018-04-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2018-03-16  Richard Biener  <rguenther@suse.de>
+
+	PR c/84873
+	* c-gimplify.c (c_gimplify_expr): Revert previous change.  Instead
+	unshare the possibly folded expression.
+
+	2018-03-15  Richard Biener  <rguenther@suse.de>
+
+	PR c/84873
+	* c-gimplify.c (c_gimplify_expr): Do not fold expressions.
+
+2018-03-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-cppbuiltin.c (c_cpp_builtins): Use ggc_strdup for the fp_suffix
+	argument.
+	(LAZY_HEX_FP_VALUES_CNT): Define.
+	(lazy_hex_fp_values): Allow up to LAZY_HEX_FP_VALUES_CNT lazy hex fp
+	values rather than just 12.
+	(builtin_define_with_hex_fp_value): Likewise.
+
 2018-01-25  Release Manager
 
 	* GCC 7.3.0 released.

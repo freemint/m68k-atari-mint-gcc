@@ -906,7 +906,7 @@ shorten_branches (rtx_insn *first)
   char *varying_length;
   rtx body;
   int uid;
-  rtx align_tab[MAX_CODE_ALIGN];
+  rtx align_tab[MAX_CODE_ALIGN + 1];
 
   /* Compute maximum UID and allocate label_align / uid_shuid.  */
   max_uid = get_max_uid ();
@@ -1015,7 +1015,7 @@ shorten_branches (rtx_insn *first)
      alignment of n.  */
   uid_align = XCNEWVEC (rtx, max_uid);
 
-  for (i = MAX_CODE_ALIGN; --i >= 0;)
+  for (i = MAX_CODE_ALIGN + 1; --i >= 0;)
     align_tab[i] = NULL_RTX;
   seq = get_last_insn ();
   for (; seq; seq = PREV_INSN (seq))
@@ -2232,6 +2232,9 @@ final_scan_insn (rtx_insn *insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 	      ASM_OUTPUT_LABEL (asm_out_file,
 				IDENTIFIER_POINTER (cold_function_name));
 #endif
+	      if (dwarf2out_do_frame ()
+	          && cfun->fde->dw_fde_second_begin != NULL)
+		ASM_OUTPUT_LABEL (asm_out_file, cfun->fde->dw_fde_second_begin);
 	    }
 	  break;
 

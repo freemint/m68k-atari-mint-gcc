@@ -863,7 +863,7 @@ typedef struct
   unsigned alloc_comp:1, pointer_comp:1, proc_pointer_comp:1,
 	   private_comp:1, zero_comp:1, coarray_comp:1, lock_comp:1,
 	   event_comp:1, defined_assign_comp:1, unlimited_polymorphic:1,
-	   has_dtio_procs:1;
+	   has_dtio_procs:1, caf_token:1;
 
   /* This is a temporary selector for SELECT TYPE or an associate
      variable for SELECT_TYPE or ASSOCIATE.  */
@@ -2856,6 +2856,8 @@ extern int gfc_charlen_int_kind;
 extern int gfc_numeric_storage_size;
 extern int gfc_character_storage_size;
 
+#define gfc_integer_4_kind 4
+
 /* symbol.c */
 void gfc_clear_new_implicit (void);
 bool gfc_add_new_implicit_range (int, int);
@@ -3145,7 +3147,7 @@ bool gfc_expr_check_typed (gfc_expr*, gfc_namespace*, bool);
 gfc_component * gfc_get_proc_ptr_comp (gfc_expr *);
 bool gfc_is_proc_ptr_comp (gfc_expr *);
 bool gfc_is_alloc_class_scalar_function (gfc_expr *);
-bool gfc_is_alloc_class_array_function (gfc_expr *);
+bool gfc_is_class_array_function (gfc_expr *);
 
 bool gfc_ref_this_image (gfc_ref *ref);
 bool gfc_is_coindexed (gfc_expr *);

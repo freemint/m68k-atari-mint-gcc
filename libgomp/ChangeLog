@@ -1,3 +1,69 @@
+2018-12-06  Release Manager
+
+	* GCC 7.4.0 released.
+
+2018-10-12  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-07-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/86542
+	* testsuite/libgomp.c++/pr86542.C: New test.
+
+	PR middle-end/86539
+	* testsuite/libgomp.c++/pr86539.C: New test.
+
+	2018-07-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/86660
+	* testsuite/libgomp.c/pr86660.c: New test.
+
+2018-06-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/86291
+	* testsuite/libgomp.c++/pr86291.C: New test.
+
+2018-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-05-01  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2018-04-16  Cesar Philippidis  <cesar@codesourcery.com>
+		    Tom de Vries  <tom@codesourcery.com>
+
+	PR middle-end/84955
+	* testsuite/libgomp.oacc-c-c++-common/pr84955.c: New test.
+	* testsuite/libgomp.oacc-fortran/pr84955.f90: New test.
+
+2018-03-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/84418
+	* libgomp.fortran/pr84418-1.f90: New test.
+	* libgomp.fortran/pr84418-2.f90: New test.
+
+	2018-01-29  Christoph Spiel  <cspiel@freenet.de>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR libgomp/84096
+	* omp.h.in (omp_init_nest_lock_with_hint): Use omp_nest_lock_t
+	instead of omp_lock_t.
+
+2018-02-09  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2018-02-08  Martin Jambor  <mjambor@suse.cz>
+
+	* testsuite/libgomp.hsa.c/staticvar.c: New test.
+
 2018-01-25  Release Manager
 
 	* GCC 7.3.0 released.

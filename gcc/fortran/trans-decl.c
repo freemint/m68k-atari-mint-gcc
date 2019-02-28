@@ -603,10 +603,12 @@ gfc_finish_var_decl (tree decl, gfc_symbol * sym)
      function scope.  */
   if (current_function_decl != NULL_TREE)
     {
-      if (sym->ns->proc_name->backend_decl == current_function_decl
-	  || sym->result == sym)
+      if (sym->ns->proc_name
+	  && (sym->ns->proc_name->backend_decl == current_function_decl
+	      || sym->result == sym))
 	gfc_add_decl_to_function (decl);
-      else if (sym->ns->proc_name->attr.flavor == FL_LABEL)
+      else if (sym->ns->proc_name
+	       && sym->ns->proc_name->attr.flavor == FL_LABEL)
 	/* This is a BLOCK construct.  */
 	add_decl_as_local (decl);
       else
@@ -698,7 +700,8 @@ gfc_finish_var_decl (tree decl, gfc_symbol * sym)
     }
 
   /* Keep variables larger than max-stack-var-size off stack.  */
-  if (!sym->ns->proc_name->attr.recursive && !sym->attr.automatic
+  if (!(sym->ns->proc_name && sym->ns->proc_name->attr.recursive)
+      && !sym->attr.automatic
       && INTEGER_CST_P (DECL_SIZE_UNIT (decl))
       && !gfc_can_put_var_on_stack (DECL_SIZE_UNIT (decl))
 	 /* Put variable length auto array pointers always into stack.  */
@@ -4142,6 +4145,24 @@ gfc_null_and_pass_deferred_len (gfc_symbol *sym, stmtblock_t *init,
   return tmp;
 }
 
+
+/* Get the result expression for a procedure.  */
+
+static tree
+get_proc_result (gfc_symbol* sym)
+{
+  if (sym->attr.subroutine || sym == sym->result)
+    {
+      if (current_fake_result_decl != NULL)
+	return TREE_VALUE (current_fake_result_decl);
+
+      return NULL_TREE;
+    }
+
+  return sym->result->backend_decl;
+}
+
+
 /* Generate function entry and exit code, and add it to the function body.
    This includes:
     Allocation and initialization of array variables.
@@ -4251,6 +4272,21 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
       else
 	gcc_assert (flag_f2c && proc_sym->ts.type == BT_COMPLEX);
     }
+  else if (proc_sym == proc_sym->result && IS_CLASS_ARRAY (proc_sym))
+    {
+      /* Nullify explicit return class arrays on entry.  */
+      tree type;
+      tmp = get_proc_result (proc_sym);
+	if (tmp && GFC_CLASS_TYPE_P (TREE_TYPE (tmp)))
+	  {
+	    gfc_start_block (&init);
+	    tmp = gfc_class_data_get (tmp);
+	    type = TREE_TYPE (gfc_conv_descriptor_data_get (tmp));
+	    gfc_conv_descriptor_data_set (&init, tmp, build_int_cst (type, 0));
+	    gfc_add_init_cleanup (block, gfc_finish_block (&init), NULL_TREE);
+	  }
+    }
+
 
   /* Initialize the INTENT(OUT) derived type dummy arguments.  This
      should be done here so that the offsets and lbounds of arrays
@@ -5978,23 +6014,6 @@ create_main_function (tree fndecl)
       saved_function_decls = saved_parent_function_decls;
     }
   current_function_decl = old_context;
-}
-
-
-/* Get the result expression for a procedure.  */
-
-static tree
-get_proc_result (gfc_symbol* sym)
-{
-  if (sym->attr.subroutine || sym == sym->result)
-    {
-      if (current_fake_result_decl != NULL)
-	return TREE_VALUE (current_fake_result_decl);
-
-      return NULL_TREE;
-    }
-
-  return sym->result->backend_decl;
 }
 
 

@@ -21,6 +21,9 @@
   ;; SSE
   UNSPEC_MOVNT
 
+  ;; SSE2
+  UNSPEC_MOVDI_TO_SSE
+
   ;; SSE3
   UNSPEC_LDDQU
 
@@ -1113,10 +1116,10 @@
 ;; from there.
 
 (define_insn_and_split "movdi_to_sse"
-  [(parallel
-    [(set (match_operand:V4SI 0 "register_operand" "=?x,x")
-	  (subreg:V4SI (match_operand:DI 1 "nonimmediate_operand" "r,m") 0))
-     (clobber (match_scratch:V4SI 2 "=&x,X"))])]
+  [(set (match_operand:V4SI 0 "register_operand" "=?x,x")
+	(unspec:V4SI [(match_operand:DI 1 "nonimmediate_operand" "r,m")]
+		     UNSPEC_MOVDI_TO_SSE))
+     (clobber (match_scratch:V4SI 2 "=&x,X"))]
   "!TARGET_64BIT && TARGET_SSE2 && TARGET_INTER_UNIT_MOVES_TO_VEC"
   "#"
   "&& reload_completed"
@@ -1134,11 +1137,8 @@
 					     operands[2]));
    }
  else if (memory_operand (operands[1], DImode))
-   {
-     rtx tmp = gen_reg_rtx (V2DImode);
-     emit_insn (gen_vec_concatv2di (tmp, operands[1], const0_rtx));
-     emit_move_insn (operands[0], gen_lowpart (V4SImode, tmp));
-   }
+   emit_insn (gen_vec_concatv2di (gen_lowpart (V2DImode, operands[0]),
+				  operands[1], const0_rtx));
  else
    gcc_unreachable ();
  DONE;
@@ -4398,7 +4398,7 @@
 	  (match_operand:VF_128 1 "register_operand" "v")
 	  (const_int 1)))]
   "TARGET_AVX512F && TARGET_64BIT"
-  "vcvtusi2<ssescalarmodesuffix>\t{%2, <round_op3>%1, %0|%0, %1<round_op3>, %2}"
+  "vcvtusi2<ssescalarmodesuffix>{q}\t{%2, <round_op3>%1, %0|%0, %1<round_op3>, %2}"
   [(set_attr "type" "sseicvt")
    (set_attr "prefix" "evex")
    (set_attr "mode" "<ssescalarmode>")])
@@ -8883,14 +8883,14 @@
 ;; see comment above inline_secondary_memory_needed function in i386.c
 (define_insn "sse2_loadhpd"
   [(set (match_operand:V2DF 0 "nonimmediate_operand"
-	  "=x,v,x,v,o,o ,o")
+	  "=x,v,x,v ,o,o ,o")
 	(vec_concat:V2DF
 	  (vec_select:DF
 	    (match_operand:V2DF 1 "nonimmediate_operand"
-	  " 0,v,0,v,0,0 ,0")
+	  " 0,v,0,v ,0,0 ,0")
 	    (parallel [(const_int 0)]))
 	  (match_operand:DF 2 "nonimmediate_operand"
-	  " m,m,x,v,x,*f,r")))]
+	  " m,m,x,Yv,x,*f,r")))]
   "TARGET_SSE2 && !(MEM_P (operands[1]) && MEM_P (operands[2]))"
   "@
    movhpd\t{%2, %0|%0, %2}
@@ -9938,11 +9938,11 @@
    && ix86_binary_operator_ok (<CODE>, <MODE>mode, operands)"
   "@
    p<plusminus_mnemonic><ssemodesuffix>\t{%2, %0|%0, %2}
-   vp<plusminus_mnemonic><ssemodesuffix>\t{%2, %1, %0<mask_operand3>|%0<mask_operand3>, %1, %2}"
+   vp<plusminus_mnemonic><ssemodesuffix>\t{%2, %1, %0|%0, %1, %2}"
   [(set_attr "isa" "noavx,avx")
    (set_attr "type" "sseiadd")
    (set_attr "prefix_data16" "1,*")
-   (set_attr "prefix" "<mask_prefix3>")
+   (set_attr "prefix" "orig,vex")
    (set_attr "mode" "<sseinsnmode>")])
 
 (define_insn "*<plusminus_insn><mode>3_mask"
@@ -10683,11 +10683,14 @@
        (const_string "0")))
    (set_attr "mode" "<sseinsnmode>")])
 
+(define_mode_attr vshift_count
+  [(V32HI "v") (V16HI "Yv") (V8HI "Yv")])
+
 (define_insn "<shift_insn><mode>3<mask_name>"
   [(set (match_operand:VI2_AVX2_AVX512BW 0 "register_operand" "=x,v")
 	(any_lshift:VI2_AVX2_AVX512BW
 	  (match_operand:VI2_AVX2_AVX512BW 1 "register_operand" "0,v")
-	  (match_operand:DI 2 "nonmemory_operand" "xN,vN")))]
+	  (match_operand:DI 2 "nonmemory_operand" "xN,<vshift_count>N")))]
   "TARGET_SSE2 && <mask_mode512bit_condition> && <mask_avx512bw_condition>"
   "@
    p<vshift><ssemodesuffix>\t{%2, %0|%0, %2}
@@ -10706,7 +10709,7 @@
   [(set (match_operand:VI48_AVX2 0 "register_operand" "=x,x,v")
 	(any_lshift:VI48_AVX2
 	  (match_operand:VI48_AVX2 1 "register_operand" "0,x,v")
-	  (match_operand:DI 2 "nonmemory_operand" "xN,xN,vN")))]
+	  (match_operand:DI 2 "nonmemory_operand" "xN,xN,YvN")))]
   "TARGET_SSE2 && <mask_mode512bit_condition>"
   "@
    p<vshift><ssemodesuffix>\t{%2, %0|%0, %2}
@@ -11822,7 +11825,7 @@
 	    (eq_attr "mode" "TI"))
        (const_string "1")
        (const_string "*")))
-   (set_attr "prefix" "<mask_prefix3>")
+   (set_attr "prefix" "orig,vex")
    (set (attr "mode")
 	(cond [(and (match_test "<MODE_SIZE> == 16")
 		    (match_test "TARGET_SSE_PACKED_SINGLE_INSN_OPTIMAL"))
@@ -17245,7 +17248,7 @@
 
   for (regno = 0; regno < nregs; regno++)
     XVECEXP (operands[0], 0, regno + 1)
-      = gen_rtx_SET (gen_rtx_REG (V8SImode, SSE_REGNO (regno)),
+      = gen_rtx_SET (gen_rtx_REG (V8SImode, GET_SSE_REGNO (regno)),
 		     CONST0_RTX (V8SImode));
 })
 

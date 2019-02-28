@@ -25,6 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gfortran.h"
 #include "arith.h"
 #include "intrinsic.h"
+#include "match.h"
 #include "target-memory.h"
 #include "constructor.h"
 #include "version.h"	/* For version_string.  */
@@ -4641,41 +4642,46 @@ gfc_simplify_mod (gfc_expr *a, gfc_expr *p)
   gfc_expr *result;
   int kind;
 
-  if (a->expr_type != EXPR_CONSTANT || p->expr_type != EXPR_CONSTANT)
+  /* First check p.  */
+  if (p->expr_type != EXPR_CONSTANT)
+    return NULL;
+
+  /* p shall not be 0.  */
+  switch (p->ts.type)
+    {
+      case BT_INTEGER:
+	if (mpz_cmp_ui (p->value.integer, 0) == 0)
+	  {
+	    gfc_error ("Argument %qs of MOD at %L shall not be zero",
+			"P", &p->where);
+	    return &gfc_bad_expr;
+	  }
+	break;
+      case BT_REAL:
+	if (mpfr_cmp_ui (p->value.real, 0) == 0)
+	  {
+	    gfc_error ("Argument %qs of MOD at %L shall not be zero",
+			"P", &p->where);
+	    return &gfc_bad_expr;
+	  }
+	break;
+      default:
+	gfc_internal_error ("gfc_simplify_mod(): Bad arguments");
+    }
+
+  if (a->expr_type != EXPR_CONSTANT)
     return NULL;
 
   kind = a->ts.kind > p->ts.kind ? a->ts.kind : p->ts.kind;
   result = gfc_get_constant_expr (a->ts.type, kind, &a->where);
 
-  switch (a->ts.type)
+  if (a->ts.type == BT_INTEGER)
+    mpz_tdiv_r (result->value.integer, a->value.integer, p->value.integer);
+  else
     {
-      case BT_INTEGER:
-	if (mpz_cmp_ui (p->value.integer, 0) == 0)
-	  {
-	    /* Result is processor-dependent.  */
-	    gfc_error ("Second argument MOD at %L is zero", &a->where);
-	    gfc_free_expr (result);
-	    return &gfc_bad_expr;
-	  }
-	mpz_tdiv_r (result->value.integer, a->value.integer, p->value.integer);
-	break;
-
-      case BT_REAL:
-	if (mpfr_cmp_ui (p->value.real, 0) == 0)
-	  {
-	    /* Result is processor-dependent.  */
-	    gfc_error ("Second argument of MOD at %L is zero", &p->where);
-	    gfc_free_expr (result);
-	    return &gfc_bad_expr;
-	  }
-
-	gfc_set_model_kind (kind);
-	mpfr_fmod (result->value.real, a->value.real, p->value.real,
-		   GFC_RND_MODE);
-	break;
-
-      default:
-	gfc_internal_error ("gfc_simplify_mod(): Bad arguments");
+      gfc_set_model_kind (kind);
+      mpfr_fmod (result->value.real, a->value.real, p->value.real,
+		 GFC_RND_MODE);
     }
 
   return range_check (result, "MOD");
@@ -6579,10 +6585,12 @@ gfc_simplify_transfer (gfc_expr *source, gfc_expr *mold, gfc_expr *size)
   unsigned char *buffer;
   size_t result_length;
 
+  if (!gfc_is_constant_expr (source) || !gfc_is_constant_expr (size))
+    return NULL;
 
-  if (!gfc_is_constant_expr (source)
-	|| (gfc_init_expr_flag && !gfc_is_constant_expr (mold))
-	|| !gfc_is_constant_expr (size))
+  if (!gfc_resolve_expr (mold))
+    return NULL;
+  if (gfc_init_expr_flag && !gfc_is_constant_expr (mold))
     return NULL;
 
   if (!gfc_calculate_transfer_sizes (source, mold, size, &source_size, 
@@ -7172,26 +7180,32 @@ gfc_convert_constant (gfc_expr *e, bt type, int kind)
 	{
 	  gfc_expr *tmp;
 	  if (c->iterator == NULL)
-	    tmp = f (c->expr, kind);
+	    {
+	      tmp = f (c->expr, kind);
+	      if (tmp == NULL)
+		{
+		  gfc_free_expr (result);
+		  return NULL;
+		}
+
+	      gfc_constructor_append_expr (&result->value.constructor,
+					   tmp, &c->where);
+	    }
 	  else
 	    {
+	      gfc_constructor *n;
 	      g = gfc_convert_constant (c->expr, type, kind);
-	      if (g == &gfc_bad_expr)
+	      if (g == NULL || g == &gfc_bad_expr)
 	        {
 		  gfc_free_expr (result);
 		  return g;
 		}
-	      tmp = g;
+	      n = gfc_constructor_get ();
+	      n->expr = g;
+	      n->iterator = gfc_copy_iterator (c->iterator);
+	      n->where = c->where;
+	      gfc_constructor_append (&result->value.constructor, n);
 	    }
-
-	  if (tmp == NULL)
-	    {
-	      gfc_free_expr (result);
-	      return NULL;
-	    }
-
-	  gfc_constructor_append_expr (&result->value.constructor,
-				       tmp, &c->where);
 	}
 
       break;

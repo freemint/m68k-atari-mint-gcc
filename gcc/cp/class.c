@@ -2732,19 +2732,20 @@ update_vtable_entry_for_fn (tree t, tree binfo, tree fn, tree* virtuals,
 	     order.  Of course it is lame that we have to repeat the
 	     search here anyway -- we should really be caching pieces
 	     of the vtable and avoiding this repeated work.  */
-	  tree thunk_binfo, base_binfo;
+	  tree thunk_binfo = NULL_TREE;
+	  tree base_binfo = TYPE_BINFO (base_return);
 
 	  /* Find the base binfo within the overriding function's
 	     return type.  We will always find a thunk_binfo, except
 	     when the covariancy is invalid (which we will have
 	     already diagnosed).  */
-	  for (base_binfo = TYPE_BINFO (base_return),
-	       thunk_binfo = TYPE_BINFO (over_return);
-	       thunk_binfo;
-	       thunk_binfo = TREE_CHAIN (thunk_binfo))
-	    if (SAME_BINFO_TYPE_P (BINFO_TYPE (thunk_binfo),
-				   BINFO_TYPE (base_binfo)))
-	      break;
+	  if (base_binfo)
+	    for (thunk_binfo = TYPE_BINFO (over_return); thunk_binfo;
+		 thunk_binfo = TREE_CHAIN (thunk_binfo))
+	      if (SAME_BINFO_TYPE_P (BINFO_TYPE (thunk_binfo),
+				     BINFO_TYPE (base_binfo)))
+		break;
+	  gcc_assert (thunk_binfo || errorcount);
 
 	  /* See if virtual inheritance is involved.  */
 	  for (virtual_offset = thunk_binfo;
@@ -4532,8 +4533,14 @@ build_base_field_1 (tree t, tree basetype, tree *&next_field)
   DECL_ARTIFICIAL (decl) = 1;
   DECL_IGNORED_P (decl) = 1;
   DECL_FIELD_CONTEXT (decl) = t;
-  DECL_SIZE (decl) = CLASSTYPE_SIZE (basetype);
-  DECL_SIZE_UNIT (decl) = CLASSTYPE_SIZE_UNIT (basetype);
+  if (is_empty_class (basetype))
+    /* CLASSTYPE_SIZE is one byte, but the field needs to have size zero.  */
+    DECL_SIZE (decl) = DECL_SIZE_UNIT (decl) = size_zero_node;
+  else
+    {
+      DECL_SIZE (decl) = CLASSTYPE_SIZE (basetype);
+      DECL_SIZE_UNIT (decl) = CLASSTYPE_SIZE_UNIT (basetype);
+    }
   SET_DECL_ALIGN (decl, CLASSTYPE_ALIGN (basetype));
   DECL_USER_ALIGN (decl) = CLASSTYPE_USER_ALIGN (basetype);
   SET_DECL_MODE (decl, TYPE_MODE (basetype));
@@ -6655,6 +6662,7 @@ layout_class_type (tree t, tree *virtuals_p)
 				  bitsize_int (BITS_PER_UNIT)));
       SET_TYPE_ALIGN (base_t, rli->record_align);
       TYPE_USER_ALIGN (base_t) = TYPE_USER_ALIGN (t);
+      TYPE_TYPELESS_STORAGE (base_t) = TYPE_TYPELESS_STORAGE (t);
 
       /* Copy the fields from T.  */
       next_field = &TYPE_FIELDS (base_t);
@@ -7592,7 +7600,8 @@ fixed_type_or_null (tree instance, int *nonnull, int *cdtorp)
 
     case CALL_EXPR:
       /* This is a call to a constructor, hence it's never zero.  */
-      if (TREE_HAS_CONSTRUCTOR (instance))
+      if (CALL_EXPR_FN (instance)
+	  && TREE_HAS_CONSTRUCTOR (instance))
 	{
 	  if (nonnull)
 	    *nonnull = 1;

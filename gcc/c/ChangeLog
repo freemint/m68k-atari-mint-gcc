@@ -1,3 +1,39 @@
+2018-12-06  Release Manager
+
+	* GCC 7.4.0 released.
+
+2018-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/85696
+	* c-typeck.c (c_finish_omp_clauses): Don't use
+	c_omp_predetermined_sharing, instead just check TREE_READONLY.
+
+	2018-05-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/85662
+	* c-fold.c (c_fully_fold_internal): Use fold_offsetof rather than
+	fold_offsetof_1, pass TREE_TYPE (expr) as TYPE to it and drop the
+	fold_convert_loc.
+	* c-typeck.c (build_unary_op): Use fold_offsetof rather than
+	fold_offsetof_1, pass argtype as TYPE to it and drop the
+	fold_convert_loc.
+
+	2018-03-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/84999
+	* c-typeck.c (build_binary_op): If c_common_type_for_size fails when
+	building vector comparison, diagnose it and return error_mark_node.
+
+	2018-03-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/84853
+	* c-typeck.c (build_binary_op) <case RSHIFT_EXPR, case LSHIFT_EXPR>:
+	If code1 is INTEGER_TYPE, only allow code0 VECTOR_TYPE if it has
+	INTEGER_TYPE element type.
+
 2018-01-25  Release Manager
 
 	* GCC 7.3.0 released.

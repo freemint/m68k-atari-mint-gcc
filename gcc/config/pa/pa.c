@@ -1725,9 +1725,7 @@ pa_emit_move_sequence (rtx *operands, machine_mode mode, rtx scratch_reg)
 		}
 	      else
 		emit_move_insn (scratch_reg, XEXP (op1, 0));
-	      emit_insn (gen_rtx_SET (operand0,
-				  replace_equiv_address (op1, scratch_reg)));
-	      return 1;
+	      op1 = replace_equiv_address (op1, scratch_reg);
 	    }
 	}
       else if ((!INT14_OK_STRICT && symbolic_memory_operand (op1, VOIDmode))
@@ -1737,10 +1735,10 @@ pa_emit_move_sequence (rtx *operands, machine_mode mode, rtx scratch_reg)
 	  /* Load memory address into SCRATCH_REG.  */
 	  scratch_reg = force_mode (word_mode, scratch_reg);
 	  emit_move_insn (scratch_reg, XEXP (op1, 0));
-	  emit_insn (gen_rtx_SET (operand0,
-				  replace_equiv_address (op1, scratch_reg)));
-	  return 1;
+	  op1 = replace_equiv_address (op1, scratch_reg);
 	}
+      emit_insn (gen_rtx_SET (operand0, op1));
+      return 1;
     }
   else if (scratch_reg
 	   && FP_REG_P (operand1)
@@ -1778,9 +1776,7 @@ pa_emit_move_sequence (rtx *operands, machine_mode mode, rtx scratch_reg)
 		}
 	      else
 		emit_move_insn (scratch_reg, XEXP (op0, 0));
-	      emit_insn (gen_rtx_SET (replace_equiv_address (op0, scratch_reg),
-				      operand1));
-	      return 1;
+	      op0 = replace_equiv_address (op0, scratch_reg);
 	    }
 	}
       else if ((!INT14_OK_STRICT && symbolic_memory_operand (op0, VOIDmode))
@@ -1790,10 +1786,10 @@ pa_emit_move_sequence (rtx *operands, machine_mode mode, rtx scratch_reg)
 	  /* Load memory address into SCRATCH_REG.  */
 	  scratch_reg = force_mode (word_mode, scratch_reg);
 	  emit_move_insn (scratch_reg, XEXP (op0, 0));
-	  emit_insn (gen_rtx_SET (replace_equiv_address (op0, scratch_reg),
-				  operand1));
-	  return 1;
+	  op0 = replace_equiv_address (op0, scratch_reg);
 	}
+      emit_insn (gen_rtx_SET (op0, operand1));
+      return 1;
     }
   /* Handle secondary reloads for loads of FP registers from constant
      expressions by forcing the constant into memory.  For the most part,
@@ -4562,12 +4558,16 @@ hppa_profile_hook (int label_no)
      lcla2 and load_offset_label_address insn patterns.  */
   rtx reg = gen_reg_rtx (SImode);
   rtx_code_label *label_rtx = gen_label_rtx ();
-  rtx mcount = gen_rtx_MEM (Pmode, gen_rtx_SYMBOL_REF (Pmode, "_mcount"));
   int reg_parm_stack_space = REG_PARM_STACK_SPACE (NULL_TREE);
-  rtx arg_bytes, begin_label_rtx;
+  rtx arg_bytes, begin_label_rtx, mcount, sym;
   rtx_insn *call_insn;
   char begin_label_name[16];
   bool use_mcount_pcrel_call;
+
+  /* Set up call destination.  */
+  sym = gen_rtx_SYMBOL_REF (Pmode, "_mcount");
+  pa_encode_label (sym);
+  mcount = gen_rtx_MEM (Pmode, sym);
 
   /* If we can reach _mcount with a pc-relative call, we can optimize
      loading the address of the current function.  This requires linker
@@ -10645,6 +10645,8 @@ pa_output_addr_vec (rtx lab, rtx body)
 {
   int idx, vlen = XVECLEN (body, 0);
 
+  if (!TARGET_SOM)
+    fputs ("\t.align 4\n", asm_out_file);
   targetm.asm_out.internal_label (asm_out_file, "L", CODE_LABEL_NUMBER (lab));
   if (TARGET_GAS)
     fputs ("\t.begin_brtab\n", asm_out_file);

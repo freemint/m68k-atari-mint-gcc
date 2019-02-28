@@ -1,3 +1,61 @@
+2018-12-06  Release Manager
+
+	* GCC 7.4.0 released.
+
+2018-08-16  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2018-08-02  Martin Liska  <mliska@suse.cz>
+
+        PR sanitizer/86022
+	* sanitizer_common/sanitizer_linux_libcdep.cc (ThreadDescriptorSize):
+        Cherry-pick compiler-rt revision 338606.
+
+2018-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-06-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2018-03-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/84761
+	* sanitizer_common/sanitizer_linux_libcdep.cc (__GLIBC_PREREQ):
+	Define if not defined.
+	(DL_INTERNAL_FUNCTION): Don't define.
+	(InitTlsSize): For __i386__ if not compiled against glibc 2.27+
+	determine at runtime whether to use regparm(3), stdcall calling
+	convention for older glibcs or normal calling convention for
+	newer glibcs for call to _dl_get_tls_static_info.
+
+2018-05-31  Matthias Klose  <doko@ubuntu.com>
+
+	PR sanitizer/86012
+	* sanitizer_common/sanitizer_platform_limits_posix.cc: Define
+	SIZEOF_STRUCT_USTAT for 32bit sparc.
+
+2018-05-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR sanitizer/85835
+	* sanitizer_common/sanitizer_platform_limits_posix.cc: Don't
+	include <sys/ustat.h> for Linux.
+	(SIZEOF_STRUCT_USTAT): New.
+	(struct_ustat_sz): Use SIZEOF_STRUCT_USTAT for Linux.
+
+2018-04-24  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2018-04-18  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	PR sanitizer/85389
+	* asan/asan_allocator.h (kAllocatorSpace): For __powerpc64__ change
+	from 0xa0000000000ULL to ~(uptr)0.
+
 2018-01-25  Release Manager
 
 	* GCC 7.3.0 released.

@@ -1,3 +1,49 @@
+2018-12-06  Release Manager
+
+	* GCC 7.4.0 released.
+
+2018-10-13  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	Backport from trunk
+	* io/close.c [!HAVE_UNLINK_OPEN_FILE]: Include <string.h>.
+
+2018-09-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from trunk
+	2018-09-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* io/unix.c (fallback_access): Avoid calling close on
+	uninitialized file descriptor.
+
+2018-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-06-09  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR libgfortran/86070
+	* io/write_float.def (build_float_string): Initialize *len.
+
+2018-06-01  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR libgfortran/85840
+	* io/write.c (write_float_0, write_real, write_real_g0,
+	write_complex): Use separate local variables for the float
+	string length.
+
+2018-02-18  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/84412
+	* io/transfer.c (finalize_transfer): After completng an internal unit
+	I/O operation, clear internal_unit_kind.
+
 2018-01-25  Release Manager
 
 	* GCC 7.3.0 released.

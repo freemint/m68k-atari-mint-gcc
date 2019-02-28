@@ -730,7 +730,10 @@ finish_if_stmt_cond (tree cond, tree if_stmt)
   cond = maybe_convert_cond (cond);
   if (IF_STMT_CONSTEXPR_P (if_stmt)
       && require_potential_rvalue_constant_expression (cond)
-      && !value_dependent_expression_p (cond))
+      && !value_dependent_expression_p (cond)
+      /* Wait until instantiation time, since only then COND has been
+	 converted to bool.  */
+      && TREE_TYPE (cond) == boolean_type_node)
     {
       cond = instantiate_non_dependent_expr (cond);
       cond = cxx_constant_value (cond, NULL_TREE);
@@ -1480,6 +1483,21 @@ finish_asm_stmt (int volatile_p, tree string, tree output_operands,
 		      && C_TYPE_FIELDS_READONLY (TREE_TYPE (operand)))))
 	    cxx_readonly_error (operand, lv_asm);
 
+	  tree *op = &operand;
+	  while (TREE_CODE (*op) == COMPOUND_EXPR)
+	    op = &TREE_OPERAND (*op, 1);
+	  switch (TREE_CODE (*op))
+	    {
+	    case PREINCREMENT_EXPR:
+	    case PREDECREMENT_EXPR:
+	    case MODIFY_EXPR:
+	      *op = genericize_compound_lvalue (*op);
+	      op = &TREE_OPERAND (*op, 1);
+	      break;
+	    default:
+	      break;
+	    }
+
 	  constraint = TREE_STRING_POINTER (TREE_VALUE (TREE_PURPOSE (t)));
 	  oconstraints[i] = constraint;
 
@@ -1488,7 +1506,7 @@ finish_asm_stmt (int volatile_p, tree string, tree output_operands,
 	    {
 	      /* If the operand is going to end up in memory,
 		 mark it addressable.  */
-	      if (!allows_reg && !cxx_mark_addressable (operand))
+	      if (!allows_reg && !cxx_mark_addressable (*op))
 		operand = error_mark_node;
 	    }
 	  else
@@ -1530,7 +1548,23 @@ finish_asm_stmt (int volatile_p, tree string, tree output_operands,
 		  /* Strip the nops as we allow this case.  FIXME, this really
 		     should be rejected or made deprecated.  */
 		  STRIP_NOPS (operand);
-		  if (!cxx_mark_addressable (operand))
+
+		  tree *op = &operand;
+		  while (TREE_CODE (*op) == COMPOUND_EXPR)
+		    op = &TREE_OPERAND (*op, 1);
+		  switch (TREE_CODE (*op))
+		    {
+		    case PREINCREMENT_EXPR:
+		    case PREDECREMENT_EXPR:
+		    case MODIFY_EXPR:
+		      *op = genericize_compound_lvalue (*op);
+		      op = &TREE_OPERAND (*op, 1);
+		      break;
+		    default:
+		      break;
+		    }
+
+		  if (!cxx_mark_addressable (*op))
 		    operand = error_mark_node;
 		}
 	      else if (!allows_reg && !allows_mem)
@@ -5604,7 +5638,11 @@ finish_omp_reduction_clause (tree c, bool *need_default_ctor, bool *need_dtor)
       return false;
     }
   else if (processing_template_decl)
-    return false;
+    {
+      if (OMP_CLAUSE_REDUCTION_PLACEHOLDER (c) == error_mark_node)
+	return true;
+      return false;
+    }
 
   tree id = OMP_CLAUSE_REDUCTION_PLACEHOLDER (c);
 
@@ -7333,7 +7371,7 @@ finish_omp_clauses (tree clauses, enum c_omp_region_type ort)
 
 	  if (VAR_P (t) && CP_DECL_THREAD_LOCAL_P (t))
 	    share_name = "threadprivate";
-	  else switch (cxx_omp_predetermined_sharing (t))
+	  else switch (cxx_omp_predetermined_sharing_1 (t))
 	    {
 	    case OMP_CLAUSE_DEFAULT_UNSPECIFIED:
 	      break;

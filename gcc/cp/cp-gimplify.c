@@ -1107,6 +1107,14 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       && omp_var_to_track (stmt))
     omp_cxx_notice_variable (wtd->omp_ctx, stmt);
 
+  /* Don't dereference parms in a thunk, pass the references through. */
+  if ((TREE_CODE (stmt) == CALL_EXPR && CALL_FROM_THUNK_P (stmt))
+      || (TREE_CODE (stmt) == AGGR_INIT_EXPR && AGGR_INIT_FROM_THUNK_P (stmt)))
+    {
+      *walk_subtrees = 0;
+      return NULL;
+    }
+
   /* Dereference invisible reference parms.  */
   if (wtd->handle_invisiref_parm_p && is_invisiref_parm (stmt))
     {
@@ -1128,6 +1136,7 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       if (h)
 	{
 	  *stmt_p = h->to;
+	  TREE_USED (h->to) |= TREE_USED (stmt);
 	  *walk_subtrees = 0;
 	  return NULL;
 	}
@@ -1910,7 +1919,7 @@ cxx_omp_const_qual_no_mutable (tree decl)
 /* True if OpenMP sharing attribute of DECL is predetermined.  */
 
 enum omp_clause_default_kind
-cxx_omp_predetermined_sharing (tree decl)
+cxx_omp_predetermined_sharing_1 (tree decl)
 {
   /* Static data members are predetermined shared.  */
   if (TREE_STATIC (decl))
@@ -1923,6 +1932,32 @@ cxx_omp_predetermined_sharing (tree decl)
   /* Const qualified vars having no mutable member are predetermined
      shared.  */
   if (cxx_omp_const_qual_no_mutable (decl))
+    return OMP_CLAUSE_DEFAULT_SHARED;
+
+  return OMP_CLAUSE_DEFAULT_UNSPECIFIED;
+}
+
+/* Likewise, but also include the artificial vars.  We don't want to
+   disallow the artificial vars being mentioned in explicit clauses,
+   as we use artificial vars e.g. for loop constructs with random
+   access iterators other than pointers, but during gimplification
+   we want to treat them as predetermined.  */
+
+enum omp_clause_default_kind
+cxx_omp_predetermined_sharing (tree decl)
+{
+  enum omp_clause_default_kind ret = cxx_omp_predetermined_sharing_1 (decl);
+  if (ret != OMP_CLAUSE_DEFAULT_UNSPECIFIED)
+    return ret;
+
+  /* Predetermine artificial variables holding integral values, those
+     are usually result of gimplify_one_sizepos or SAVE_EXPR
+     gimplification.  */
+  if (VAR_P (decl)
+      && DECL_ARTIFICIAL (decl)
+      && INTEGRAL_TYPE_P (TREE_TYPE (decl))
+      && !(DECL_LANG_SPECIFIC (decl)
+	   && DECL_OMP_PRIVATIZED_MEMBER (decl)))
     return OMP_CLAUSE_DEFAULT_SHARED;
 
   return OMP_CLAUSE_DEFAULT_UNSPECIFIED;
@@ -2148,6 +2183,28 @@ cp_fold (tree x)
       goto unary;
 
     case ADDR_EXPR:
+      loc = EXPR_LOCATION (x);
+      op0 = cp_fold_maybe_rvalue (TREE_OPERAND (x, 0), false);
+
+      /* Cope with user tricks that amount to offsetof.  */
+      if (op0 != error_mark_node
+	  && TREE_CODE (TREE_TYPE (op0)) != FUNCTION_TYPE
+	  && TREE_CODE (TREE_TYPE (op0)) != METHOD_TYPE)
+	{
+	  tree val = get_base_address (op0);
+	  if (val
+	      && INDIRECT_REF_P (val)
+	      && COMPLETE_TYPE_P (TREE_TYPE (val))
+	      && TREE_CONSTANT (TREE_OPERAND (val, 0)))
+	    {
+	      val = TREE_OPERAND (val, 0);
+	      STRIP_NOPS (val);
+	      if (TREE_CODE (val) == INTEGER_CST)
+		return fold_offsetof (op0, TREE_TYPE (x));
+	    }
+	}
+      goto finish_unary;
+
     case REALPART_EXPR:
     case IMAGPART_EXPR:
       rval_ops = false;
@@ -2165,6 +2222,7 @@ cp_fold (tree x)
       loc = EXPR_LOCATION (x);
       op0 = cp_fold_maybe_rvalue (TREE_OPERAND (x, 0), rval_ops);
 
+    finish_unary:
       if (op0 != TREE_OPERAND (x, 0))
 	{
 	  if (op0 == error_mark_node)

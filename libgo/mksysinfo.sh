@@ -1088,7 +1088,20 @@ grep '^type _rlimit ' gen-sysinfo.go | \
 grep '^const _RLIMIT_' gen-sysinfo.go |
     sed -e 's/^\(const \)_\(RLIMIT_[^= ]*\)\(.*\)$/\1\2 = _\2/' >> ${OUT}
 grep '^const _RLIM_' gen-sysinfo.go |
+    grep -v '^const _RLIM_INFINITY ' |
     sed -e 's/^\(const \)_\(RLIM_[^= ]*\)\(.*\)$/\1\2 = _\2/' >> ${OUT}
+rliminf=""
+if test "${rlimit}" = "_rlimit64" && grep '^const _RLIM64_INFINITY ' gen-sysinfo.go > /dev/null 2>&1; then
+  rliminf=`grep '^const _RLIM64_INFINITY ' gen-sysinfo.go | sed -e 's/.* //'`
+else
+  rliminf=`grep '^const _RLIM_INFINITY ' gen-sysinfo.go | sed -e 's/.* //'`
+fi
+# For compatibility with the gc syscall package, treat 0xffffffffffffffff as -1.
+if test "$rliminf" = "0xffffffffffffffff"; then
+  echo "const RLIM_INFINITY = -1" >> ${OUT}
+elif test -n "$rliminf"; then
+  echo "const RLIM_INFINITY = $rliminf" >> ${OUT}
+fi
 
 # The sysinfo struct.
 grep '^type _sysinfo ' gen-sysinfo.go | \
@@ -1106,20 +1119,6 @@ grep '^type _sysinfo ' gen-sysinfo.go | \
       -e 's/freehigh/Freehigh/' \
       -e 's/mem_unit/Unit/' \
     >> ${OUT}
-
-# The ustat struct.
-grep '^type _ustat ' gen-sysinfo.go | \
-    sed -e 's/_ustat/Ustat_t/' \
-      -e 's/f_tfree/Tfree/' \
-      -e 's/f_tinode/Tinoe/' \
-      -e 's/f_fname/Fname/' \
-      -e 's/f_fpack/Fpack/' \
-    >> ${OUT}
-# Force it to be defined, as on some older GNU/Linux systems the
-# header file fails when using with <linux/filter.h>.
-if ! grep 'type _ustat ' gen-sysinfo.go >/dev/null 2>&1; then
-  echo 'type Ustat_t struct { Tfree int32; Tinoe uint64; Fname [5+1]int8; Fpack [5+1]int8; }' >> ${OUT}
-fi
 
 # The utimbuf struct.
 grep '^type _utimbuf ' gen-sysinfo.go | \

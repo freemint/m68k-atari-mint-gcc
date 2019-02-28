@@ -5482,11 +5482,15 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
 		    x = gen_rtx_CLOBBER (mode, const0_rtx);
 		}
 	      else if (CONST_SCALAR_INT_P (new_rtx)
-		       && GET_CODE (x) == ZERO_EXTEND)
+		       && (GET_CODE (x) == ZERO_EXTEND
+			   || GET_CODE (x) == FLOAT
+			   || GET_CODE (x) == UNSIGNED_FLOAT))
 		{
-		  x = simplify_unary_operation (ZERO_EXTEND, GET_MODE (x),
-						new_rtx, GET_MODE (XEXP (x, 0)));
-		  gcc_assert (x);
+		  x = simplify_unary_operation (GET_CODE (x), GET_MODE (x),
+						new_rtx,
+						GET_MODE (XEXP (x, 0)));
+		  if (!x)
+		    return gen_rtx_CLOBBER (VOIDmode, const0_rtx);
 		}
 	      else
 		SUBST (XEXP (x, i), new_rtx);
@@ -5637,7 +5641,11 @@ combine_simplify_rtx (rtx x, machine_mode op0_mode, int in_dest,
 	  /* If everything is a comparison, what we have is highly unlikely
 	     to be simpler, so don't use it.  */
 	  && ! (COMPARISON_P (x)
-		&& (COMPARISON_P (true_rtx) || COMPARISON_P (false_rtx))))
+		&& (COMPARISON_P (true_rtx) || COMPARISON_P (false_rtx)))
+	  /* Similarly, if we end up with one of the expressions the same
+	     as the original, it is certainly not simpler.  */
+	  && ! rtx_equal_p (x, true_rtx)
+	  && ! rtx_equal_p (x, false_rtx))
 	{
 	  rtx cop1 = const0_rtx;
 	  enum rtx_code cond_code = simplify_comparison (NE, &cond, &cop1);
@@ -6325,7 +6333,7 @@ simplify_if_then_else (rtx x)
 			  pc_rtx, pc_rtx, 0, 0, 0);
       if (reg_mentioned_p (from, false_rtx))
 	false_rtx = subst (known_cond (copy_rtx (false_rtx), false_code,
-				   from, false_val),
+				       from, false_val),
 			   pc_rtx, pc_rtx, 0, 0, 0);
 
       SUBST (XEXP (x, 1), swapped ? false_rtx : true_rtx);
@@ -9179,6 +9187,7 @@ if_then_else_cond (rtx x, rtx *ptrue, rtx *pfalse)
 
 	  if (COMPARISON_P (cond0)
 	      && COMPARISON_P (cond1)
+	      && SCALAR_INT_MODE_P (mode)
 	      && ((GET_CODE (cond0) == reversed_comparison_code (cond1, NULL)
 		   && rtx_equal_p (XEXP (cond0, 0), XEXP (cond1, 0))
 		   && rtx_equal_p (XEXP (cond0, 1), XEXP (cond1, 1)))
@@ -9327,12 +9336,12 @@ known_cond (rtx x, enum rtx_code cond, rtx reg, rtx val)
 	  if (COMPARISON_P (x))
 	    {
 	      if (comparison_dominates_p (cond, code))
-		return const_true_rtx;
+		return VECTOR_MODE_P (GET_MODE (x)) ? x : const_true_rtx;
 
 	      code = reversed_comparison_code (x, NULL);
 	      if (code != UNKNOWN
 		  && comparison_dominates_p (cond, code))
-		return const0_rtx;
+		return CONST0_RTX (GET_MODE (x));
 	      else
 		return x;
 	    }
@@ -9375,7 +9384,7 @@ known_cond (rtx x, enum rtx_code cond, rtx reg, rtx val)
 	  /* We must simplify subreg here, before we lose track of the
 	     original inner_mode.  */
 	  new_rtx = simplify_subreg (GET_MODE (x), r,
-				 inner_mode, SUBREG_BYTE (x));
+				     inner_mode, SUBREG_BYTE (x));
 	  if (new_rtx)
 	    return new_rtx;
 	  else
@@ -9400,7 +9409,7 @@ known_cond (rtx x, enum rtx_code cond, rtx reg, rtx val)
 	  /* We must simplify the zero_extend here, before we lose
 	     track of the original inner_mode.  */
 	  new_rtx = simplify_unary_operation (ZERO_EXTEND, GET_MODE (x),
-					  r, inner_mode);
+					      r, inner_mode);
 	  if (new_rtx)
 	    return new_rtx;
 	  else
@@ -11322,8 +11331,15 @@ change_zero_ext (rtx pat)
 	    x = gen_rtx_LSHIFTRT (inner_mode, XEXP (x, 0), GEN_INT (start));
 	  else
 	    x = XEXP (x, 0);
+
 	  if (mode != inner_mode)
-	    x = gen_lowpart_SUBREG (mode, x);
+	    {
+	      if (REG_P (x) && HARD_REGISTER_P (x)
+		  && !can_change_dest_mode (x, 0, mode))
+		continue;
+
+	      x = gen_lowpart_SUBREG (mode, x);
+	    }
 	}
       else if (GET_CODE (x) == ZERO_EXTEND
 	       && SCALAR_INT_MODE_P (mode)
@@ -11335,7 +11351,13 @@ change_zero_ext (rtx pat)
 	  size = GET_MODE_PRECISION (GET_MODE (XEXP (x, 0)));
 	  x = SUBREG_REG (XEXP (x, 0));
 	  if (GET_MODE (x) != mode)
-	    x = gen_lowpart_SUBREG (mode, x);
+	    {
+	      if (REG_P (x) && HARD_REGISTER_P (x)
+		  && !can_change_dest_mode (x, 0, mode))
+		continue;
+
+	      x = gen_lowpart_SUBREG (mode, x);
+	    }
 	}
       else if (GET_CODE (x) == ZERO_EXTEND
 	       && SCALAR_INT_MODE_P (mode)
@@ -13081,8 +13103,11 @@ record_dead_and_set_regs_1 (rtx dest, const_rtx setter, void *data)
   if (REG_P (dest))
     {
       /* If we are setting the whole register, we know its value.  Otherwise
-	 show that we don't know the value.  We can handle SUBREG in
-	 some cases.  */
+	 show that we don't know the value.  We can handle a SUBREG if it's
+	 the low part, but we must be careful with paradoxical SUBREGs on
+	 RISC architectures because we cannot strip e.g. an extension around
+	 a load and record the naked load since the RTL middle-end considers
+	 that the upper bits are defined according to LOAD_EXTEND_OP.  */
       if (GET_CODE (setter) == SET && dest == SET_DEST (setter))
 	record_value_for_reg (dest, record_dead_insn, SET_SRC (setter));
       else if (GET_CODE (setter) == SET
@@ -13091,8 +13116,12 @@ record_dead_and_set_regs_1 (rtx dest, const_rtx setter, void *data)
 	       && GET_MODE_PRECISION (GET_MODE (dest)) <= BITS_PER_WORD
 	       && subreg_lowpart_p (SET_DEST (setter)))
 	record_value_for_reg (dest, record_dead_insn,
-			      gen_lowpart (GET_MODE (dest),
-						       SET_SRC (setter)));
+			      WORD_REGISTER_OPERATIONS
+			      && word_register_operation_p (SET_SRC (setter))
+			      && paradoxical_subreg_p (SET_DEST (setter))
+			      ? SET_SRC (setter)
+			      : gen_lowpart (GET_MODE (dest),
+					     SET_SRC (setter)));
       else
 	record_value_for_reg (dest, record_dead_insn, NULL_RTX);
     }

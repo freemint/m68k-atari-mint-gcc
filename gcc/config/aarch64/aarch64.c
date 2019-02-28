@@ -4664,13 +4664,13 @@ aarch64_select_cc_mode (RTX_CODE code, rtx x, rtx y)
 	case UNGT:
 	case UNGE:
 	case UNEQ:
-	case LTGT:
 	  return CCFPmode;
 
 	case LT:
 	case LE:
 	case GT:
 	case GE:
+	case LTGT:
 	  return CCFPEmode;
 
 	default:
@@ -5721,7 +5721,7 @@ aarch64_class_max_nregs (reg_class_t regclass, machine_mode mode)
 {
   switch (regclass)
     {
-    case CALLER_SAVE_REGS:
+    case TAILCALL_ADDR_REGS:
     case POINTER_REGS:
     case GENERAL_REGS:
     case ALL_REGS:
@@ -5804,7 +5804,7 @@ aarch64_elf_asm_constructor (rtx symbol, int priority)
          -Wformat-truncation false positive, use a larger size.  */
       char buf[23];
       snprintf (buf, sizeof (buf), ".init_array.%.5u", priority);
-      s = get_section (buf, SECTION_WRITE, NULL);
+      s = get_section (buf, SECTION_WRITE | SECTION_NOTYPE, NULL);
       switch_to_section (s);
       assemble_align (POINTER_SIZE);
       assemble_aligned_integer (POINTER_BYTES, symbol);
@@ -5824,7 +5824,7 @@ aarch64_elf_asm_destructor (rtx symbol, int priority)
          -Wformat-truncation false positive, use a larger size.  */
       char buf[23];
       snprintf (buf, sizeof (buf), ".fini_array.%.5u", priority);
-      s = get_section (buf, SECTION_WRITE, NULL);
+      s = get_section (buf, SECTION_WRITE | SECTION_NOTYPE, NULL);
       switch_to_section (s);
       assemble_align (POINTER_SIZE);
       assemble_aligned_integer (POINTER_BYTES, symbol);
@@ -6536,7 +6536,8 @@ aarch64_mask_and_shift_for_ubfiz_p (machine_mode mode, rtx mask, rtx shft_amnt)
   return CONST_INT_P (mask) && CONST_INT_P (shft_amnt)
 	 && INTVAL (shft_amnt) < GET_MODE_BITSIZE (mode)
 	 && exact_log2 ((INTVAL (mask) >> INTVAL (shft_amnt)) + 1) >= 0
-	 && (INTVAL (mask) & ((1 << INTVAL (shft_amnt)) - 1)) == 0;
+	 && (INTVAL (mask)
+	     & ((HOST_WIDE_INT_1U << INTVAL (shft_amnt)) - 1)) == 0;
 }
 
 /* Calculate the cost of calculating X, storing it in *COST.  Result
@@ -7799,10 +7800,10 @@ aarch64_register_move_cost (machine_mode mode,
     = aarch64_tune_params.regmove_cost;
 
   /* Caller save and pointer regs are equivalent to GENERAL_REGS.  */
-  if (to == CALLER_SAVE_REGS || to == POINTER_REGS)
+  if (to == TAILCALL_ADDR_REGS || to == POINTER_REGS)
     to = GENERAL_REGS;
 
-  if (from == CALLER_SAVE_REGS || from == POINTER_REGS)
+  if (from == TAILCALL_ADDR_REGS || from == POINTER_REGS)
     from = GENERAL_REGS;
 
   /* Moving between GPR and stack cost is the same as GP2GP.  */
@@ -8606,17 +8607,6 @@ aarch64_override_options_after_change_1 (struct gcc_options *opts)
   /* If -mpc-relative-literal-loads is set on the command line, this
      implies that the user asked for PC relative literal loads.  */
   if (opts->x_pcrelative_literal_loads == 1)
-    aarch64_pcrelative_literal_loads = true;
-
-  /* This is PR70113. When building the Linux kernel with
-     CONFIG_ARM64_ERRATUM_843419, support for relocations
-     R_AARCH64_ADR_PREL_PG_HI21 and R_AARCH64_ADR_PREL_PG_HI21_NC is
-     removed from the kernel to avoid loading objects with possibly
-     offending sequences.  Without -mpc-relative-literal-loads we would
-     generate such relocations, preventing the kernel build from
-     succeeding.  */
-  if (opts->x_pcrelative_literal_loads == 2
-      && TARGET_FIX_ERR_A53_843419)
     aarch64_pcrelative_literal_loads = true;
 
   /* In the tiny memory model it makes no sense to disallow PC relative

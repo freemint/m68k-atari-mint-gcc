@@ -2072,7 +2072,8 @@ determine_specialization (tree template_id,
   /* We shouldn't be specializing a member template of an
      unspecialized class template; we already gave an error in
      check_specialization_scope, now avoid crashing.  */
-  if (template_count && DECL_CLASS_SCOPE_P (decl)
+  if (!VAR_P (decl)
+      && template_count && DECL_CLASS_SCOPE_P (decl)
       && template_class_depth (DECL_CONTEXT (decl)) > 0)
     {
       gcc_assert (errorcount);
@@ -2175,10 +2176,17 @@ determine_specialization (tree template_id,
 	     that the const qualification is the same.  Since
 	     get_bindings does not try to merge the "this" parameter,
 	     we must do the comparison explicitly.  */
-	  if (DECL_NONSTATIC_MEMBER_FUNCTION_P (fn)
-	      && !same_type_p (TREE_VALUE (fn_arg_types),
-			       TREE_VALUE (decl_arg_types)))
-	    continue;
+	  if (DECL_NONSTATIC_MEMBER_FUNCTION_P (fn))
+	    {
+	      if (!same_type_p (TREE_VALUE (fn_arg_types),
+				TREE_VALUE (decl_arg_types)))
+		continue;
+
+	      /* And the ref-qualification.  */
+	      if (type_memfn_rqual (TREE_TYPE (decl))
+		  != type_memfn_rqual (TREE_TYPE (fn)))
+		continue;
+	    }
 
 	  /* Skip the "this" parameter and, for constructors of
 	     classes with virtual bases, the VTT parameter.  A
@@ -2283,6 +2291,11 @@ determine_specialization (tree template_id,
 	  if (!compparms (TYPE_ARG_TYPES (TREE_TYPE (fn)),
 			 decl_arg_types))
             continue;
+
+	  if (DECL_NONSTATIC_MEMBER_FUNCTION_P (fn)
+	      && (type_memfn_rqual (TREE_TYPE (decl))
+		  != type_memfn_rqual (TREE_TYPE (fn))))
+	    continue;
 
           // If the deduced arguments do not satisfy the constraints,
           // this is not a candidate.
@@ -4601,10 +4614,13 @@ process_partial_specialization (tree decl)
     {
       if (!flag_concepts)
         error ("partial specialization %q+D does not specialize "
-	       "any template arguments", decl);
+	       "any template arguments; to define the primary template, "
+	       "remove the template argument list", decl);
       else
         error ("partial specialization %q+D does not specialize any "
-	       "template arguments and is not more constrained than", decl);
+	       "template arguments and is not more constrained than "
+	       "the primary template; to define the primary template, "
+	       "remove the template argument list", decl);
       inform (DECL_SOURCE_LOCATION (maintmpl), "primary template here");
     }
 
@@ -4848,7 +4864,7 @@ static void
 fixed_parameter_pack_p_1 (tree parm, struct find_parameter_pack_data *ppd)
 {
   /* A type parm can't refer to another parm.  */
-  if (TREE_CODE (parm) == TYPE_DECL)
+  if (TREE_CODE (parm) == TYPE_DECL || parm == error_mark_node)
     return;
   else if (TREE_CODE (parm) == PARM_DECL)
     {
@@ -6032,7 +6048,12 @@ convert_nontype_argument_function (tree type, tree expr,
 
  accept:
   if (TREE_CODE (type) == REFERENCE_TYPE)
-    fn = build_address (fn);
+    {
+      if (REFERENCE_REF_P (fn))
+	fn = TREE_OPERAND (fn, 0);
+      else
+	fn = build_address (fn);
+    }
   if (!same_type_ignoring_top_level_qualifiers_p (type, TREE_TYPE (fn)))
     fn = build_nop (type, fn);
 
@@ -8244,7 +8265,11 @@ coerce_template_parms (tree parms,
     }
 
   if (lost)
-    return error_mark_node;
+    {
+      if ((complain & tf_error) && !seen_error())
+	error ("wrong number of template arguments");
+      return error_mark_node;
+    }
 
   if (CHECKING_P && !NON_DEFAULT_TEMPLATE_ARGS_COUNT (new_inner_args))
     SET_NON_DEFAULT_TEMPLATE_ARGS_COUNT (new_inner_args,
@@ -11454,7 +11479,9 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 	    {
 	      /* This parameter pack was used in an unevaluated context.  Just
 		 make a dummy decl, since it's only used for its type.  */
+	      ++cp_unevaluated_operand;
 	      arg_pack = tsubst_decl (parm_pack, args, complain);
+	      --cp_unevaluated_operand;
 	      if (arg_pack && DECL_PACK_P (arg_pack))
 		/* Partial instantiation of the parm_pack, we can't build
 		   up an argument pack yet.  */
@@ -11524,7 +11551,7 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 	  /* We can't substitute for this parameter pack.  We use a flag as
 	     well as the missing_level counter because function parameter
 	     packs don't have a level.  */
-	  gcc_assert (processing_template_decl);
+	  gcc_assert (processing_template_decl || is_auto (parm_pack));
 	  unsubstituted_packs = true;
 	}
     }
@@ -13755,8 +13782,7 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 			= tsubst_constraint (constr, args, complain, in_decl);
 		    else if (tree pl = CLASS_PLACEHOLDER_TEMPLATE (t))
 		      {
-			if (DECL_TEMPLATE_TEMPLATE_PARM_P (pl))
-			  pl = tsubst (pl, args, complain, in_decl);
+			pl = tsubst_copy (pl, args, complain, in_decl);
 			CLASS_PLACEHOLDER_TEMPLATE (r) = pl;
 		      }
 		  }
@@ -15778,6 +15804,12 @@ tsubst_decomp_names (tree decl, tree pattern_decl, tree args,
       DECL_HAS_VALUE_EXPR_P (decl2) = 1;
       if (VAR_P (decl3))
 	DECL_TEMPLATE_INSTANTIATED (decl3) = 1;
+      else
+	{
+	  gcc_assert (errorcount);
+	  decl = error_mark_node;
+	  continue;
+	}
       maybe_push_decl (decl3);
       if (error_operand_p (decl3))
 	decl = error_mark_node;
@@ -16766,14 +16798,14 @@ tsubst_copy_and_build (tree t,
 	if (targs)
 	  targs = tsubst_template_args (targs, args, complain, in_decl);
 	if (targs == error_mark_node)
-	  return error_mark_node;
+	  RETURN (error_mark_node);
 
 	if (TREE_CODE (templ) == SCOPE_REF)
 	  {
 	    tree name = TREE_OPERAND (templ, 1);
 	    tree tid = lookup_template_function (name, targs);
 	    TREE_OPERAND (templ, 1) = tid;
-	    return templ;
+	    RETURN (templ);
 	  }
 
 	if (variable_template_p (templ))
@@ -16838,6 +16870,8 @@ tsubst_copy_and_build (tree t,
       {
 	tree type = tsubst (TREE_TYPE (t), args, complain, in_decl);
 	tree op0 = RECUR (TREE_OPERAND (t, 0));
+	if (op0 == error_mark_node)
+	  RETURN (error_mark_node);
 	RETURN (build1 (CONVERT_EXPR, type, op0));
       }
 
@@ -16985,7 +17019,7 @@ tsubst_copy_and_build (tree t,
       {
 	tree op0 = RECUR (TREE_OPERAND (t, 0));
 	tree op1 = RECUR (TREE_OPERAND (t, 1));
-	return fold_build_pointer_plus (op0, op1);
+	RETURN (fold_build_pointer_plus (op0, op1));
       }
 
     case SCOPE_REF:
@@ -17492,7 +17526,10 @@ tsubst_copy_and_build (tree t,
 		CALL_EXPR_REVERSE_ARGS (function) = rev;
 		if (thk)
 		  {
-		    CALL_FROM_THUNK_P (function) = true;
+		    if (TREE_CODE (function) == CALL_EXPR)
+		      CALL_FROM_THUNK_P (function) = true;
+		    else
+		      AGGR_INIT_FROM_THUNK_P (function) = true;
 		    /* The thunk location is not interesting.  */
 		    SET_EXPR_LOCATION (function, UNKNOWN_LOCATION);
 		  }
@@ -19205,6 +19242,24 @@ try_array_deduction (tree tparms, tree targs, tree parm)
 			  /*nondeduced*/false, array_deduction_r);
 }
 
+/* Returns how many levels of { } INIT contains.  */
+
+static int
+braced_init_depth (tree init)
+{
+  if (!init || !BRACE_ENCLOSED_INITIALIZER_P (init))
+    return 0;
+  unsigned i; tree val;
+  unsigned max = 0;
+  FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (init), i, val)
+    {
+      unsigned elt_d = braced_init_depth (val);
+      if (elt_d > max)
+	max = elt_d;
+    }
+  return max + 1;
+}
+
 /* Most parms like fn_type_unification.
 
    If SUBR is 1, we're being called recursively (to unify the
@@ -19440,6 +19495,10 @@ type_unification_real (tree tparms,
 	    ++ia;
 
 	    if (uses_template_parms (parm))
+	      continue;
+	    /* Workaround for c++/80290: avoid combinatorial explosion on
+	       deeply nested braced init-lists.  */
+	    if (braced_init_depth (arg) > 2)
 	      continue;
 	    if (check_non_deducible_conversion (parm, arg, strict, flags,
 						explain_p))
@@ -24065,20 +24124,21 @@ type_dependent_expression_p (tree expression)
 	  && (any_dependent_template_arguments_p
 	      (INNERMOST_TEMPLATE_ARGS (DECL_TI_ARGS (expression)))))
 	return true;
+    }
 
-      /* Otherwise, if the decl isn't from a dependent scope, it can't be
-	 type-dependent.  Checking this is important for functions with auto
-	 return type, which looks like a dependent type.  */
-      if (TREE_CODE (expression) == FUNCTION_DECL
-	  && undeduced_auto_decl (expression)
-	  && (!DECL_CLASS_SCOPE_P (expression)
-	      || !dependent_type_p (DECL_CONTEXT (expression)))
-	  && (!DECL_FRIEND_CONTEXT (expression)
-	      || !dependent_type_p (DECL_FRIEND_CONTEXT (expression)))
-	  && !DECL_LOCAL_FUNCTION_P (expression))
-	{
-	  return false;
-	}
+  /* Otherwise, if the decl isn't from a dependent scope, it can't be
+     type-dependent.  Checking this is important for functions with auto
+     return type, which looks like a dependent type.  */
+  if (TREE_CODE (expression) == FUNCTION_DECL
+      && undeduced_auto_decl (expression)
+      && (!DECL_CLASS_SCOPE_P (expression)
+	  || !dependent_type_p (DECL_CONTEXT (expression)))
+      && (!DECL_LANG_SPECIFIC (expression)
+	  || !DECL_FRIEND_CONTEXT (expression)
+	  || !dependent_type_p (DECL_FRIEND_CONTEXT (expression)))
+      && !DECL_LOCAL_FUNCTION_P (expression))
+    {
+      return false;
     }
 
   /* Always dependent, on the number of arguments if nothing else.  */
@@ -25105,8 +25165,21 @@ rewrite_template_parm (tree olddecl, unsigned index, unsigned level,
 	  = TEMPLATE_TYPE_PARM_FOR_CLASS (oldtype);
     }
   else
-    newtype = tsubst (TREE_TYPE (olddecl), tsubst_args,
-		      complain, NULL_TREE);
+    {
+      newtype = TREE_TYPE (olddecl);
+      if (type_uses_auto (newtype))
+	{
+	  // Substitute once to fix references to other template parameters.
+	  newtype = tsubst (newtype, tsubst_args,
+			    complain|tf_partial, NULL_TREE);
+	  // Now substitute again to reduce the level of the auto.
+	  newtype = tsubst (newtype, current_template_args (),
+			    complain, NULL_TREE);
+	}
+      else
+	newtype = tsubst (newtype, tsubst_args,
+			  complain, NULL_TREE);
+    }
 
   tree newdecl
     = build_decl (DECL_SOURCE_LOCATION (olddecl), TREE_CODE (olddecl),
@@ -25145,7 +25218,7 @@ rewrite_template_parm (tree olddecl, unsigned index, unsigned level,
 	  // Substitute ttargs into ttparms to fix references to
 	  // other template parameters.
 	  ttparms = tsubst_template_parms_level (ttparms, ttargs,
-						 complain);
+						 complain|tf_partial);
 	  // Now substitute again with args based on tparms, to reduce
 	  // the level of the ttparms.
 	  ttargs = current_template_args ();
@@ -25386,6 +25459,9 @@ do_class_deduction (tree ptype, tree tmpl, tree init, int flags,
     // FIXME cache artificial deduction guides
     for (tree fns = CLASSTYPE_CONSTRUCTORS (type); fns; fns = OVL_NEXT (fns))
       {
+	if (TREE_CODE (fns) == OVERLOAD && OVL_USED (fns))
+	  continue;
+
 	tree fn = OVL_CURRENT (fns);
 	tree guide = build_deduction_guide (fn, outer_args, complain);
 	cands = ovl_cons (guide, cands);

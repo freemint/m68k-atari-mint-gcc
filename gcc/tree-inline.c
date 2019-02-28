@@ -57,6 +57,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "cfgloop.h"
 #include "builtins.h"
 #include "tree-chkp.h"
+#include "attribs.h"
 
 
 /* I'm not real happy about this, but we need to handle gimple and
@@ -1182,6 +1183,7 @@ copy_tree_body_r (tree *tp, int *walk_subtrees, void *data)
 	      *tp = gimple_fold_indirect_ref (ptr);
 	      if (! *tp)
 	        {
+		  type = remap_type (type, id);
 		  if (TREE_CODE (ptr) == ADDR_EXPR)
 		    {
 		      *tp
@@ -1941,8 +1943,7 @@ copy_bb (copy_body_data *id, basic_block bb, int frequency_scale,
 		   && id->call_stmt
 		   && (decl = gimple_call_fndecl (stmt))
 		   && DECL_BUILT_IN_CLASS (decl) == BUILT_IN_NORMAL
-		   && DECL_FUNCTION_CODE (decl) == BUILT_IN_VA_ARG_PACK_LEN
-		   && ! gimple_call_va_arg_pack_p (id->call_stmt))
+		   && DECL_FUNCTION_CODE (decl) == BUILT_IN_VA_ARG_PACK_LEN)
 	    {
 	      /* __builtin_va_arg_pack_len () should be replaced by
 		 the number of anonymous arguments.  */
@@ -1960,10 +1961,32 @@ copy_bb (copy_body_data *id, basic_block bb, int frequency_scale,
 		if (POINTER_BOUNDS_P (gimple_call_arg (id->call_stmt, i)))
 		  nargs--;
 
-	      count = build_int_cst (integer_type_node, nargs);
-	      new_stmt = gimple_build_assign (gimple_call_lhs (stmt), count);
-	      gsi_replace (&copy_gsi, new_stmt, false);
-	      stmt = new_stmt;
+	      if (!gimple_call_lhs (stmt))
+		{
+		  /* Drop unused calls.  */
+		  gsi_remove (&copy_gsi, false);
+		  continue;
+		}
+	      else if (!gimple_call_va_arg_pack_p (id->call_stmt))
+		{
+		  count = build_int_cst (integer_type_node, nargs);
+		  new_stmt = gimple_build_assign (gimple_call_lhs (stmt), count);
+		  gsi_replace (&copy_gsi, new_stmt, false);
+		  stmt = new_stmt;
+		}
+	      else if (nargs != 0)
+		{
+		  tree newlhs;
+		  if (gimple_in_ssa_p (cfun))
+		    newlhs = make_ssa_name (integer_type_node, NULL);
+		  else
+		    newlhs = create_tmp_reg (integer_type_node);
+		  count = build_int_cst (integer_type_node, nargs);
+		  new_stmt = gimple_build_assign (gimple_call_lhs (stmt),
+						  PLUS_EXPR, newlhs, count);
+		  gimple_call_set_lhs (stmt, newlhs);
+		  gsi_insert_after (&copy_gsi, new_stmt, GSI_NEW_STMT);
+		}
 	    }
 	  else if (call_stmt
 		   && id->call_stmt
@@ -6023,6 +6046,25 @@ tree_function_versioning (tree old_decl, tree new_decl,
     DECL_ARGUMENTS (new_decl)
       = copy_arguments_for_versioning (DECL_ARGUMENTS (old_decl), &id,
 				       args_to_skip, &vars);
+
+  /* Remove omp declare simd attribute from the new attributes.  */
+  if (tree a = lookup_attribute ("omp declare simd",
+				 DECL_ATTRIBUTES (new_decl)))
+    {
+      while (tree a2 = lookup_attribute ("omp declare simd", TREE_CHAIN (a)))
+	a = a2;
+      a = TREE_CHAIN (a);
+      for (tree *p = &DECL_ATTRIBUTES (new_decl); *p != a;)
+	if (is_attribute_p ("omp declare simd", get_attribute_name (*p)))
+	  *p = TREE_CHAIN (*p);
+	else
+	  {
+	    tree chain = TREE_CHAIN (*p);
+	    *p = copy_node (*p);
+	    p = &TREE_CHAIN (*p);
+	    *p = chain;
+	  }
+    }
 
   DECL_INITIAL (new_decl) = remap_blocks (DECL_INITIAL (id.src_fn), &id);
   BLOCK_SUPERCONTEXT (DECL_INITIAL (new_decl)) = new_decl;

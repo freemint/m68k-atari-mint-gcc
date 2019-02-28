@@ -2001,11 +2001,16 @@ gfc_match_type_spec (gfc_typespec *ts)
 {
   match m;
   locus old_locus;
-  char name[GFC_MAX_SYMBOL_LEN + 1];
+  char c, name[GFC_MAX_SYMBOL_LEN + 1];
 
   gfc_clear_ts (ts);
   gfc_gobble_whitespace ();
   old_locus = gfc_current_locus;
+
+  /* If c isn't [a-z], then return immediately.  */
+  c = gfc_peek_ascii_char ();
+  if (!ISALPHA(c))
+    return MATCH_NO;
 
   if (match_derived_type_spec (ts) == MATCH_YES)
     {
@@ -2045,6 +2050,8 @@ gfc_match_type_spec (gfc_typespec *ts)
       ts->type = BT_CHARACTER;
 
       m = gfc_match_char_spec (ts);
+      if (ts->u.cl && ts->u.cl->length)
+	gfc_resolve_expr (ts->u.cl->length);
 
       if (m == MATCH_NO)
 	m = MATCH_YES;
@@ -2056,7 +2063,7 @@ gfc_match_type_spec (gfc_typespec *ts)
      or list item in a type-list of an OpenMP reduction clause.  Need to
      differentiate REAL([KIND]=scalar-int-initialization-expr) from
      REAL(A,[KIND]) and REAL(KIND,A).  Logically, when this code was
-     written the use of LOGICAL as a type-spec or intrinsic subprogram 
+     written the use of LOGICAL as a type-spec or intrinsic subprogram
      was overlooked.  */
 
   m = gfc_match (" %n", name);
@@ -4404,8 +4411,8 @@ gfc_match_deallocate (void)
 	   && (tail->expr->ref->type == REF_COMPONENT
 	       || tail->expr->ref->type == REF_ARRAY));
       if (sym && sym->ts.type == BT_CLASS)
-	b2 = !(CLASS_DATA (sym)->attr.allocatable
-	       || CLASS_DATA (sym)->attr.class_pointer);
+	b2 = !(CLASS_DATA (sym) && (CLASS_DATA (sym)->attr.allocatable
+	       || CLASS_DATA (sym)->attr.class_pointer));
       else
 	b2 = sym && !(sym->attr.allocatable || sym->attr.pointer
 		      || sym->attr.proc_pointer);
@@ -5707,6 +5714,7 @@ copy_ts_from_selector_to_associate (gfc_expr *associate, gfc_expr *selector)
 {
   gfc_ref *ref;
   gfc_symbol *assoc_sym;
+  int rank = 0;
 
   assoc_sym = associate->symtree->n.sym;
 
@@ -5743,14 +5751,28 @@ copy_ts_from_selector_to_associate (gfc_expr *associate, gfc_expr *selector)
 	selector->rank = ref->u.ar.dimen;
       else
 	selector->rank = 0;
+
+      rank = selector->rank;
     }
 
-  if (selector->rank)
+  if (rank)
     {
-      assoc_sym->attr.dimension = 1;
-      assoc_sym->as = gfc_get_array_spec ();
-      assoc_sym->as->rank = selector->rank;
-      assoc_sym->as->type = AS_DEFERRED;
+      for (int i = 0; i < ref->u.ar.dimen + ref->u.ar.codimen; i++)
+	if (ref->u.ar.dimen_type[i] == DIMEN_ELEMENT
+	    || (ref->u.ar.dimen_type[i] == DIMEN_UNKNOWN
+		&& ref->u.ar.end[i] == NULL
+		&& ref->u.ar.stride[i] == NULL))
+	  rank--;
+
+      if (rank)
+	{
+	  assoc_sym->attr.dimension = 1;
+	  assoc_sym->as = gfc_get_array_spec ();
+	  assoc_sym->as->rank = rank;
+	  assoc_sym->as->type = AS_DEFERRED;
+	}
+      else
+	assoc_sym->as = NULL;
     }
   else
     assoc_sym->as = NULL;

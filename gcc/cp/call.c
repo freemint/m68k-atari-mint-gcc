@@ -375,18 +375,10 @@ build_call_a (tree function, int n, tree *argarray)
 
   TREE_HAS_CONSTRUCTOR (function) = (decl && DECL_CONSTRUCTOR_P (decl));
 
-  if (current_function_decl && decl
-      && flag_new_inheriting_ctors
-      && DECL_INHERITED_CTOR (current_function_decl)
-      && (DECL_INHERITED_CTOR (current_function_decl)
-	  == DECL_CLONED_FUNCTION (decl)))
-    /* Pass arguments directly to the inherited constructor.  */
-    CALL_FROM_THUNK_P (function) = true;
-
   /* Don't pass empty class objects by value.  This is useful
      for tags in STL, which are used to control overload resolution.
      We don't need to handle other cases of copying empty classes.  */
-  else if (! decl || ! DECL_BUILT_IN (decl))
+  if (! decl || ! DECL_BUILT_IN (decl))
     for (i = 0; i < n; i++)
       {
 	tree arg = CALL_EXPR_ARG (function, i);
@@ -3267,10 +3259,10 @@ add_template_conv_candidate (struct z_candidate **candidates, tree tmpl,
 			     tree return_type, tree access_path,
 			     tree conversion_path, tsubst_flags_t complain)
 {
-  /* Making this work broke PR 71117, so until the committee resolves core
-     issue 2189, let's disable this candidate if there are any viable call
+  /* Making this work broke PR 71117 and 85118, so until the committee resolves
+     core issue 2189, let's disable this candidate if there are any call
      operators.  */
-  if (any_strictly_viable (*candidates))
+  if (*candidates)
     return NULL;
 
   return
@@ -6886,6 +6878,11 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	  && DECL_INHERITED_CTOR (current_function_decl))
 	return expr;
 
+      if (TREE_CODE (expr) == TARGET_EXPR
+	  && TARGET_EXPR_LIST_INIT_P (expr))
+	/* Copy-list-initialization doesn't actually involve a copy.  */
+	return expr;
+
       /* Fall through.  */
     case ck_base:
       if (convs->kind == ck_base && !convs->need_temporary_p)
@@ -6911,10 +6908,6 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	flags |= LOOKUP_ONLYCONVERTING;
       if (convs->rvaluedness_matches_p)
 	flags |= LOOKUP_PREFER_RVALUE;
-      if (TREE_CODE (expr) == TARGET_EXPR
-	  && TARGET_EXPR_LIST_INIT_P (expr))
-	/* Copy-list-initialization doesn't actually involve a copy.  */
-	return expr;
       expr = build_temp (expr, totype, flags, &diag_kind, complain);
       if (diag_kind && complain)
 	{
@@ -7151,7 +7144,7 @@ convert_arg_to_ellipsis (tree arg, tsubst_flags_t complain)
 		     "passing objects of non-trivially-copyable "
 		     "type %q#T through %<...%> is conditionally supported",
 		     arg_type);
-	  return cp_build_addr_expr (arg, complain);
+	  return build1 (ADDR_EXPR, build_reference_type (arg_type), arg);
 	}
       /* Build up a real lvalue-to-rvalue conversion in case the
 	 copy constructor is trivial but not callable.  */
@@ -7525,6 +7518,15 @@ unsafe_copy_elision_p (tree target, tree exp)
   /* build_compound_expr pushes COMPOUND_EXPR inside TARGET_EXPR.  */
   while (TREE_CODE (init) == COMPOUND_EXPR)
     init = TREE_OPERAND (init, 1);
+  if (TREE_CODE (init) == COND_EXPR)
+    {
+      /* We'll end up copying from each of the arms of the COND_EXPR directly
+	 into the target, so look at them. */
+      if (tree op = TREE_OPERAND (init, 1))
+	if (unsafe_copy_elision_p (target, op))
+	  return true;
+      return unsafe_copy_elision_p (target, TREE_OPERAND (init, 2));
+    }
   return (TREE_CODE (init) == AGGR_INIT_EXPR
 	  && !AGGR_INIT_VIA_CTOR_P (init));
 }
@@ -7566,6 +7568,10 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 
       if (undeduced_auto_decl (fn))
 	mark_used (fn, complain);
+      else
+	/* Otherwise set TREE_USED for the benefit of -Wunused-function.
+	   See PR80598.  */
+	TREE_USED (fn) = 1;
 
       return_type = TREE_TYPE (TREE_TYPE (fn));
       nargs = vec_safe_length (args);
@@ -7929,7 +7935,15 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
       tree *fargs = (!nargs ? argarray
 			    : (tree *) alloca (nargs * sizeof (tree)));
       for (j = 0; j < nargs; j++)
-	fargs[j] = maybe_constant_value (argarray[j]);
+	{
+	  /* For -Wformat undo the implicit passing by hidden reference
+	     done by convert_arg_to_ellipsis.  */
+	  if (TREE_CODE (argarray[j]) == ADDR_EXPR
+	      && TREE_CODE (TREE_TYPE (argarray[j])) == REFERENCE_TYPE)
+	    fargs[j] = TREE_OPERAND (argarray[j], 0);
+	  else
+	    fargs[j] = maybe_constant_value (argarray[j]);
+	}
 
       warned_p = check_function_arguments (input_location, fn, TREE_TYPE (fn),
 					   nargs, fargs);
@@ -8399,6 +8413,9 @@ build_special_member_call (tree instance, tree name, vec<tree, va_gc> **args,
 	{
 	  if (is_dummy_object (instance))
 	    return arg;
+	  else if (TREE_CODE (arg) == TARGET_EXPR)
+	    TARGET_EXPR_DIRECT_INIT_P (arg) = true;
+
 	  if ((complain & tf_error)
 	      && (flags & LOOKUP_DELEGATING_CONS))
 	    check_self_delegation (arg);
@@ -8851,8 +8868,14 @@ build_new_method_call_1 (tree instance, tree fns, vec<tree, va_gc> **args,
 	      if (TREE_CODE (TREE_TYPE (fn)) != METHOD_TYPE
 		  && !is_dummy_object (instance)
 		  && TREE_SIDE_EFFECTS (instance))
-		call = build2 (COMPOUND_EXPR, TREE_TYPE (call),
-			       instance, call);
+		{
+		  /* But avoid the implicit lvalue-rvalue conversion when 'a'
+		     is volatile.  */
+		  tree a = instance;
+		  if (TREE_THIS_VOLATILE (a))
+		    a = build_this (a);
+		  call = build2 (COMPOUND_EXPR, TREE_TYPE (call), a, call);
+		}
 	      else if (call != error_mark_node
 		       && DECL_DESTRUCTOR_P (cand->fn)
 		       && !VOID_TYPE_P (TREE_TYPE (call)))

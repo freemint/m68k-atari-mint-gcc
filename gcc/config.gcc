@@ -1461,7 +1461,7 @@ x86_64-*-elf*)
 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h"
 	;;
 x86_64-*-rtems*)
-	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/rtemself.h"
+	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h i386/rtemself.h rtems.h"
 	;;
 i[34567]86-*-rdos*)
     tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/rdos.h"
@@ -2055,10 +2055,17 @@ riscv*-*-linux*)
 	;;
 riscv*-*-elf* | riscv*-*-rtems*)
 	tm_file="elfos.h newlib-stdint.h ${tm_file} riscv/elf.h"
-	case "x${enable_multilib}" in
-	xno) ;;
-	xyes) tmake_file="${tmake_file} riscv/t-elf-multilib" ;;
-	*) echo "Unknown value for enable_multilib"; exit 1
+	case ${target} in
+	*-*-rtems*)
+	  tm_file="${tm_file} rtems.h riscv/rtems.h"
+	  tmake_file="${tmake_file} riscv/t-rtems"
+	  ;;
+	*)
+	  case "x${enable_multilib}" in
+	  xno) ;;
+	  xyes) tmake_file="${tmake_file} riscv/t-elf-multilib" ;;
+	  *) echo "Unknown value for enable_multilib"; exit 1
+	  esac
 	esac
 	tmake_file="${tmake_file} riscv/t-riscv"
 	gnu_ld=yes
@@ -2066,11 +2073,6 @@ riscv*-*-elf* | riscv*-*-rtems*)
 	# Force .init_array support.  The configure script cannot always
 	# automatically detect that GAS supports it, yet we require it.
 	gcc_cv_initfini_array=yes
-	case ${target} in
-	riscv*-*-rtems*)
-	  tm_file="${tm_file} rtems.h riscv/rtems.h"
-	  ;;
-	esac
 	;;
 mips*-*-netbsd*)			# NetBSD/mips, either endian.
 	target_cpu_default="MASK_ABICALLS"

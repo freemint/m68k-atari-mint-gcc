@@ -198,8 +198,6 @@ struct GTY(()) loop_info_d {
   tree high_bound;
   vec<range_check_info, va_gc> *checks;
   bool artificial;
-  bool has_checks;
-  bool warned_aggressive_loop_optimizations;
 };
 
 typedef struct loop_info_d *loop_info;
@@ -657,10 +655,6 @@ gigi (Node_Id gnat_root,
 
   /* Now translate the compilation unit proper.  */
   Compilation_Unit_to_gnu (gnat_root);
-
-  /* Disable -Waggressive-loop-optimizations since we implement our own
-     version of the warning.  */
-  warn_aggressive_loop_optimizations = 0;
 
   /* Then process the N_Validate_Unchecked_Conversion nodes.  We do this at
      the very end to avoid having to second-guess the front-end when we run
@@ -1266,32 +1260,18 @@ Pragma_to_gnu (Node_Id gnat_node)
 	{
 	  Node_Id gnat_expr = Expression (gnat_temp);
 	  tree gnu_expr = gnat_to_gnu (gnat_expr);
-	  int use_address;
-	  machine_mode mode;
 	  tree asm_constraint = NULL_TREE;
 #ifdef ASM_COMMENT_START
 	  char *comment;
 #endif
-
-	  if (TREE_CODE (gnu_expr) == UNCONSTRAINED_ARRAY_REF)
-	    gnu_expr = TREE_OPERAND (gnu_expr, 0);
-
-	  /* Use the value only if it fits into a normal register,
-	     otherwise use the address.  */
-	  mode = TYPE_MODE (TREE_TYPE (gnu_expr));
-	  use_address = ((GET_MODE_CLASS (mode) != MODE_INT
-			  && GET_MODE_CLASS (mode) != MODE_PARTIAL_INT)
-			 || GET_MODE_SIZE (mode) > UNITS_PER_WORD);
-
-	  if (use_address)
-	    gnu_expr = build_unary_op (ADDR_EXPR, NULL_TREE, gnu_expr);
+	  gnu_expr = maybe_unconstrained_array (gnu_expr);
+	  gnat_mark_addressable (gnu_expr);
 
 #ifdef ASM_COMMENT_START
 	  comment = concat (ASM_COMMENT_START,
 			    " inspection point: ",
 			    Get_Name_String (Chars (gnat_expr)),
-			    use_address ? " address" : "",
-			    " is in %0",
+			    " is at %0",
 			    NULL);
 	  asm_constraint = build_string (strlen (comment), comment);
 	  free (comment);
@@ -1301,8 +1281,8 @@ Pragma_to_gnu (Node_Id gnat_node)
 			     NULL_TREE,
 			     tree_cons
 			     (build_tree_list (NULL_TREE,
-					       build_string (1, "g")),
-			      gnu_expr, NULL_TREE),
+					       build_string (1, "m")),
+					       gnu_expr, NULL_TREE),
 			     NULL_TREE, NULL_TREE);
 	  ASM_VOLATILE_P (gnu_expr) = 1;
 	  set_expr_location_from_node (gnu_expr, gnat_node);
@@ -4059,6 +4039,8 @@ node_has_volatile_full_access (Node_Id gnat_node)
     case N_Identifier:
     case N_Expanded_Name:
       gnat_entity = Entity (gnat_node);
+      if (!Is_Object (gnat_entity))
+	break;
       return Is_Volatile_Full_Access (gnat_entity)
 	     || Is_Volatile_Full_Access (Etype (gnat_entity));
 
@@ -4324,12 +4306,15 @@ Call_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, tree gnu_target,
 	  because we need to preserve the return value before copying back the
 	  parameters.
 
-       2. There is no target and the call is made for neither an object nor a
+       2. There is no target and the call is made for neither an object, nor a
 	  renaming declaration, nor a return statement, nor an allocator, and
 	  the return type has variable size because in this case the gimplifier
-	  cannot create the temporary, or more generally is simply an aggregate
-	  type, because the gimplifier would then create the temporary in the
-	  outermost scope instead of locally.
+	  cannot create the temporary, or more generally is an aggregate type,
+	  because the gimplifier would create the temporary in the outermost
+	  scope instead of locally.  But there is an exception for an allocator
+	  of an unconstrained record type with default discriminant because we
+	  allocate the actual size in this case, unlike the other 3 cases, so
+	  we need a temporary to fetch the discriminant and we create it here.
 
        3. There is a target and it is a slice or an array with fixed size,
 	  and the return type has variable size, because the gimplifier
@@ -4348,8 +4333,9 @@ Call_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, tree gnu_target,
 	      && Nkind (Parent (gnat_node)) != N_Object_Declaration
 	      && Nkind (Parent (gnat_node)) != N_Object_Renaming_Declaration
 	      && Nkind (Parent (gnat_node)) != N_Simple_Return_Statement
-	      && !(Nkind (Parent (gnat_node)) == N_Qualified_Expression
-		   && Nkind (Parent (Parent (gnat_node))) == N_Allocator)
+	      && (!(Nkind (Parent (gnat_node)) == N_Qualified_Expression
+		    && Nkind (Parent (Parent (gnat_node))) == N_Allocator)
+		  || type_is_padding_self_referential (gnu_result_type))
 	      && AGGREGATE_TYPE_P (gnu_result_type)
 	      && !TYPE_IS_FAT_POINTER_P (gnu_result_type))
 	  || (gnu_target
@@ -5652,7 +5638,6 @@ Raise_Error_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p)
 	      rci->inserted_cond
 		= build1 (SAVE_EXPR, boolean_type_node, boolean_true_node);
 	      vec_safe_push (loop->checks, rci);
-	      loop->has_checks = true;
 	      gnu_cond = build_noreturn_cond (gnat_to_gnu (gnat_cond));
 	      if (flag_unswitch_loops)
 		gnu_cond = build_binary_op (TRUTH_ANDIF_EXPR,
@@ -5665,14 +5650,6 @@ Raise_Error_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p)
 					    gnu_cond,
 					    rci->inserted_cond);
 	    }
-
-	  /* Or else, if aggressive loop optimizations are enabled, we just
-	     record that there are checks applied to iteration variables.  */
-	  else if (optimize
-		   && flag_aggressive_loop_optimizations
-		   && inside_loop_p ()
-		   && (loop = find_loop_for (gnu_index)))
-	    loop->has_checks = true;
 	}
       break;
 
@@ -6288,45 +6265,9 @@ gnat_to_gnu (Node_Id gnat_node)
 	    gcc_assert (TREE_CODE (gnu_type) == ARRAY_TYPE);
 	    gnat_temp = gnat_expr_array[i];
 	    gnu_expr = maybe_character_value (gnat_to_gnu (gnat_temp));
-	    struct loop_info_d *loop;
 
 	    gnu_result
 	      = build_binary_op (ARRAY_REF, NULL_TREE, gnu_result, gnu_expr);
-
-	    /* Array accesses are bound-checked so they cannot trap, but this
-	       is valid only if they are not hoisted ahead of the check.  We
-	       need to mark them as no-trap to get decent loop optimizations
-	       in the presence of -fnon-call-exceptions, so we do it when we
-	       know that the original expression had no side-effects.  */
-	    if (TREE_CODE (gnu_result) == ARRAY_REF
-		&& !(Nkind (gnat_temp) == N_Identifier
-		     && Ekind (Entity (gnat_temp)) == E_Constant))
-	      TREE_THIS_NOTRAP (gnu_result) = 1;
-
-	    /* If aggressive loop optimizations are enabled, we warn for loops
-	       overrunning a simple array of size 1 not at the end of a record.
-	       This is aimed to catch misuses of the trailing array idiom.  */
-	    if (optimize
-		&& flag_aggressive_loop_optimizations
-		&& inside_loop_p ()
-		&& TREE_CODE (TREE_TYPE (gnu_type)) != ARRAY_TYPE
-		&& TREE_CODE (gnu_array_object) != ARRAY_REF
-		&& tree_int_cst_equal (TYPE_MIN_VALUE (TYPE_DOMAIN (gnu_type)),
-				       TYPE_MAX_VALUE (TYPE_DOMAIN (gnu_type)))
-		&& !array_at_struct_end_p (gnu_result)
-		&& (loop = find_loop_for (gnu_expr))
-		&& !loop->artificial
-		&& !loop->has_checks
-		&& tree_int_cst_equal (TYPE_MIN_VALUE (TYPE_DOMAIN (gnu_type)),
-				       loop->low_bound)
-		&& can_be_lower_p (loop->low_bound, loop->high_bound)
-		&& !loop->warned_aggressive_loop_optimizations
-		&& warning (OPT_Waggressive_loop_optimizations,
-			    "out-of-bounds access may be optimized away"))
-	      {
-		inform (EXPR_LOCATION (loop->stmt), "containing loop");
-		loop->warned_aggressive_loop_optimizations = true;
-	      }
 	  }
 
 	gnu_result_type = get_unpadded_type (Etype (gnat_node));
@@ -9272,7 +9213,7 @@ convert_with_check (Entity_Id gnat_type, tree gnu_expr, bool overflowp,
 	  ? tree_int_cst_lt (gnu_out_ub, gnu_in_ub)
 	  : (FLOAT_TYPE_P (gnu_base_type)
 	     ? real_less (&TREE_REAL_CST (gnu_out_ub),
-			  &TREE_REAL_CST (gnu_in_lb))
+			  &TREE_REAL_CST (gnu_in_ub))
 	     : 1))
 	gnu_cond
 	  = build_binary_op (TRUTH_ORIF_EXPR, boolean_type_node, gnu_cond,

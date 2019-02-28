@@ -283,11 +283,25 @@ warn_type_compatibility_p (tree prevailing_type, tree type,
       alias_set_type set1 = get_alias_set (type);
       alias_set_type set2 = get_alias_set (prevailing_type);
 
-      if (set1 && set2 && set1 != set2 
-          && (!POINTER_TYPE_P (type) || !POINTER_TYPE_P (prevailing_type)
+      if (set1 && set2 && set1 != set2)
+	{
+          tree t1 = type, t2 = prevailing_type;
+
+	  /* Alias sets of arrays with aliased components are the same as alias
+	     sets of the inner types.  */
+	  while (TREE_CODE (t1) == ARRAY_TYPE
+		 && !TYPE_NONALIASED_COMPONENT (t1)
+		 && TREE_CODE (t2) == ARRAY_TYPE
+		 && !TYPE_NONALIASED_COMPONENT (t2))
+	    {
+	      t1 = TREE_TYPE (t1);
+	      t2 = TREE_TYPE (t2);
+	    }
+          if ((!POINTER_TYPE_P (t1) || !POINTER_TYPE_P (t2))
 	      || (set1 != TYPE_ALIAS_SET (ptr_type_node)
-		  && set2 != TYPE_ALIAS_SET (ptr_type_node))))
-        lev |= 5;
+		  && set2 != TYPE_ALIAS_SET (ptr_type_node)))
+             lev |= 5;
+	}
     }
 
   return lev;
@@ -351,18 +365,31 @@ lto_symtab_merge (symtab_node *prevailing, symtab_node *entry)
     return false;
 
   if (DECL_SIZE (decl) && DECL_SIZE (prevailing_decl)
-      && !tree_int_cst_equal (DECL_SIZE (decl), DECL_SIZE (prevailing_decl))
+      && !tree_int_cst_equal (DECL_SIZE (decl), DECL_SIZE (prevailing_decl)))
+      {
+	if (!DECL_COMMON (decl) && !DECL_EXTERNAL (decl))
+	  return false;
+
+	tree type = TREE_TYPE (decl);
+
+	/* For record type, check for array at the end of the structure.  */
+	if (TREE_CODE (type) == RECORD_TYPE)
+	  {
+	    tree field = TYPE_FIELDS (type);
+	    while (DECL_CHAIN (field) != NULL_TREE)
+	      field = DECL_CHAIN (field);
+
+	    return TREE_CODE (TREE_TYPE (field)) == ARRAY_TYPE;
+	  }
       /* As a special case do not warn about merging
 	 int a[];
 	 and
 	 int a[]={1,2,3};
 	 here the first declaration is COMMON
 	 and sizeof(a) == sizeof (int).  */
-      && ((!DECL_COMMON (decl) && !DECL_EXTERNAL (decl))
-	  || TREE_CODE (TREE_TYPE (decl)) != ARRAY_TYPE
-	  || TYPE_SIZE (TREE_TYPE (decl))
-	     != TYPE_SIZE (TREE_TYPE (TREE_TYPE (decl)))))
-    return false;
+	else if (TREE_CODE (type) == ARRAY_TYPE)
+	  return (TYPE_SIZE (decl) == TYPE_SIZE (TREE_TYPE (type)));
+      }
 
   return true;
 }
@@ -438,9 +465,14 @@ lto_symtab_resolve_symbols (symtab_node *first)
   /* If the chain is already resolved there is nothing else to do.  */
   if (prevailing)
     {
-      /* Assert it's the only one.  */
+      /* Assert it's the only one.
+	 GCC should silence multiple PREVAILING_DEF_IRONLY defs error
+	 on COMMON symbols since it isn't error.
+	 See: https://sourceware.org/bugzilla/show_bug.cgi?id=23079.  */
       for (e = prevailing->next_sharing_asm_name; e; e = e->next_sharing_asm_name)
 	if (lto_symtab_symbol_p (e)
+	    && !DECL_COMMON (prevailing->decl)
+	    && !DECL_COMMON (e->decl)
 	    && (e->resolution == LDPR_PREVAILING_DEF_IRONLY
 		|| e->resolution == LDPR_PREVAILING_DEF_IRONLY_EXP
 		|| e->resolution == LDPR_PREVAILING_DEF))
@@ -544,6 +576,9 @@ lto_symtab_merge_p (tree prevailing, tree decl)
 	  return false;
 	}
     }
+
+  /* FIXME: after MPX is removed, use flags_from_decl_or_type
+     function instead.  PR lto/85248.  */
   if (DECL_ATTRIBUTES (prevailing) != DECL_ATTRIBUTES (decl))
     {
       tree prev_attr = lookup_attribute ("error", DECL_ATTRIBUTES (prevailing));
@@ -569,6 +604,16 @@ lto_symtab_merge_p (tree prevailing, tree decl)
           if (symtab->dump_file)
 	    fprintf (symtab->dump_file, "Not merging decls; "
 		     "warning attribute mismatch\n");
+	  return false;
+	}
+
+      prev_attr = lookup_attribute ("noreturn", DECL_ATTRIBUTES (prevailing));
+      attr = lookup_attribute ("noreturn", DECL_ATTRIBUTES (decl));
+      if ((prev_attr == NULL) != (attr == NULL))
+	{
+          if (symtab->dump_file)
+	    fprintf (symtab->dump_file, "Not merging decls; "
+		     "noreturn attribute mismatch\n");
 	  return false;
 	}
     }

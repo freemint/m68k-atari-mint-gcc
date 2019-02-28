@@ -817,9 +817,12 @@ store_init_value (tree decl, tree init, vec<tree, va_gc>** cleanups, int flags)
       bool const_init;
       value = instantiate_non_dependent_expr (value);
       if (DECL_DECLARED_CONSTEXPR_P (decl)
-	  || (DECL_IN_AGGR_P (decl) && !DECL_VAR_DECLARED_INLINE_P (decl)))
+	  || (DECL_IN_AGGR_P (decl)
+	      && DECL_INITIALIZED_IN_CLASS_P (decl)
+	      && !DECL_VAR_DECLARED_INLINE_P (decl)))
 	{
-	  /* Diagnose a non-constant initializer for constexpr.  */
+	  /* Diagnose a non-constant initializer for constexpr variable or
+	     non-inline in-class-initialized static data member.  */
 	  if (processing_template_decl
 	      && !require_potential_constant_expression (value))
 	    value = error_mark_node;
@@ -1954,7 +1957,7 @@ build_functional_cast (tree exp, tree parms, tsubst_flags_t complain)
       if (complain & tf_warning
 	  && TREE_DEPRECATED (type)
 	  && DECL_ARTIFICIAL (exp))
-	warn_deprecated_use (type, NULL_TREE);
+	cp_warn_deprecated_use (type);
     }
   else
     type = exp;

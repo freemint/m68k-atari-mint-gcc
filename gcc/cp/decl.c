@@ -5022,7 +5022,7 @@ start_decl (const cp_declarator *declarator,
     }
 
   /* If #pragma weak was used, mark the decl weak now.  */
-  if (!processing_template_decl)
+  if (!processing_template_decl && !DECL_DECOMPOSITION_P (decl))
     maybe_apply_pragma_weak (decl);
 
   if (TREE_CODE (decl) == FUNCTION_DECL
@@ -5042,19 +5042,17 @@ start_decl (const cp_declarator *declarator,
 	  if (field == NULL_TREE
 	      || !(VAR_P (field) || variable_template_p (field)))
 	    error ("%q+#D is not a static data member of %q#T", decl, context);
+	  else if (variable_template_p (field)
+		   && (DECL_LANG_SPECIFIC (decl)
+		       && DECL_TEMPLATE_SPECIALIZATION (decl)))
+	    /* OK, specialization was already checked.  */;
 	  else if (variable_template_p (field) && !this_tmpl)
 	    {
-	      if (DECL_LANG_SPECIFIC (decl)
-		  && DECL_TEMPLATE_SPECIALIZATION (decl))
-		/* OK, specialization was already checked.  */;
-	      else
-		{
-		  error_at (DECL_SOURCE_LOCATION (decl),
-			    "non-member-template declaration of %qD", decl);
-		  inform (DECL_SOURCE_LOCATION (field), "does not match "
-			  "member template declaration here");
-		  return error_mark_node;
-		}
+	      error_at (DECL_SOURCE_LOCATION (decl),
+			"non-member-template declaration of %qD", decl);
+	      inform (DECL_SOURCE_LOCATION (field), "does not match "
+		      "member template declaration here");
+	      return error_mark_node;
 	    }
 	  else
 	    {
@@ -5798,8 +5796,18 @@ reshape_init_class (tree type, reshape_iter *d, bool first_initializer_p,
 	    return error_mark_node;
 
 	  if (TREE_CODE (d->cur->index) == FIELD_DECL)
-	    /* We already reshaped this.  */
-	    gcc_assert (d->cur->index == field);
+	    {
+	      /* We already reshaped this.  */
+	      if (field != d->cur->index)
+		{
+		  tree id = DECL_NAME (d->cur->index);
+		  gcc_assert (id);
+		  gcc_checking_assert (lookup_field_1 (type, id,
+						       /*want_type=*/false)
+				       == d->cur->index);
+		  field = d->cur->index;
+		}
+	    }
 	  else if (TREE_CODE (d->cur->index) == IDENTIFIER_NODE)
 	    field = lookup_field_1 (type, d->cur->index, /*want_type=*/false);
 	  else
@@ -6402,7 +6410,9 @@ check_initializer (tree decl, tree init, int flags, vec<tree, va_gc> **cleanups)
     }
 
   if (init_code
-      && (DECL_IN_AGGR_P (decl) && !DECL_VAR_DECLARED_INLINE_P (decl)))
+      && (DECL_IN_AGGR_P (decl)
+	  && DECL_INITIALIZED_IN_CLASS_P (decl)
+	  && !DECL_VAR_DECLARED_INLINE_P (decl)))
     {
       static int explained = 0;
 
@@ -7213,7 +7223,9 @@ find_decomp_class_base (location_t loc, tree type, tree ret)
 {
   bool member_seen = false;
   for (tree field = TYPE_FIELDS (type); field; field = DECL_CHAIN (field))
-    if (TREE_CODE (field) != FIELD_DECL || DECL_ARTIFICIAL (field))
+    if (TREE_CODE (field) != FIELD_DECL
+	|| DECL_ARTIFICIAL (field)
+	|| (DECL_C_BIT_FIELD (field) && !DECL_NAME (field)))
       continue;
     else if (ret)
       return type;
@@ -7228,9 +7240,9 @@ find_decomp_class_base (location_t loc, tree type, tree ret)
 	inform (DECL_SOURCE_LOCATION (field), "declared here");
 	return error_mark_node;
       }
-    else if (TREE_PRIVATE (field) || TREE_PROTECTED (field))
+    else if (!accessible_p (type, field, true))
       {
-	error_at (loc, "cannot decompose non-public member %qD of %qT",
+	error_at (loc, "cannot decompose inaccessible member %qD of %qT",
 		  field, type);
 	inform (DECL_SOURCE_LOCATION (field),
 		TREE_PRIVATE (field)
@@ -7252,7 +7264,7 @@ find_decomp_class_base (location_t loc, tree type, tree ret)
       tree t = find_decomp_class_base (loc, TREE_TYPE (base_binfo), ret);
       if (t == error_mark_node)
 	return error_mark_node;
-      if (t != NULL_TREE)
+      if (t != NULL_TREE && t != ret)
 	{
 	  if (ret == type)
 	    {
@@ -7263,9 +7275,6 @@ find_decomp_class_base (location_t loc, tree type, tree ret)
 	    }
 	  else if (orig_ret != NULL_TREE)
 	    return t;
-	  else if (ret == t)
-	    /* OK, found the same base along another path.  We'll complain
-	       in convert_to_base if it's ambiguous.  */;
 	  else if (ret != NULL_TREE)
 	    {
 	      error_at (loc, "cannot decompose class type %qT: its base "
@@ -7341,7 +7350,29 @@ get_tuple_decomp_init (tree decl, unsigned i)
 
   tree fns = lookup_qualified_name (TREE_TYPE (e), get_id,
 				    /*type*/false, /*complain*/false);
-  if (fns != error_mark_node)
+  bool use_member_get = false;
+
+  /* To use a member get, member lookup must find at least one
+     declaration that is a function template
+     whose first template parameter is a non-type parameter.  */
+  for (tree iter = BASELINK_P (fns) ? BASELINK_FUNCTIONS (fns) : fns;
+       iter;
+       iter = OVL_NEXT (iter))
+    {
+      tree fn = OVL_CURRENT (iter);
+      if (TREE_CODE (fn) == TEMPLATE_DECL)
+	{
+	  tree tparms = DECL_TEMPLATE_PARMS (fn);
+	  tree parm = TREE_VEC_ELT (INNERMOST_TEMPLATE_PARMS (tparms), 0);
+	  if (TREE_CODE (TREE_VALUE (parm)) == PARM_DECL)
+	    {
+	      use_member_get = true;
+	      break;
+	    }
+	}
+    }
+
+  if (use_member_get)
     {
       fns = lookup_template_function (fns, targs);
       return build_new_method_call (e, fns, /*args*/NULL,
@@ -7391,6 +7422,7 @@ cp_maybe_mangle_decomp (tree decl, tree first, unsigned int count)
       for (unsigned int i = 0; i < count; i++, d = DECL_CHAIN (d))
 	v[count - i - 1] = d;
       SET_DECL_ASSEMBLER_NAME (decl, mangle_decomp (decl, v));
+      maybe_apply_pragma_weak (decl);
     }
 }
 
@@ -7466,6 +7498,12 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
       type = complete_type (TREE_TYPE (type));
       if (type == error_mark_node)
 	goto error_out;
+      if (!COMPLETE_TYPE_P (type))
+	{
+	  error_at (loc, "structured binding refers to incomplete type %qT",
+		    type);
+	  goto error_out;
+	}
     }
 
   tree eltype = NULL_TREE;
@@ -7640,7 +7678,9 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	  goto error_out;
 	}
       for (tree field = TYPE_FIELDS (btype); field; field = TREE_CHAIN (field))
-	if (TREE_CODE (field) != FIELD_DECL || DECL_ARTIFICIAL (field))
+	if (TREE_CODE (field) != FIELD_DECL
+	    || DECL_ARTIFICIAL (field)
+	    || (DECL_C_BIT_FIELD (field) && !DECL_NAME (field)))
 	  continue;
 	else
 	  eltscnt++;
@@ -7655,7 +7695,9 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	}
       unsigned int i = 0;
       for (tree field = TYPE_FIELDS (btype); field; field = TREE_CHAIN (field))
-	if (TREE_CODE (field) != FIELD_DECL || DECL_ARTIFICIAL (field))
+	if (TREE_CODE (field) != FIELD_DECL
+	    || DECL_ARTIFICIAL (field)
+	    || (DECL_C_BIT_FIELD (field) && !DECL_NAME (field)))
 	  continue;
 	else
 	  {
@@ -9517,7 +9559,8 @@ compute_array_index_type (tree name, tree size, tsubst_flags_t complain)
       constant_expression_error (size);
 
       /* An array must have a positive number of elements.  */
-      if (tree_int_cst_lt (size, integer_zero_node))
+      tree signed_size = fold_convert (ssizetype, size);
+      if (tree_int_cst_lt (signed_size, integer_zero_node))
 	{
 	  if (!(complain & tf_error))
 	    return error_mark_node;
@@ -10097,6 +10140,8 @@ grokdeclarator (const cp_declarator *declarator,
 						      declspecs->locations);
   if (typespec_loc == UNKNOWN_LOCATION)
     typespec_loc = declspecs->locations[ds_type_spec];
+  if (typespec_loc == UNKNOWN_LOCATION)
+    typespec_loc = input_location;
 
   /* Look inside a declarator for the name being declared
      and get it as a string, for an error message.  */
@@ -10366,7 +10411,7 @@ grokdeclarator (const cp_declarator *declarator,
      suppress reports of deprecated items.  */
   if (type && TREE_DEPRECATED (type)
       && deprecated_state != DEPRECATED_SUPPRESS)
-    warn_deprecated_use (type, NULL_TREE);
+    cp_warn_deprecated_use (type);
   if (type && TREE_CODE (type) == TYPE_DECL)
     {
       typedef_decl = type;
@@ -10374,7 +10419,7 @@ grokdeclarator (const cp_declarator *declarator,
       if (TREE_DEPRECATED (type)
 	  && DECL_ARTIFICIAL (typedef_decl)
 	  && deprecated_state != DEPRECATED_SUPPRESS)
-	warn_deprecated_use (type, NULL_TREE);
+	cp_warn_deprecated_use (type);
     }
   /* No type at all: default to `int', and set DEFAULTED_INT
      because it was not a user-defined typedef.  */
@@ -11169,8 +11214,18 @@ grokdeclarator (const cp_declarator *declarator,
 		  explicitp = 2;
 	      }
 
-	    arg_types = grokparms (declarator->u.function.parameters,
-				   &parms);
+	    tree pushed_scope = NULL_TREE;
+	    if (funcdecl_p
+		&& decl_context != FIELD
+		&& inner_declarator->u.id.qualifying_scope
+		&& CLASS_TYPE_P (inner_declarator->u.id.qualifying_scope))
+	      pushed_scope
+		= push_scope (inner_declarator->u.id.qualifying_scope);
+
+	    arg_types = grokparms (declarator->u.function.parameters, &parms);
+
+	    if (pushed_scope)
+	      pop_scope (pushed_scope);
 
 	    if (inner_declarator
 		&& inner_declarator->kind == cdk_id
@@ -12556,7 +12611,9 @@ check_default_argument (tree decl, tree arg, tsubst_flags_t complain)
      A default argument expression is implicitly converted to the
      parameter type.  */
   ++cp_unevaluated_operand;
-  perform_implicit_conversion_flags (decl_type, arg, complain,
+  /* Avoid digest_init clobbering the initializer.  */
+  tree carg = BRACE_ENCLOSED_INITIALIZER_P (arg) ? unshare_expr (arg): arg;
+  perform_implicit_conversion_flags (decl_type, carg, complain,
 				     LOOKUP_IMPLICIT);
   --cp_unevaluated_operand;
 
@@ -12685,7 +12742,7 @@ grokparms (tree parmlist, tree *parms)
 	    {
 	      tree deptype = type_is_deprecated (type);
 	      if (deptype)
-		warn_deprecated_use (deptype, NULL_TREE);
+		cp_warn_deprecated_use (deptype);
 	    }
 
 	  /* Top-level qualifiers on the parameters are

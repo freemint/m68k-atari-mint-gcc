@@ -639,12 +639,12 @@ set_parameter_value_inquire (stmtblock_t *block, tree var,
       /* Don't evaluate the UNIT number multiple times.  */
       se.expr = gfc_evaluate_now (se.expr, &se.pre);
 
-      /* UNIT numbers should be greater than zero.  */
+      /* UNIT numbers should be greater than the min.  */
       i = gfc_validate_kind (BT_INTEGER, 4, false);
+      val = gfc_conv_mpz_to_tree (gfc_integer_kinds[i].pedantic_min_int, 4);
       cond1 = build2_loc (input_location, LT_EXPR, logical_type_node,
 			  se.expr,
-			  fold_convert (TREE_TYPE (se.expr),
-			  integer_zero_node));
+			  fold_convert (TREE_TYPE (se.expr), val));
       /* UNIT numbers should be less than the max.  */
       val = gfc_conv_mpz_to_tree (gfc_integer_kinds[i].huge, 4);
       cond2 = build2_loc (input_location, GT_EXPR, logical_type_node,
@@ -2214,25 +2214,9 @@ get_dtio_proc (gfc_typespec * ts, gfc_code * code, gfc_symbol **dtio_sub)
   bool formatted = false;
   gfc_dt *dt = code->ext.dt;
 
-  if (dt)
-    {
-      char *fmt = NULL;
-
-      if (dt->format_label == &format_asterisk)
-	{
-	  /* List directed io must call the formatted DTIO procedure.  */
-	  formatted = true;
-	}
-      else if (dt->format_expr)
-	fmt = gfc_widechar_to_char (dt->format_expr->value.character.string,
-				      -1);
-      else if (dt->format_label)
-	fmt = gfc_widechar_to_char (dt->format_label->format->value.character.string,
-				      -1);
-      if (fmt && strtok (fmt, "DT") != NULL)
-	formatted = true;
-
-    }
+  /* Determine when to use the formatted DTIO procedure.  */
+  if (dt && (dt->format_expr || dt->format_label))
+    formatted = true;
 
   if (ts->type == BT_CLASS)
     derived = ts->u.derived->components->ts.u.derived;
@@ -2288,6 +2272,16 @@ transfer_expr (gfc_se * se, gfc_typespec * ts, tree addr_expr,
   if ((ts->type == BT_DERIVED || ts->type == BT_INTEGER)
       && ts->u.derived != NULL
       && (ts->is_iso_c == 1 || ts->u.derived->ts.is_iso_c == 1))
+    {
+      ts->type = BT_INTEGER;
+      ts->kind = gfc_index_integer_kind;
+    }
+
+  /* gfortran reaches here for "print *, c_loc(xxx)".  */
+  if (ts->type == BT_VOID
+      && code->expr1 && code->expr1->ts.type == BT_VOID
+      && code->expr1->symtree
+      && strcmp (code->expr1->symtree->name, "c_loc") == 0)
     {
       ts->type = BT_INTEGER;
       ts->kind = gfc_index_integer_kind;
@@ -2442,8 +2436,7 @@ transfer_expr (gfc_se * se, gfc_typespec * ts, tree addr_expr,
 	    {
 	      /* Recurse into the elements of the derived type.  */
 	      expr = gfc_evaluate_now (addr_expr, &se->pre);
-	      expr = build_fold_indirect_ref_loc (input_location,
-				      expr);
+	      expr = build_fold_indirect_ref_loc (input_location, expr);
 
 	      /* Make sure that the derived type has been built.  An external
 		 function, if only referenced in an io statement, requires this

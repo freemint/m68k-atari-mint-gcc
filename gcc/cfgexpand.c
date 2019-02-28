@@ -1252,10 +1252,10 @@ set_parm_rtl (tree parm, rtx x)
 	 allocate it, which means that in-frame portion is just a
 	 pointer.  ??? We've got a pseudo for sure here, do we
 	 actually dynamically allocate its spilling area if needed?
-	 ??? Isn't it a problem when POINTER_SIZE also exceeds
-	 MAX_SUPPORTED_STACK_ALIGNMENT, as on cris and lm32?  */
+	 ??? Isn't it a problem when Pmode alignment also exceeds
+	 MAX_SUPPORTED_STACK_ALIGNMENT, as can happen on cris and lm32?  */
       if (align > MAX_SUPPORTED_STACK_ALIGNMENT)
-	align = POINTER_SIZE;
+	align = GET_MODE_ALIGNMENT (Pmode);
 
       record_alignment_for_reg_var (align);
     }
@@ -1375,7 +1375,7 @@ expand_one_ssa_partition (tree var)
   /* If the variable alignment is very large we'll dynamicaly allocate
      it, which means that in-frame portion is just a pointer.  */
   if (align > MAX_SUPPORTED_STACK_ALIGNMENT)
-    align = POINTER_SIZE;
+    align = GET_MODE_ALIGNMENT (Pmode);
 
   record_alignment_for_reg_var (align);
 
@@ -1592,7 +1592,7 @@ expand_one_var (tree var, bool toplevel, bool really_expand)
       /* If the variable alignment is very large we'll dynamicaly allocate
 	 it, which means that in-frame portion is just a pointer.  */
       if (align > MAX_SUPPORTED_STACK_ALIGNMENT)
-	align = POINTER_SIZE;
+	align = GET_MODE_ALIGNMENT (Pmode);
     }
 
   record_alignment_for_reg_var (align);
@@ -2997,14 +2997,14 @@ expand_asm_stmt (gasm *stmt)
 
       generating_concat_p = 0;
 
-      if ((TREE_CODE (val) == INDIRECT_REF
-	   && allows_mem)
+      if ((TREE_CODE (val) == INDIRECT_REF && allows_mem)
 	  || (DECL_P (val)
 	      && (allows_mem || REG_P (DECL_RTL (val)))
 	      && ! (REG_P (DECL_RTL (val))
 		    && GET_MODE (DECL_RTL (val)) != TYPE_MODE (type)))
 	  || ! allows_reg
-	  || is_inout)
+	  || is_inout
+	  || TREE_ADDRESSABLE (type))
 	{
 	  op = expand_expr (val, NULL_RTX, VOIDmode,
 			    !allows_reg ? EXPAND_MEMORY : EXPAND_WRITE);
@@ -3013,7 +3013,7 @@ expand_asm_stmt (gasm *stmt)
 
 	  if (! allows_reg && !MEM_P (op))
 	    error ("output number %d not directly addressable", i);
-	  if ((! allows_mem && MEM_P (op))
+	  if ((! allows_mem && MEM_P (op) && GET_MODE (op) != BLKmode)
 	      || GET_CODE (op) == CONCAT)
 	    {
 	      rtx old_op = op;
@@ -6466,18 +6466,20 @@ pass_expand::execute (function *fun)
   find_many_sub_basic_blocks (blocks);
   purge_all_dead_edges ();
 
+  /* After initial rtl generation, call back to finish generating
+     exception support code.  We need to do this before cleaning up
+     the CFG as the code does not expect dead landing pads.  */
+  if (fun->eh->region_tree != NULL)
+    finish_eh_generation ();
+
+  /* Call expand_stack_alignment after finishing all
+     updates to crtl->preferred_stack_boundary.  */
   expand_stack_alignment ();
 
   /* Fixup REG_EQUIV notes in the prologue if there are tailcalls in this
      function.  */
   if (crtl->tail_call_emit)
     fixup_tail_calls ();
-
-  /* After initial rtl generation, call back to finish generating
-     exception support code.  We need to do this before cleaning up
-     the CFG as the code does not expect dead landing pads.  */
-  if (fun->eh->region_tree != NULL)
-    finish_eh_generation ();
 
   /* Remove unreachable blocks, otherwise we cannot compute dominators
      which are needed for loop state verification.  As a side-effect
