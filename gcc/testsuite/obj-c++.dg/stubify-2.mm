@@ -4,7 +4,7 @@
 /* { dg-do compile { target *-*-darwin* } } */
 /* { dg-skip-if "" { *-*-* } { "-fgnu-runtime" } { "" } } */
 /* { dg-require-effective-target ilp32 } */
-/* { dg-options "-mdynamic-no-pic -fdump-rtl-jump -mmacosx-version-min=10.4" } */
+/* { dg-options "-mdynamic-no-pic -fdump-rtl-jump -mmacosx-version-min=10.4 -msymbol-stubs" } */
 
 typedef struct objc_object { } *id ;
 int x = 41 ;
@@ -16,9 +16,9 @@ extern int bogonic (int, int, int) ;
 - (Document *) close;
 @end
 @implementation Document
-- (Document *) class { }
-- (Document *) close { }
-- (Document *) window { }
+- (Document *) class { return (Document *)0; }
+- (Document *) close { return (Document *)0; }
+- (Document *) window { return (Document *)0; }
 - (void)willEndCloseSheet:(void *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo {
   [[self window] close];
   ((void (*)(id, char *, int))objc_msgSend)([self class], (char *)contextInfo, 1);

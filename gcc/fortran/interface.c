@@ -691,6 +691,15 @@ gfc_compare_types (gfc_typespec *ts1, gfc_typespec *ts2)
   if (ts1->type == BT_VOID || ts2->type == BT_VOID)
     return true;
 
+  /* Special case for our C interop types.  There should be a better
+     way of doing this...  */
+
+  if (((ts1->type == BT_INTEGER && ts2->type == BT_DERIVED)
+       || (ts1->type == BT_DERIVED && ts2->type == BT_INTEGER))
+      && ts1->u.derived && ts2->u.derived
+      && ts1->u.derived == ts2->u.derived)
+    return true;
+
   /* The _data component is not always present, therefore check for its
      presence before assuming, that its derived->attr is available.
      When the _data component is not present, then nevertheless the
@@ -3576,6 +3585,7 @@ gfc_procedure_use (gfc_symbol *sym, gfc_actual_arglist **ap, locus *where)
 	gfc_warning (OPT_Wimplicit_procedure,
 		     "Procedure %qs called at %L is not explicitly declared",
 		     sym->name, where);
+      gfc_find_proc_namespace (sym->ns)->implicit_interface_calls = 1;
     }
 
   if (sym->attr.if_source == IFSRC_UNKNOWN)

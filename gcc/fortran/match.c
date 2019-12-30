@@ -2050,8 +2050,6 @@ gfc_match_type_spec (gfc_typespec *ts)
       ts->type = BT_CHARACTER;
 
       m = gfc_match_char_spec (ts);
-      if (ts->u.cl && ts->u.cl->length)
-	gfc_resolve_expr (ts->u.cl->length);
 
       if (m == MATCH_NO)
 	m = MATCH_YES;
@@ -2153,6 +2151,9 @@ found:
 	      return MATCH_NO;
 	    }
 
+	  if (e->expr_type != EXPR_CONSTANT)
+	    goto ohno;
+
 	  gfc_next_char (); /* Burn the ')'. */
 	  ts->kind = (int) mpz_get_si (e->value.integer);
 	  if (gfc_validate_kind (ts->type, ts->kind , true) == -1)
@@ -2166,6 +2167,8 @@ found:
 	  return MATCH_YES;
 	}
     }
+
+ohno:
 
   /* If a type is not matched, simply return MATCH_NO.  */
   gfc_current_locus = old_locus;
