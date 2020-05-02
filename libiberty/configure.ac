@@ -202,6 +202,7 @@ if [[ "${shared}" = "yes" ]]; then
   case "${host}" in
     *-*-cygwin*)	;;
     *-*-mint*)		;;
+    aarch64*-*-*)	PICFLAG=-fPIC ;;
     alpha*-*-linux*)	PICFLAG=-fPIC ;;
     arm*-*-*)		PICFLAG=-fPIC ;;
     hppa*-*-*)		PICFLAG=-fPIC ;;
