@@ -4,4 +4,4 @@
 # -x: Display expanded script commands
 
 SYSROOT_DIR="/" ./.travis/install_bintray.sh m68k-atari-mint-binutils-gdb
-BINTRAY_REPO="freemint" ./.travis/install_bintray.sh mintlib fdlibm
+SYSROOT_DIR="/usr/m68k-atari-mint/sys-root/usr" BINTRAY_REPO="freemint" ./.travis/install_bintray.sh mintlib fdlibm

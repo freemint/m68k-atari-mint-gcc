@@ -11,7 +11,7 @@ mkdir .build && cd .build
 CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer" CXXFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer" "${SRC_DIR}/configure" \
 	--prefix=/usr \
 	--target=m68k-atari-mint \
-	--with-sysroot=/usr/m68k-atari-mint \
+	--with-sysroot=/usr/m68k-atari-mint/sys-root \
 	--disable-nls \
 	--enable-languages="c,c++" \
 	--disable-libstdcxx-pch \
@@ -20,7 +20,7 @@ CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer" CXXFLAGS_FOR_TARGET="-O2 -fomit-fra
 make
 make install-strip DESTDIR="${INSTALL_DIR}"
 
-cd "${INSTALL_DIR}/lib/gcc/m68k-atari-mint/${PROJECT_VERSION}/include-fixed"
+cd "${INSTALL_DIR}/usr/lib/gcc/m68k-atari-mint/${PROJECT_VERSION}/include-fixed"
 for f in $(find . -type f)
 do
 	case "$f" in
