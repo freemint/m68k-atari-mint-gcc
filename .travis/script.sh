@@ -16,7 +16,8 @@ CFLAGS_FOR_TARGET="-O2 -fomit-frame-pointer" CXXFLAGS_FOR_TARGET="-O2 -fomit-fra
 	--enable-languages="c,c++" \
 	--disable-libstdcxx-pch \
 	--disable-libgomp \
-	--disable-lto
+	--disable-lto \
+	--with-default-libstdcxx-abi=gcc4-compatible
 make
 make install-strip DESTDIR="${INSTALL_DIR}"
 
