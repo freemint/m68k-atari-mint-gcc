@@ -77,9 +77,12 @@ MULTILIB_MATCHES += \
 	 (CPU_NAME != MLIB) $(M68K_MLIB_CPU), \
 	 ("mcpu?"MLIB"=mcpu?"CPU_NAME))
 
+# Add subtarget specific matches.
+MULTILIB_MATCHES += $(M68K_MLIB_MATCHES)
+
 MULTILIB_EXCEPTIONS :=
 
-ifeq ($(firstword $(M68K_MLIB_OPTIONS)),msoft-float)
+ifeq ($(findstring msoft-float,$(subst /, ,$(M68K_MLIB_OPTIONS))),msoft-float)
 # Exclude soft-float multilibs for targets that default to soft-float anyway.
 MULTILIB_EXCEPTIONS += $(call M68K_AWK,\
 	(CPU_NAME == MLIB) $(M68K_MLIB_CPU) \
@@ -89,6 +92,15 @@ MULTILIB_EXCEPTIONS += $(call M68K_AWK,\
 	 "mcpu="MLIB"/msoft-float*")
 endif
 
+# Add subtarget specific exceptions.
+MULTILIB_EXCEPTIONS += $(M68K_MLIB_EXCEPTIONS)
+
 # Remove the default CPU from the explicit exceptions.
 MULTILIB_EXCEPTIONS := \
 	$(patsubst mcpu=$(M68K_MLIB_DEFAULT)/%,%,$(MULTILIB_EXCEPTIONS))
+
+# Remove the default CPU from the reused multilibs.
+MULTILIB_REUSE := \
+	$(patsubst mcpu.$(M68K_MLIB_DEFAULT)=%,,$(MULTILIB_REUSE))
+MULTILIB_REUSE := \
+	$(shell echo $(MULTILIB_REUSE) | sed -e "s|\(mcpu\..*=\)mcpu\.$(M68K_MLIB_DEFAULT)/\(.*\b\)|\1\2|g")
