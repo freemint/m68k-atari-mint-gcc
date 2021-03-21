@@ -358,10 +358,11 @@ struct gcc_target targetm = TARGET_INITIALIZER;
 #define FL_FOR_isa_10    (FL_FOR_isa_00 | FL_ISA_68010)
 /* FL_68881 controls the default setting of -m68881.  gcc has traditionally
    generated 68881 code for 68020 and 68030 targets unless explicitly told
-   not to.  */
-#define FL_FOR_isa_20    (FL_FOR_isa_10 | FL_ISA_68020 \
-			  | FL_BITFIELD | FL_68881 | FL_CAS)
-#define FL_FOR_isa_40    (FL_FOR_isa_20 | FL_ISA_68040)
+   not to.
+
+   Change this behaviour so it applies only to 68040 and 68060 targets.  */
+#define FL_FOR_isa_20    (FL_FOR_isa_10 | FL_ISA_68020 | FL_BITFIELD | FL_CAS)
+#define FL_FOR_isa_40    (FL_FOR_isa_20 | FL_68881 | FL_ISA_68040)
 #define FL_FOR_isa_cpu32 (FL_FOR_isa_10 | FL_ISA_68020)
 
 /* Base flags for ColdFire ISAs.  */
