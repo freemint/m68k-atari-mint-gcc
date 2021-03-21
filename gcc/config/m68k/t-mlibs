@@ -45,10 +45,9 @@ ifeq ($(filter m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)),)
 $(error Error default cpu '$(target_cpu_default)' is not in multilib set '$(M68K_MLIB_CPUS)')
 endif
 
-MULTILIB_DIRNAMES := $(subst m68020,m68020-60,$(filter-out m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS)))
+MULTILIB_DIRNAMES := $(filter-out m$(M68K_MLIB_DEFAULT),$(M68K_MLIB_CPUS))
 MULTILIB_OPTIONS := $(shell echo $(MULTILIB_DIRNAMES:m%=mcpu=%) \
-		      | sed -e 's| |/|g' \
-		      | sed -e 's|cpu=68020-60|68020-60|g' )
+		      | sed -e 's| |/|g' )
 
 # Add subtarget specific options & dirs.
 MULTILIB_DIRNAMES += $(M68K_MLIB_DIRNAMES)
@@ -59,44 +58,17 @@ MULTILIB_MATCHES :=
 ifneq ($(M68K_ARCH),cf)
 # Map -march=* options to the representative -mcpu=* option.
 MULTILIB_MATCHES += mcpu?68000=march?68000 \
+		    mcpu?68020=march?68020 \
+		    mcpu?68030=march?68030 \
+		    mcpu?68040=march?68040 \
+		    mcpu?68060=march?68060 \
 		    mcpu?cpu32=march?cpu32
-
-MULTILIB_MATCHES += m68020-60=m68881 \
-		    m68020-60=m68020 \
-		    m68020-60=m68020-40 \
-		    m68020-60=mc68020 \
-		    m68020-60=m68030 \
-		    m68020-60=m68040 \
-		    m68020-60=m68060 \
-		    m68020-60=mcpu?68020 \
-		    m68020-60=mcpu?68030 \
-		    m68020-60=mcpu?68040 \
-		    m68020-60=mcpu?68060 \
-		    m68020-60=march?68020 \
-		    m68020-60=march?68030 \
-		    m68020-60=march?68040 \
-		    m68020-60=march?68060
 endif
 
 ifneq ($(M68K_ARCH),m68k)
 # Map -march=* options to the representative -mcpu=* option.
 MULTILIB_MATCHES += mcpu?5206e=march?isaa mcpu?5208=march?isaaplus \
 		    mcpu?5407=march?isab
-
-MULTILIB_MATCHES += mcpu?5475=mcfv4e \
-		    mcpu?5475=mcpu?5470 \
-		    mcpu?5475=mcpu?5471 \
-		    mcpu?5475=mcpu?5472 \
-		    mcpu?5475=mcpu?5473 \
-		    mcpu?5475=mcpu?5474 \
-		    mcpu?5475=mcpu?547x \
-		    mcpu?5475=mcpu?5480 \
-		    mcpu?5475=mcpu?5481 \
-		    mcpu?5475=mcpu?5482 \
-		    mcpu?5475=mcpu?5483 \
-		    mcpu?5475=mcpu?5484 \
-		    mcpu?5475=mcpu?5485 \
-		    mcpu?5475=mcpu?548x
 endif
 
 # Match non-representative -mcpu options to their representative option.
