@@ -89,3 +89,7 @@ along with GCC; see the file COPYING3.  If not see
 /* Don't default to pcc-struct-return, so that we can return small structures
    and unions in registers, which is slightly more efficient.  */
 #define DEFAULT_PCC_STRUCT_RETURN 0
+
+/* Install the __sync libcalls.  */
+#undef TARGET_INIT_LIBFUNCS
+#define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
