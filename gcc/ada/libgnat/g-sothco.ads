@@ -211,7 +211,7 @@ package GNAT.Sockets.Thin_Common is
 
    type Hostent is new
      System.Storage_Elements.Storage_Array (1 .. SOSC.SIZEOF_struct_hostent);
-   for Hostent'Alignment use 8;
+   --  for Hostent'Alignment use 8;
    --  Host entry. This is an opaque type used only via the following
    --  accessor functions, because 'struct hostent' has different layouts on
    --  different platforms.
@@ -241,7 +241,7 @@ package GNAT.Sockets.Thin_Common is
 
    type Servent is new
      System.Storage_Elements.Storage_Array (1 .. SOSC.SIZEOF_struct_servent);
-   for Servent'Alignment use 8;
+   --  for Servent'Alignment use 8;
    --  Service entry. This is an opaque type used only via the following
    --  accessor functions, because 'struct servent' has different layouts on
    --  different platforms.

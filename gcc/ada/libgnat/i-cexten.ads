@@ -70,7 +70,7 @@ package Interfaces.C.Extensions is
       low, high : unsigned_long_long;
    end record;
    pragma Convention (C_Pass_By_Copy, Signed_128);
-   for Signed_128'Alignment use unsigned_long_long'Alignment * 2;
+   --  for Signed_128'Alignment use unsigned_long_long'Alignment * 2;
 
    --  128-bit floating-point type available on x86:
    --  typedef float float_128 __attribute__ ((mode (TF)));
@@ -79,7 +79,7 @@ package Interfaces.C.Extensions is
       low, high : unsigned_long_long;
    end record;
    pragma Convention (C_Pass_By_Copy, Float_128);
-   for Float_128'Alignment use unsigned_long_long'Alignment * 2;
+   --  for Float_128'Alignment use unsigned_long_long'Alignment * 2;
 
    --  128-bit complex floating-point type available on x86:
    --  typedef _Complex float cfloat_128 __attribute__ ((mode (TC)));

@@ -125,6 +125,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <sys/time.h>
 
 #if defined (__vxworks) || defined (__ANDROID__)
 /* S_IREAD and S_IWRITE are not defined in VxWorks or Android */
@@ -3284,7 +3285,7 @@ __gnat_copy_attribs (char *from ATTRIBUTE_UNUSED, char *to ATTRIBUTE_UNUSED,
       return -1;
   }
 
-#elif _POSIX_C_SOURCE >= 200809L
+#elif _POSIX_C_SOURCE >= 200809L && defined(AT_FDCWD)
   struct timespec tbuf[2];
 
   if (mode != 2) {

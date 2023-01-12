@@ -86,7 +86,7 @@ pragma Style_Checks ("M32766");
  ** a number of non-POSIX but useful/required features.
  **/
 
-#if defined (__linux__) || defined (__ANDROID__)
+#if defined (__linux__) || defined (__ANDROID__) || defined(__MINT__)
 
 /* Define _XOPEN_SOURCE to get IOV_MAX */
 # if !defined (_XOPEN_SOURCE)
@@ -160,7 +160,7 @@ pragma Style_Checks ("M32766");
 #endif
 
 #if defined (__linux__) || defined (__ANDROID__) || defined (__QNX__) \
-  || defined (__rtems__)
+  || defined (__rtems__) || defined(__MINT__)
 # include <pthread.h>
 # include <signal.h>
 #endif
@@ -1210,12 +1210,12 @@ CND(NI_NUMERICSERV, "Numeric form of the service")
 CND(NI_NUMERICHOST, "Numeric form of the hostname")
 
 #ifndef NI_MAXHOST
-# define NI_MAXHOST -1
+# define NI_MAXHOST 1025
 #endif
 CND(NI_MAXHOST, "Maximum size of hostname")
 
 #ifndef NI_MAXSERV
-# define NI_MAXSERV -1
+# define NI_MAXSERV 32
 #endif
 CND(NI_MAXSERV, "Maximum size of service name")
 
@@ -1796,7 +1796,7 @@ CND(SIZEOF_struct_hostent, "struct hostent")
 #define SIZEOF_struct_servent (sizeof (struct servent))
 CND(SIZEOF_struct_servent, "struct servent")
 
-#if defined (__linux__) || defined (__ANDROID__) || defined (__QNX__)
+#if defined (__linux__) || defined (__ANDROID__) || defined (__QNX__) || defined(__MINT__)
 #define SIZEOF_sigset (sizeof (sigset_t))
 CND(SIZEOF_sigset, "sigset")
 #endif
@@ -1992,7 +1992,7 @@ CNS(CLOCK_RT_Ada, "")
 #endif
 
 #if defined (__APPLE__) || defined (__linux__) || defined (__ANDROID__) \
-  || defined (__QNX__) || defined (__rtems__) || defined (DUMMY)
+  || defined (__QNX__) || defined (__rtems__) || defined (DUMMY) || defined(__MINT__)
 /*
 
    --  Sizes of pthread data types

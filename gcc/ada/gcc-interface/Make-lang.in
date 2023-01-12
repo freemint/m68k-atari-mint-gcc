@@ -936,7 +936,7 @@ gnat-install-tools:
 	    fi ; \
 	  done; \
 	  $(RM) $(DESTDIR)$(bindir)/gnatdll$(exeext); \
-	  $(INSTALL_PROGRAM) gnatdll$(exeext) $(DESTDIR)$(bindir)/gnatdll$(exeext); \
+	  test -f gnatdll$(exeext) && $(INSTALL_PROGRAM) gnatdll$(exeext) $(DESTDIR)$(bindir)/gnatdll$(exeext); \
 	fi
 
 #

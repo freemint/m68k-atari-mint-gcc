@@ -34,7 +34,7 @@
 /* First all usupported platforms. Add stubs for exported routines. */
 
 #if defined (VMS) || defined (__vxworks) || defined (__Lynx__) \
-  || defined (__ANDROID__) || defined (__PikeOS__) || defined(__DJGPP__)
+  || defined (__ANDROID__) || defined (__PikeOS__) || defined(__DJGPP__) || defined(__MINT__)
 
 void *
 __gnat_new_tty (void)

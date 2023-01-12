@@ -4324,6 +4324,7 @@ package body Exp_Ch4 is
          --  too large, and which in the absence of a check results in
          --  undetected chaos ???
 
+         Len := 0;
          for J in 1 .. Number_Dimensions (E) loop
 
             if not Is_Modular_Integer_Type (Etype (Idx)) then

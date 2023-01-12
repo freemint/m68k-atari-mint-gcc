@@ -43,9 +43,9 @@ package System.Bitfields is
    Val_Bits  : constant := Long_Long_Integer'Size / 2;
    Val_Bytes : constant := Val_Bits / System.Storage_Unit;
 
-   type Val_2 is mod 2**(Val_Bits * 2) with Alignment => Val_Bytes;
+   type Val_2 is mod 2**(Val_Bits * 2) with Alignment => 2;
    pragma Provide_Shift_Operators (Val_2);
-   type Val is mod 2**Val_Bits with Alignment => Val_Bytes;
+   type Val is mod 2**Val_Bits with Alignment => 2;
 
    --  Enabling checks on the instantiation of System.Bitfield_Utils.G makes a
    --  latent visibility bug appear on strict alignment platforms related to
