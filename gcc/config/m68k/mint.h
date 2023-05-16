@@ -217,3 +217,7 @@ do {									\
    ? ((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4 \
    : DW_EH_PE_aligned)
 #endif
+
+#define STACK_CHECK_ATARI
+#define STACK_CHECK_BUILTIN 1
+int m68k_emit_stack_check(void);

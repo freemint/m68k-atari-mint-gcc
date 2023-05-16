@@ -1028,6 +1028,40 @@ m68k_set_frame_related (rtx_insn *insn)
       RTX_FRAME_RELATED_P (XVECEXP (body, 0, i)) = 1;
 }
 
+#define IS_INTERRUPT(func_kind) (func_kind != m68k_fk_normal_function)
+
+int m68k_emit_stack_check(void)
+{
+  if (flag_stack_check == FULL_BUILTIN_STACK_CHECK &&
+        !IS_INTERRUPT(m68k_get_function_kind (current_function_decl)) &&
+        !DECL_NO_LIMIT_STACK(current_function_decl))
+  {
+        rtx_code_label *lab1;
+        rtx limit_mem;
+        rtx jump;
+
+        static rtx stack_limit_symbol;
+        static rtx stack_overflow_rtx;
+
+        if (stack_limit_symbol == 0)
+                stack_limit_symbol = gen_rtx_SYMBOL_REF (Pmode, "_StkLim");
+        if (stack_overflow_rtx == 0)
+                stack_overflow_rtx = gen_rtx_SYMBOL_REF (Pmode, "_StkOver");
+        lab1 = gen_label_rtx ();
+        limit_mem = gen_rtx_MEM (Pmode, stack_limit_symbol);
+        emit_cmp_and_jump_insns (limit_mem, stack_pointer_rtx, LTU, 0,
+                           Pmode, 1, lab1);
+        JUMP_LABEL (get_last_insn ()) = lab1;
+        jump = gen_rtx_SET(pc_rtx, stack_overflow_rtx);
+        emit_insn(jump);
+        emit_barrier ();
+        emit_label(lab1);
+        return true;
+  }
+  return false;
+}
+
+
 /* Emit RTL for the "prologue" define_expand.  */
 
 void
@@ -1044,7 +1078,7 @@ m68k_expand_prologue (void)
 
   /* If the stack limit is a symbol, we can check it here,
      before actually allocating the space.  */
-  if (crtl->limit_stack
+  if (crtl->limit_stack && !IS_INTERRUPT(m68k_get_function_kind (current_function_decl))
       && GET_CODE (stack_limit_rtx) == SYMBOL_REF)
     {
       limit = plus_constant (Pmode, stack_limit_rtx, current_frame.size + 4);
@@ -1134,9 +1168,14 @@ m68k_expand_prologue (void)
 	}
     }
 
+#ifdef STACK_CHECK_ATARI
+  if (m68k_emit_stack_check())
+  {
+  } else
+#endif
   /* If the stack limit is not a symbol, check it here.
      This has the disadvantage that it may be too late...  */
-  if (crtl->limit_stack)
+  if (crtl->limit_stack && !IS_INTERRUPT(m68k_get_function_kind (current_function_decl)))
     {
       if (REG_P (stack_limit_rtx))
         emit_insn (gen_ctrapsi4 (gen_rtx_LTU (VOIDmode, stack_pointer_rtx,
