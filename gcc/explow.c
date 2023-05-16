@@ -1482,7 +1482,12 @@ allocate_dynamic_stack_space (rtx size, unsigned size_align,
       stack_pointer_delta = saved_stack_pointer_delta;
 
       if (STACK_GROWS_DOWNWARD)
+	{
 	emit_move_insn (target, virtual_stack_dynamic_rtx);
+#ifdef STACK_CHECK_ATARI
+	m68k_emit_stack_check();
+#endif
+	}
     }
 
   suppress_reg_args_size = false;

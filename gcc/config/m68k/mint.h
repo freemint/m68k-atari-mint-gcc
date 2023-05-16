@@ -192,3 +192,7 @@ do {									\
 /* Install the __sync libcalls.  */
 #undef TARGET_INIT_LIBFUNCS
 #define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
+
+#define STACK_CHECK_ATARI
+#define STACK_CHECK_BUILTIN 1
+int m68k_emit_stack_check(void);
