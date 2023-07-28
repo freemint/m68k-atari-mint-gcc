@@ -248,7 +248,7 @@ namespace __gnu_posix
   file_time(const stat_type& st, std::error_code& ec) noexcept
   {
     using namespace std::chrono;
-#ifdef _GLIBCXX_USE_ST_MTIM
+#if defined(_GLIBCXX_USE_ST_MTIM) && !defined(__MINT__)
     time_t s = st.st_mtim.tv_sec;
     nanoseconds ns{st.st_mtim.tv_nsec};
 #else

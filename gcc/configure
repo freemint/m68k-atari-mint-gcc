@@ -8140,7 +8140,7 @@ if test "${with_pkgversion+set}" = set; then :
       *)   PKGVERSION="($withval) " ;;
      esac
 else
-  PKGVERSION="(GCC) "
+  PKGVERSION="(GCC MiNT ELF 20230728) "
 
 fi
 
@@ -8158,7 +8158,7 @@ if test "${with_bugurl+set}" = set; then :
 	   ;;
      esac
 else
-  BUGURL="https://gcc.gnu.org/bugs/"
+  BUGURL="https://github.com/freemint/m68k-atari-mint-gcc/issues"
 
 fi
 

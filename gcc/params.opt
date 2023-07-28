@@ -607,7 +607,7 @@ Common Joined UInteger Var(param_max_modulo_backtrack_attempts) Init(40) Param O
 The maximum number of backtrack attempts the scheduler should make when modulo scheduling a loop.
 
 -param=min-pagesize=
-Common Joined UInteger Var(param_min_pagesize) Init(4096) Param Optimization
+Common Joined UInteger Var(param_min_pagesize) Init(0) Param Optimization
 Minimum page size for warning purposes.
 
 -param=max-partial-antic-length=
