@@ -803,10 +803,6 @@ __gcov_info_to_gcda (const struct gcov_info *gi_ptr,
    freestanding environments which do not support the C library file I/O.  */
 
 void
-#if defined(__mcoldfire__) && defined(__MSHORT__)
-/* Workaround for GCC bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88160 */
-__attribute__((optimize("-fno-combine-stack-adjustments")))
-#endif
 __gcov_filename_to_gcfn (const char *filename,
 			 void (*dump_fn) (const void *, unsigned, void *),
 			 void *arg)

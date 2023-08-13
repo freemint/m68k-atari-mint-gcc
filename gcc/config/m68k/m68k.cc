@@ -712,6 +712,14 @@ m68k_option_override (void)
       else
 	m68k_sched_mac = MAC_NO;
     }
+
+  /*
+   * disable -fcombine-stack-adjustments for coldfire/mshort combination,
+   * which generates wrong CFI offsets.
+   * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88160
+   */
+  if (PREFERRED_STACK_BOUNDARY > 16 && INT_TYPE_SIZE <= 16 && (write_symbols & DWARF2_DEBUG))
+    flag_combine_stack_adjustments = 0;
 }
 
 /* Implement TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE.  */

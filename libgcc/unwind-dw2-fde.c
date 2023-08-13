@@ -596,10 +596,6 @@ frame_heapsort (struct object *ob, fde_compare_t fde_compare,
 
 // Radix sort data in V1 using V2 as aux memory. Runtime O(n).
 static inline void
-#if defined(__mcoldfire__) && defined(__MSHORT__)
-/* Workaround for GCC bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88160 */
-__attribute__((optimize("-fno-combine-stack-adjustments")))
-#endif
 fde_radixsort (struct object *ob, fde_extractor_t fde_extractor,
 	       struct fde_vector *v1, struct fde_vector *v2)
 {

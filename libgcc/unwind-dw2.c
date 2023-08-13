@@ -1074,10 +1074,6 @@ struct frame_state * __frame_state_for (void *, struct frame_state *);
    `struct frame_state' and pass its address to STATE_IN.  */
 
 struct frame_state *
-#if defined(__mcoldfire__) && defined(__MSHORT__)
-/* Workaround for GCC bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88160 */
-__attribute__((optimize("-fno-combine-stack-adjustments")))
-#endif
 __frame_state_for (void *pc_target, struct frame_state *state_in)
 {
   struct _Unwind_Context context;
@@ -1323,10 +1319,6 @@ init_dwarf_reg_size_table (void)
 }
 
 static void __attribute__((noinline))
-#if defined(__mcoldfire__) && defined(__MSHORT__)
-/* Workaround for GCC bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88160 */
-__attribute__((optimize("-fno-combine-stack-adjustments")))
-#endif
 uw_init_context_1 (struct _Unwind_Context *context,
 		   void *outer_cfa, void *outer_ra)
 {
