@@ -9,7 +9,7 @@
 // generally only good for requesting no networking
 #if !defined (CODY_NETWORKING)
 // Have a known-good list of networking systems
-#if defined (__unix__) || defined (__MACH__)
+#if (defined (__unix__) || defined (__MACH__)) && !defined (__MINT__)
 #define CODY_NETWORKING 1
 #else
 #define CODY_NETWORKING 0

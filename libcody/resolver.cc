@@ -11,6 +11,7 @@
 #include <sys/types.h>
 
 #if ((defined (__unix__)						\
+      && !defined(__MINT__)						\
       && defined _POSIX_C_SOURCE					\
       && (_POSIX_C_SOURCE - 0) >= 200809L)				\
      || (defined (__Apple__)						\
