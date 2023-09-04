@@ -8140,7 +8140,7 @@ if test "${with_pkgversion+set}" = set; then :
       *)   PKGVERSION="($withval) " ;;
      esac
 else
-  PKGVERSION="(GCC MiNT ELF 20230819) "
+  PKGVERSION="(GCC MiNT ELF) "
 
 fi
 

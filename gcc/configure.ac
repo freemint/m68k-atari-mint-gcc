@@ -1067,7 +1067,7 @@ AC_ARG_WITH(specs,
 )
 AC_SUBST(CONFIGURE_SPECS)
 
-ACX_PKGVERSION([GCC MiNT ELF 20230819)
+ACX_PKGVERSION([GCC MiNT ELF)
 ACX_BUGURL([https://github.com/freemint/m68k-atari-mint-gcc/issues])
 
 # Allow overriding the default URL for documentation
