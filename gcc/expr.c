@@ -4310,7 +4310,11 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 	  size = GEN_INT (GET_MODE_SIZE (mode));
 	  if (!MEM_P (xinner))
 	    {
-	      temp = assign_temp (type, 1, 1);
+	      tree atype = type;
+
+	      if (atype == NULL)
+		atype = lang_hooks.types.type_for_mode (mode, 0);
+	      temp = assign_temp (atype, 1, 1);
 	      emit_move_insn (temp, xinner);
 	      xinner = temp;
 	    }
