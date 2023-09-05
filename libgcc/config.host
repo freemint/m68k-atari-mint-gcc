@@ -985,6 +985,7 @@ m68k-*-linux*)			# Motorola m68k's running GNU/Linux
 	;;
 m68k-*-mint*)
 	tmake_file="$tmake_file m68k/t-floatlib m68k/t-mint"
+	extra_parts="$extra_parts crtbegin.o crtend.o"
 	;;
 m68k-*-rtems*)
 	tmake_file="$tmake_file m68k/t-floatlib"

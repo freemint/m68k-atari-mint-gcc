@@ -62,10 +62,10 @@ along with GCC; see the file COPYING3.  If not see
   "%{mshort:-D__MSHORT__}"
 
 #undef  STARTFILE_SPEC
-#define STARTFILE_SPEC "%{pg|p|profile:gcrt0.o%s;:crt0.o%s}"
+#define STARTFILE_SPEC "%{pg|p|profile:gcrt0.o%s;:crt0.o%s} crtbegin.o%s"
 
 #undef  ENDFILE_SPEC
-#define ENDFILE_SPEC ""
+#define ENDFILE_SPEC "crtend.o%s"
 
 #undef  LIB_SPEC
 #define LIB_SPEC "-lc"
