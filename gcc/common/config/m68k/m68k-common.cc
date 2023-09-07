@@ -75,4 +75,26 @@ m68k_handle_option (struct gcc_options *opts,
 #undef TARGET_HANDLE_OPTION
 #define TARGET_HANDLE_OPTION m68k_handle_option
 
+/* Implement TARGET_EXCEPT_UNWIND_INFO.  */
+
+static enum unwind_info_type
+m68k_except_unwind_info (struct gcc_options *opts ATTRIBUTE_UNUSED)
+{
+#ifdef USING_ELFOS_H
+  /* Honor the --enable-sjlj-exceptions configure switch.  */
+#ifdef CONFIG_SJLJ_EXCEPTIONS
+  if (CONFIG_SJLJ_EXCEPTIONS)
+    return UI_SJLJ;
+#endif
+
+  if (DWARF2_UNWIND_INFO)
+    return UI_DWARF2;
+#endif
+
+  return UI_SJLJ;
+}
+
+#undef TARGET_EXCEPT_UNWIND_INFO
+#define TARGET_EXCEPT_UNWIND_INFO  m68k_except_unwind_info
+
 struct gcc_targetm_common targetm_common = TARGETM_COMMON_INITIALIZER;

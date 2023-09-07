@@ -74,10 +74,6 @@ along with GCC; see the file COPYING3.  If not see
 #undef INIT_SECTION_ASM_OP
 #undef FINI_SECTION_ASM_OP
 
-/* Disable DWARF 2 frame unwind support for exceptions.
-   Currently, .eh_frame sections contain relocations at odd addresses. Bug?  */
-#define DWARF2_UNWIND_INFO 0
-
 /* The following defines are taken from m68kemb.h to mimic m68k-elf.  */
 
 /* In order for bitfields to work on a 68000, or with -mnobitfield, we must
@@ -98,7 +94,7 @@ along with GCC; see the file COPYING3.  If not see
 
    MiNT: DWARF 2 frame unwind is not supported by a.out-mint.
 */
-#ifndef DWARF2_UNWIND_INFO
+#undef DWARF2_UNWIND_INFO
 /* If configured with --disable-sjlj-exceptions, use DWARF2
    else default to SJLJ.  */
 #if defined(USING_ELFOS_H) && defined (CONFIG_SJLJ_EXCEPTIONS) && !CONFIG_SJLJ_EXCEPTIONS
@@ -107,7 +103,6 @@ along with GCC; see the file COPYING3.  If not see
 #define DWARF2_UNWIND_INFO 1
 #else
 #define DWARF2_UNWIND_INFO 0
-#endif
 #endif
 
 #if DWARF2_UNWIND_INFO
