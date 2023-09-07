@@ -602,8 +602,10 @@ __do_global_ctors_1(void)
 }
 #endif /* USE_EH_FRAME_REGISTRY || USE_TM_CLONE_REGISTRY */
 
+#elif defined(__MINT__) && defined(__ELF__)
+/* already done in libgcc2.c */
 #else /* ! __LIBGCC_INIT_SECTION_ASM_OP__ && ! HAS_INIT_SECTION */
-/*#error "What are you doing with crtstuff.c, then?"*/
+#error "What are you doing with crtstuff.c, then?"
 #endif
 
 #elif defined(CRT_END) /* ! CRT_BEGIN */
@@ -762,8 +764,10 @@ __do_global_ctors (void)
     (*p) ();
 }
 
+#elif defined(__MINT__) && defined(__ELF__)
+/* already done in libgcc2.c */
 #else /* ! __LIBGCC_INIT_SECTION_ASM_OP__ && ! HAS_INIT_SECTION */
-/*#error "What are you doing with crtstuff.c, then?"*/
+#error "What are you doing with crtstuff.c, then?"
 #endif
 
 #else /* ! CRT_BEGIN && ! CRT_END */

@@ -93,3 +93,36 @@ along with GCC; see the file COPYING3.  If not see
 /* Install the __sync libcalls.  */
 #undef TARGET_INIT_LIBFUNCS
 #define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
+
+#ifdef USING_ELFOS_H
+/*
+ * Definitions for crtstuff.c.
+ * Only for elf; others use libgcc2.c instead
+ */
+#define CTOR_LIST_BEGIN \
+STATIC func_ptr __CTOR_LIST__[1] \
+  __attribute__ ((__used__, section(".ctors"), aligned(__alignof__(func_ptr)))) \
+  = { (func_ptr) (-1) }; \
+  /* STATIC ELF_ALIAS(__CTOR_LIST__) */
+
+#define DTOR_LIST_BEGIN \
+STATIC func_ptr __DTOR_LIST__[1] \
+  __attribute__ ((__used__, section(".dtors"), aligned(__alignof__(func_ptr)))) \
+  = { (func_ptr) (-1) }; \
+  /* STATIC ELF_ALIAS(__DTOR_LIST__) */
+
+#define CTOR_LIST_END \
+STATIC func_ptr __CTOR_END__[1] \
+  __attribute__((__used__)) \
+  __attribute__((section(".ctors"), aligned(__alignof__(func_ptr)))) \
+  = { (func_ptr) 0 }; \
+  /* STATIC ELF_ALIAS(__CTOR_END__) */
+
+#define DTOR_LIST_END \
+STATIC func_ptr __DTOR_END__[1] \
+  __attribute__((__used__)) \
+  __attribute__((section(".dtors"), aligned(__alignof__(func_ptr)))) \
+  = { (func_ptr) 0 }; \
+  /* STATIC ELF_ALIAS(__DTOR_END__) */
+
+#endif

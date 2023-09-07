@@ -2445,12 +2445,16 @@ SYMBOL__MAIN (void)
 
    Long term no port should use those extensions.  But many still do.  */
 #if !defined(__LIBGCC_INIT_SECTION_ASM_OP__)
+#if defined(__MINT__) && defined(__ELF__)
+/* nothing; we use the definitions from crtstuff.c now */
+#else
 #if defined (TARGET_ASM_CONSTRUCTOR) || defined (USE_COLLECT2)
 func_ptr __CTOR_LIST__[2] = {0, 0};
 func_ptr __DTOR_LIST__[2] = {0, 0};
 #else
 func_ptr __CTOR_LIST__[2];
 func_ptr __DTOR_LIST__[2];
+#endif
 #endif
 #endif /* no __LIBGCC_INIT_SECTION_ASM_OP__ */
 #endif /* L_ctors */
