@@ -90,6 +90,37 @@ along with GCC; see the file COPYING3.  If not see
    and unions in registers, which is slightly more efficient.  */
 #define DEFAULT_PCC_STRUCT_RETURN 0
 
+/* If we have a definition of INCOMING_RETURN_ADDR_RTX, assume that
+   the rest of the DWARF 2 frame unwind support is also provided.
+   
+   All configurations that don't use elf must be explicit about not using
+   dwarf unwind information.
+
+   MiNT: DWARF 2 frame unwind is not supported by a.out-mint.
+*/
+#ifndef DWARF2_UNWIND_INFO
+/* If configured with --disable-sjlj-exceptions, use DWARF2
+   else default to SJLJ.  */
+#if defined(USING_ELFOS_H) && defined (CONFIG_SJLJ_EXCEPTIONS) && !CONFIG_SJLJ_EXCEPTIONS
+/* The logic of this #if must be kept synchronised with the logic
+   for selecting the tmake_eh_file fragment in libgcc/config.host.  */
+#define DWARF2_UNWIND_INFO 1
+#else
+#define DWARF2_UNWIND_INFO 0
+#endif
+#endif
+
+#if DWARF2_UNWIND_INFO
+/* the default of DW_EH_PE_absptr creates relocations at odd addresses, which we cannot handle */
+#undef ASM_PREFERRED_EH_DATA_FORMAT
+#define ASM_PREFERRED_EH_DATA_FORMAT(CODE, GLOBAL)			   \
+  (flag_pic								   \
+   && !((TARGET_ID_SHARED_LIBRARY || TARGET_SEP_DATA)			   \
+	&& ((GLOBAL) || (CODE)))					   \
+   ? ((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4 \
+   : DW_EH_PE_aligned)
+#endif
+
 /* Install the __sync libcalls.  */
 #undef TARGET_INIT_LIBFUNCS
 #define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs

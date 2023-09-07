@@ -7540,6 +7540,13 @@ print_configuration (FILE *file)
 #endif
 
   fnotice (file, "Thread model: %s\n", thrmod);
+  enum unwind_info_type unwind_info = targetm_common.except_unwind_info (&global_options);
+  fnotice (file, "Exceptions: %s\n",
+    unwind_info == UI_NONE ? "none" :
+    unwind_info == UI_SJLJ ? "SJLJ" :
+    unwind_info == UI_DWARF2 ? "Dwarf2" :
+    unwind_info == UI_SEH ? "SEH" :
+    "target");
   fnotice (file, "Supported LTO compression algorithms: zlib");
 #ifdef HAVE_ZSTD_H
   fnotice (file, " zstd");

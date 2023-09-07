@@ -196,6 +196,7 @@ static bool m68k_modes_tieable_p (machine_mode, machine_mode);
 static machine_mode m68k_promote_function_mode (const_tree, machine_mode,
 						int *, const_tree, int);
 static void m68k_asm_final_postscan_insn (FILE *, rtx_insn *insn, rtx [], int);
+static enum unwind_info_type m68k_except_unwind_info (struct gcc_options *opts);
 
 /* Initialize the GCC target structure.  */
 
@@ -234,6 +235,9 @@ static void m68k_asm_final_postscan_insn (FILE *, rtx_insn *insn, rtx [], int);
 
 #undef TARGET_ASM_FILE_START_APP_OFF
 #define TARGET_ASM_FILE_START_APP_OFF true
+
+#undef TARGET_EXCEPT_UNWIND_INFO
+#define TARGET_EXCEPT_UNWIND_INFO  m68k_except_unwind_info
 
 #undef TARGET_LEGITIMIZE_ADDRESS
 #define TARGET_LEGITIMIZE_ADDRESS m68k_legitimize_address
@@ -7172,6 +7176,25 @@ m68k_promote_function_mode (const_tree type, machine_mode mode,
   if (type == NULL_TREE && !for_return && (mode == QImode || mode == HImode))
     return SImode;
   return mode;
+}
+
+/* Implement TARGET_EXCEPT_UNWIND_INFO.  */
+
+static enum unwind_info_type
+m68k_except_unwind_info (struct gcc_options *opts)
+{
+#ifdef USING_ELFOS_H
+  /* Honor the --enable-sjlj-exceptions configure switch.  */
+#ifdef CONFIG_SJLJ_EXCEPTIONS
+  if (CONFIG_SJLJ_EXCEPTIONS)
+    return UI_SJLJ;
+#endif
+
+  if (DWARF2_UNWIND_INFO)
+    return UI_DWARF2;
+#endif
+
+  return UI_SJLJ;
 }
 
 #include "gt-m68k.h"
