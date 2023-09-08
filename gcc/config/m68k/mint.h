@@ -35,11 +35,18 @@ along with GCC; see the file COPYING3.  If not see
 #undef  SIZE_TYPE
 #define SIZE_TYPE "long unsigned int"
 
+#if HAVE_INITFINI_ARRAY_SUPPORT
+#define GCC_HAVE_INITFINI_ARRAY_SUPPORT builtin_define ("__GCC_HAVE_INITFINI_ARRAY_SUPPORT");
+#else
+#define GCC_HAVE_INITFINI_ARRAY_SUPPORT
+#endif
+
 #undef  TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()		\
   do						\
     {						\
       builtin_define ("__MINT__");		\
+      GCC_HAVE_INITFINI_ARRAY_SUPPORT \
       builtin_define_std ("atarist");		\
       builtin_assert ("machine=atari");		\
       builtin_assert ("system=mint");		\

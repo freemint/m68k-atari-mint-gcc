@@ -428,9 +428,6 @@ changequote([,])dnl
 	# so we don't need the preprocessor test above.
 	gcc_cv_initfini_array=yes
 	;;
-      m68k-*-mintelf)
-	gcc_cv_initfini_array=yes
-	;;
 
       *)
 	AC_MSG_CHECKING(cross compile... guessing)

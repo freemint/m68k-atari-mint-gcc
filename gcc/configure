@@ -24590,9 +24590,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext;;
 	# so we don't need the preprocessor test above.
 	gcc_cv_initfini_array=yes
 	;;
-      m68k-*-mintelf)
-	gcc_cv_initfini_array=yes
-	;;
 
       *)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking cross compile... guessing" >&5

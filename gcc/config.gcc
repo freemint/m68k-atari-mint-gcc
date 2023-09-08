@@ -2363,6 +2363,9 @@ m68k-*-mintelf*)
 	tmake_file="m68k/t-floatlib m68k/t-mint m68k/t-mlibs"
 	gas=yes
 	gnu_ld=yes
+	if test "${enable_initfini_array}" != "no"; then
+		gcc_cv_initfini_array=yes
+	fi
 	;;
 m68k-*-rtems*)
 	default_m68k_cpu=68020
