@@ -149,49 +149,10 @@ struct _Unwind_Context
 static unsigned char dwarf_reg_size_table[__LIBGCC_DWARF_FRAME_REGISTERS__+1];
 
 
-/* Read unaligned data from the instruction buffer.  */
-
-union unaligned
-{
-  void *p;
-  unsigned u2 __attribute__ ((mode (HI)));
-  unsigned u4 __attribute__ ((mode (SI)));
-  unsigned u8 __attribute__ ((mode (DI)));
-  signed s2 __attribute__ ((mode (HI)));
-  signed s4 __attribute__ ((mode (SI)));
-  signed s8 __attribute__ ((mode (DI)));
-} __attribute__ ((packed));
-
 static void uw_update_context (struct _Unwind_Context *, _Unwind_FrameState *);
 static _Unwind_Reason_Code uw_frame_state_for (struct _Unwind_Context *,
 					       _Unwind_FrameState *);
 
-static inline void *
-read_pointer (const void *p) { const union unaligned *up = p; return up->p; }
-
-static inline int
-read_1u (const void *p) { return *(const unsigned char *) p; }
-
-static inline int
-read_1s (const void *p) { return *(const signed char *) p; }
-
-static inline int
-read_2u (const void *p) { const union unaligned *up = p; return up->u2; }
-
-static inline int
-read_2s (const void *p) { const union unaligned *up = p; return up->s2; }
-
-static inline unsigned int
-read_4u (const void *p) { const union unaligned *up = p; return up->u4; }
-
-static inline int
-read_4s (const void *p) { const union unaligned *up = p; return up->s4; }
-
-static inline unsigned long
-read_8u (const void *p) { const union unaligned *up = p; return up->u8; }
-
-static inline unsigned long
-read_8s (const void *p) { const union unaligned *up = p; return up->s8; }
 
 static inline _Unwind_Word
 _Unwind_IsSignalFrame (struct _Unwind_Context *context)
