@@ -17,10 +17,6 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
-/* The prefix to add to user-visible assembler symbols.  */
-#undef  USER_LABEL_PREFIX
-#define USER_LABEL_PREFIX "_"
-
 /* with fdlibm, most of the c99 functions are available, including sincos */
 #undef  TARGET_LIBC_HAS_FUNCTION
 #define TARGET_LIBC_HAS_FUNCTION bsd_libc_has_function
