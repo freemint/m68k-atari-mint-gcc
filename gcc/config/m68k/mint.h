@@ -73,6 +73,11 @@ along with GCC; see the file COPYING3.  If not see
 #undef  LIB_SPEC
 #define LIB_SPEC "-lc"
 
+/* we must define this to prevent alignment of the table,
+   otherwise the relative offset from ASM_RETURN_CASE_JUMP might not match */
+#undef ASM_OUTPUT_BEFORE_CASE_LABEL
+#define ASM_OUTPUT_BEFORE_CASE_LABEL(FILE,PREFIX,NUM,TABLE)
+
 /* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
    keep switch tables in the text section.  */
 
