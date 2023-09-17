@@ -134,6 +134,18 @@ along with GCC; see the file COPYING3.  If not see
    : DW_EH_PE_aligned)
 #endif
 
+/* Disable -fpic and -fPIC since bsr.l _label@PLTPC
+   is unsupported by the assembler.  */
+
+#undef  SUBTARGET_OVERRIDE_OPTIONS
+#define SUBTARGET_OVERRIDE_OPTIONS					\
+do {									\
+  if (flag_pic && !TARGET_PCREL)					\
+      error ("%<-f%s%> is not supported on this target",			\
+	       (flag_pic > 1) ? "PIC" : "pic");				\
+} while (0)
+
+
 /* Install the __sync libcalls.  */
 #undef TARGET_INIT_LIBFUNCS
 #define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
