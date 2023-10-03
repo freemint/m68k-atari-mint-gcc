@@ -173,92 +173,6 @@ read_sleb128 (const unsigned char *p, _sleb128_t *val)
   return p;
 }
 
-/* Read unaligned data from the instruction buffer.  */
-
-typedef unsigned __attribute__ ((mode (HI))) __uw16;
-typedef unsigned __attribute__ ((mode (SI))) __uw32;
-typedef unsigned __attribute__ ((mode (DI))) __uw64;
-typedef signed __attribute__ ((mode (HI))) __sw16;
-typedef signed __attribute__ ((mode (SI))) __sw32;
-typedef signed __attribute__ ((mode (DI))) __sw64;
-
-union unaligned
-{
-  void *p;
-  __uw16 u2;
-  __uw32 u4;
-  __uw64 u8;
-  __sw16 s2;
-  __sw32 s4;
-  __sw64 s8;
-  unsigned char c[8];
-} __attribute__ ((packed));
-
-static inline int
-read_1u (const void *p) { return *(const unsigned char *) p; }
-
-static inline int
-read_1s (const void *p) { return *(const signed char *) p; }
-
-#if __GCC_TARGET_STRICT_ALIGNMENT__
-
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-static inline int
-read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw16)up->c[0] << 8) | ((__uw16)up->c[1]); }
-static inline __uw32
-read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw32)up->c[0] << 24) | ((__uw32)up->c[1] << 16) | ((__uw32)up->c[2] << 8) | ((__uw32)up->c[3]); }
-static inline __uw64
-read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw64)read_4u(&up->c[0]) << 32) | ((__uw64)read_4u(&up->c[4])); }
-#else
-static inline int
-read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw16)up->c[1] << 8) | ((__uw16)up->c[0]); }
-static inline __uw32
-read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw32)up->c[3] << 24) | ((__uw32)up->c[2] << 16) | ((__uw32)up->c[1] << 8) | ((__uw32)up->c[0]); }
-static inline __uw64
-read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return ((__uw64)read_4u(&up->c[4]) << 32) | ((__uw64)read_4u(&up->c[0])); }
-#endif
-
-static inline int
-read_2s (const void *p) { __sw16 x = read_2u(p); return x; }
-static inline __sw32
-read_4s (const void *p) { __sw32 x = read_4u(p); return x; }
-static inline __sw64
-read_8s (const void *p) { __sw64 x = read_8u(p); return x; }
-
-#else /* !__GCC_TARGET_STRICT_ALIGNMENT__ */
-
-static inline int
-read_2u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u2; }
-
-static inline int
-read_2s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s2; }
-
-static inline __uw32
-read_4u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u4; }
-
-static inline __sw32
-read_4s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s4; }
-
-static inline __uw64
-read_8u (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->u8; }
-
-static inline __sw64
-read_8s (const void *p) { const union unaligned *up = (const union unaligned *)p; return up->s8; }
-#endif
-
-static inline void *
-read_pointer (const void *p) {
-#if __SIZEOF_POINTER__ == 8
-  return (void *)read_8u(p);
-#elif __SIZEOF_POINTER__ == 4
-  return (void *)read_4u(p);
-#elif __SIZEOF_POINTER__ == 2
-  return (void *)read_2u(p);
-#else
-  #error "unsupported pointer size"
-#endif
-}
-
 /* Load an encoded value from memory at P.  The value is returned in VAL;
    The function returns P incremented past the value.  BASE is as given
    by base_of_encoded_value for this encoding in the appropriate context.  */
@@ -270,7 +184,18 @@ static const unsigned char *
 read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
 			      const unsigned char *p, _Unwind_Ptr *val)
 {
-  const unsigned char *u = p;
+  union unaligned
+    {
+      void *ptr;
+      unsigned u2 __attribute__ ((mode (HI)));
+      unsigned u4 __attribute__ ((mode (SI)));
+      unsigned u8 __attribute__ ((mode (DI)));
+      signed s2 __attribute__ ((mode (HI)));
+      signed s4 __attribute__ ((mode (SI)));
+      signed s8 __attribute__ ((mode (DI)));
+    } __attribute__((__packed__));
+
+  const union unaligned *u = (const union unaligned *) p;
   _Unwind_Internal_Ptr result;
 
   if (encoding == DW_EH_PE_aligned)
@@ -285,7 +210,7 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
       switch (encoding & 0x0f)
 	{
 	case DW_EH_PE_absptr:
-	  result = (_Unwind_Internal_Ptr) read_pointer(p);
+	  result = (_Unwind_Internal_Ptr) u->ptr;
 	  p += sizeof (void *);
 	  break;
 
@@ -306,28 +231,28 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
 	  break;
 
 	case DW_EH_PE_udata2:
-	  result = read_2u (p);
+	  result = u->u2;
 	  p += 2;
 	  break;
 	case DW_EH_PE_udata4:
-	  result = read_4u (p);
+	  result = u->u4;
 	  p += 4;
 	  break;
 	case DW_EH_PE_udata8:
-	  result = read_8u (p);
+	  result = u->u8;
 	  p += 8;
 	  break;
 
 	case DW_EH_PE_sdata2:
-	  result = read_2s (p);
+	  result = u->s2;
 	  p += 2;
 	  break;
 	case DW_EH_PE_sdata4:
-	  result = read_4s (p);
+	  result = u->s4;
 	  p += 4;
 	  break;
 	case DW_EH_PE_sdata8:
-	  result = read_8s (p);
+	  result = u->s8;
 	  p += 8;
 	  break;
 

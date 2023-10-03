@@ -1576,8 +1576,6 @@ c_cpp_builtins (cpp_reader *pfile)
     cpp_define (pfile, "__GCC_HAVE_DWARF2_CFI_ASM");
 #endif
 
-  builtin_define_with_int_value("__GCC_TARGET_STRICT_ALIGNMENT__", TARGET_STRICT_ALIGNMENT);
-
   /* Make the choice of ObjC runtime visible to source code.  */
   if (c_dialect_objc () && flag_next_runtime)
     cpp_define (pfile, "__NEXT_RUNTIME__");
