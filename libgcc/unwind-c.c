@@ -244,3 +244,7 @@ __gcc_personality_seh0 (PEXCEPTION_RECORD ms_exc, void *this_frame,
 				ms_disp, __gcc_personality_imp);
 }
 #endif /* SEH */
+
+#ifdef __MINT__
+void *__DW_EH_PE_aligned_var __attribute__((__aligned__(sizeof(void *))));
+#endif

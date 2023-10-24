@@ -201,7 +201,18 @@ read_encoded_value_with_base (unsigned char encoding, _Unwind_Ptr base,
   if (encoding == DW_EH_PE_aligned)
     {
       _Unwind_Internal_Ptr a = (_Unwind_Internal_Ptr) p;
+#ifdef __MINT__
+      /*
+       * alignment to pointer size cannot be guaranteed by TOS at runtime
+       */
+      extern void *__DW_EH_PE_aligned_var;
+      _Unwind_Internal_Ptr base_offset = ((_Unwind_Internal_Ptr)&__DW_EH_PE_aligned_var) & 3;
+      a += base_offset; /* Where it should have been located */
+#endif
       a = (a + sizeof (void *) - 1) & - sizeof(void *);
+#ifdef __MINT__
+      a -= base_offset; /* Where it is actually aligned */
+#endif
       result = *(_Unwind_Internal_Ptr *) a;
       p = (const unsigned char *) (_Unwind_Internal_Ptr) (a + sizeof (void *));
     }
