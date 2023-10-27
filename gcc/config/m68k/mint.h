@@ -73,6 +73,17 @@ along with GCC; see the file COPYING3.  If not see
 #undef  LIB_SPEC
 #define LIB_SPEC "-lc"
 
+/* Register in which static-chain is passed to a function.  */
+#undef  STATIC_CHAIN_REGNUM
+#define STATIC_CHAIN_REGNUM A0_REG
+#undef  M68K_STATIC_CHAIN_REG_NAME
+#define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a0"
+
+/* Register in which address to store a structure value
+   is passed to a function.  */
+#undef  M68K_STRUCT_VALUE_REGNUM
+#define M68K_STRUCT_VALUE_REGNUM A1_REG
+
 /* we must define this to prevent alignment of the table,
    otherwise the relative offset from ASM_RETURN_CASE_JUMP might not match */
 #undef ASM_OUTPUT_BEFORE_CASE_LABEL
