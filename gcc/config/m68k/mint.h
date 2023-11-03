@@ -84,15 +84,29 @@ along with GCC; see the file COPYING3.  If not see
 #undef  M68K_STRUCT_VALUE_REGNUM
 #define M68K_STRUCT_VALUE_REGNUM A1_REG
 
-/* we must define this to prevent alignment of the table,
-   otherwise the relative offset from ASM_RETURN_CASE_JUMP might not match */
-#undef ASM_OUTPUT_BEFORE_CASE_LABEL
-#define ASM_OUTPUT_BEFORE_CASE_LABEL(FILE,PREFIX,NUM,TABLE)
-
 /* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
    keep switch tables in the text section.  */
 
 #define JUMP_TABLES_IN_TEXT_SECTION 1
+
+/* Use the default action for outputting the case label.  */
+#undef ASM_OUTPUT_CASE_LABEL
+#define ASM_RETURN_CASE_JUMP				\
+  do {							\
+    if (TARGET_COLDFIRE)				\
+      {							\
+	if (ADDRESS_REG_P (operands[0]))		\
+	  return "jmp %%pc@(2,%0:l)";			\
+	else if (TARGET_LONG_JUMP_TABLE_OFFSETS)	\
+	  return "jmp %%pc@(2,%0:l)";			\
+	else						\
+	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
+      }							\
+    else if (TARGET_LONG_JUMP_TABLE_OFFSETS)		\
+      return "jmp %%pc@(2,%0:l)";			\
+    else						\
+      return "jmp %%pc@(2,%0:w)";			\
+  } while (0)
 
 #define EH_TABLES_CAN_BE_READ_ONLY 1
 
