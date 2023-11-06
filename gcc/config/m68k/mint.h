@@ -108,6 +108,10 @@ along with GCC; see the file COPYING3.  If not see
       return "jmp %%pc@(2,%0:w)";			\
   } while (0)
 
+/* As offset 2 is hardcoded in the jmp instruction above,
+   the ADDR_VEC must immediately follow the jmp instruction.  */
+#define ADDR_VEC_ALIGN(ADDR_VEC) 0
+
 #define EH_TABLES_CAN_BE_READ_ONLY 1
 
 /* avoid pulling in the tm_clone support which we don't need */
