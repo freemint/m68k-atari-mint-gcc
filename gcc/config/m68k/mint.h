@@ -35,8 +35,41 @@ along with GCC; see the file COPYING3.  If not see
 #undef USER_LABEL_PREFIX
 #define USER_LABEL_PREFIX ""
 
-#undef  ASM_COMMENT_START
+/* How to start an assembler comment.  */
+
+#undef ASM_COMMENT_START
 #define ASM_COMMENT_START "|"
+
+/* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
+   keep switch tables in the text section.  */
+
+#define JUMP_TABLES_IN_TEXT_SECTION 1
+
+/* Use the default action for outputting the case label.  */
+
+#undef ASM_OUTPUT_CASE_LABEL
+#define ASM_RETURN_CASE_JUMP				\
+  do {							\
+    if (TARGET_COLDFIRE)				\
+      {							\
+	if (ADDRESS_REG_P (operands[0]))		\
+	  return "jmp %%pc@(2,%0:l)";			\
+	else if (TARGET_LONG_JUMP_TABLE_OFFSETS)	\
+	  return "jmp %%pc@(2,%0:l)";			\
+	else						\
+	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
+      }							\
+    else if (TARGET_LONG_JUMP_TABLE_OFFSETS)		\
+      return "jmp %%pc@(2,%0:l)";			\
+    else						\
+      return "jmp %%pc@(2,%0:w)";			\
+  } while (0)
+
+/* As offset 2 is hardcoded in the jmp instruction above,
+   the ADDR_VEC must immediately follow the jmp instruction.
+   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=112413  */
+
+#define ADDR_VEC_ALIGN(ADDR_VEC) 0
 
 /* This is how to output an assembler line that says to advance the
    location counter to a multiple of 2**LOG bytes.  */
@@ -48,38 +81,46 @@ do {								\
     fprintf ((FILE), "%s%u\n", ALIGN_ASM_OP, 1 << (LOG));	\
 } while (0)
 
-#ifndef BSS_SECTION_ASM_OP
-#define BSS_SECTION_ASM_OP	"\t.section\t.bss"
-#endif
+/* If defined, a C expression whose value is a string containing the
+   assembler operation to identify the following data as uninitialized global
+   data.  */
 
-#ifndef ASM_OUTPUT_ALIGNED_BSS
+#define BSS_SECTION_ASM_OP "\t.section\t.bss"
+
+/* A C statement (sans semicolon) to output to the stdio stream
+   FILE the assembler definition of uninitialized global DECL named
+   NAME whose size is SIZE bytes and alignment is ALIGN bytes.
+   Try to use asm_output_aligned_bss to implement this macro.  */
+
 #define ASM_OUTPUT_ALIGNED_BSS(FILE, DECL, NAME, SIZE, ALIGN) \
   asm_output_aligned_bss (FILE, DECL, NAME, SIZE, ALIGN)
-#endif
+
+/* Output a common block.  */
 
 #undef ASM_OUTPUT_COMMON
-#undef ASM_OUTPUT_LOCAL
 #define ASM_OUTPUT_COMMON(FILE, NAME, SIZE, ROUNDED)  \
 ( fputs (".comm ", (FILE)),			\
   assemble_name ((FILE), (NAME)),		\
   fprintf ((FILE), ",%u\n", (int)(SIZE)))
 
+/* Output a local common block.  */
+
+#undef ASM_OUTPUT_LOCAL
 #define ASM_OUTPUT_LOCAL(FILE, NAME, SIZE, ROUNDED)  \
 ( fputs (".lcomm ", (FILE)),			\
   assemble_name ((FILE), (NAME)),		\
   fprintf ((FILE), ",%u\n", (int)(SIZE)))
 
-/* Define how the m68k registers should be numbered for Dwarf output.
-   The numbering provided here should be compatible with the native
-   SVR4 debugger in the m68k/SVR4 reference port, where d0-d7
-   are 0-7, a0-a8 are 8-15, and fp0-fp7 are 16-23.  */
+/* Disable -fpic and -fPIC since bsr.l _label@PLTPC
+   is unsupported by the assembler.  */
 
-#undef DEBUGGER_REGNO
-#define DEBUGGER_REGNO(REGNO) (REGNO)
-
-/* with fdlibm, most of the c99 functions are available, including sincos */
-#undef  TARGET_LIBC_HAS_FUNCTION
-#define TARGET_LIBC_HAS_FUNCTION bsd_libc_has_function
+#undef  SUBTARGET_OVERRIDE_OPTIONS
+#define SUBTARGET_OVERRIDE_OPTIONS					\
+do {									\
+  if (flag_pic && !TARGET_PCREL)					\
+      error ("%<-f%s%> is not supported on this target",		\
+	       (flag_pic > 1) ? "PIC" : "pic");				\
+} while (0)
 
 /* Define these to avoid dependence on meaning of `int'.  */
 #undef  WCHAR_TYPE
@@ -90,6 +131,10 @@ do {								\
 #define PTRDIFF_TYPE "long int"
 #undef  SIZE_TYPE
 #define SIZE_TYPE "long unsigned int"
+
+/* Don't default to pcc-struct-return, so that we can return small structures
+   and unions in registers, which is slightly more efficient.  */
+#define DEFAULT_PCC_STRUCT_RETURN 0
 
 #if HAVE_INITFINI_ARRAY_SUPPORT
 #define GCC_HAVE_INITFINI_ARRAY_SUPPORT builtin_define ("__GCC_HAVE_INITFINI_ARRAY_SUPPORT");
@@ -133,65 +178,31 @@ do {								\
 #undef  LIB_SPEC
 #define LIB_SPEC "-lc"
 
-/* Register in which static-chain is passed to a function.  */
-#undef  STATIC_CHAIN_REGNUM
-#define STATIC_CHAIN_REGNUM A0_REG
-#undef  M68K_STATIC_CHAIN_REG_NAME
-#define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a0"
-
-/* Register in which address to store a structure value
-   is passed to a function.  */
-#undef  M68K_STRUCT_VALUE_REGNUM
-#define M68K_STRUCT_VALUE_REGNUM A1_REG
-
-/* Currently, JUMP_TABLES_IN_TEXT_SECTION must be defined in order to
-   keep switch tables in the text section.  */
-
-#define JUMP_TABLES_IN_TEXT_SECTION 1
-
-/* Use the default action for outputting the case label.  */
-#undef ASM_OUTPUT_CASE_LABEL
-#define ASM_RETURN_CASE_JUMP				\
-  do {							\
-    if (TARGET_COLDFIRE)				\
-      {							\
-	if (ADDRESS_REG_P (operands[0]))		\
-	  return "jmp %%pc@(2,%0:l)";			\
-	else if (TARGET_LONG_JUMP_TABLE_OFFSETS)	\
-	  return "jmp %%pc@(2,%0:l)";			\
-	else						\
-	  return "ext%.l %0\n\tjmp %%pc@(2,%0:l)";	\
-      }							\
-    else if (TARGET_LONG_JUMP_TABLE_OFFSETS)		\
-      return "jmp %%pc@(2,%0:l)";			\
-    else						\
-      return "jmp %%pc@(2,%0:w)";			\
-  } while (0)
-
-/* As offset 2 is hardcoded in the jmp instruction above,
-   the ADDR_VEC must immediately follow the jmp instruction.  */
-#define ADDR_VEC_ALIGN(ADDR_VEC) 0
-
-#define EH_TABLES_CAN_BE_READ_ONLY 1
-
-/* avoid pulling in the tm_clone support which we don't need */
-#define USE_TM_CLONE_REGISTRY 0
-
 /* The MiNTLib doesn't have support for .init and .fini sections yet.  */
 #undef INIT_SECTION_ASM_OP
 #undef FINI_SECTION_ASM_OP
 
-/* The following defines are taken from m68kemb.h to mimic m68k-elf.  */
+/* avoid pulling in the tm_clone support which we don't need */
+#define USE_TM_CLONE_REGISTRY 0
 
-/* In order for bitfields to work on a 68000, or with -mnobitfield, we must
-   define either PCC_BITFIELD_TYPE_MATTERS or STRUCTURE_SIZE_BOUNDARY.
-   Defining STRUCTURE_SIZE_BOUNDARY results in structure packing problems,
-   so we define PCC_BITFIELD_TYPE_MATTERS.  */
-#define PCC_BITFIELD_TYPE_MATTERS 1
+/* Install the __sync libcalls.  */
+#undef TARGET_INIT_LIBFUNCS
+#define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
 
-/* Don't default to pcc-struct-return, so that we can return small structures
-   and unions in registers, which is slightly more efficient.  */
-#define DEFAULT_PCC_STRUCT_RETURN 0
+/* with fdlibm, most of the c99 functions are available, including sincos */
+#undef  TARGET_LIBC_HAS_FUNCTION
+#define TARGET_LIBC_HAS_FUNCTION bsd_libc_has_function
+
+/* Define how the m68k registers should be numbered for Dwarf output.
+   The numbering provided here should be compatible with the native
+   SVR4 debugger in the m68k/SVR4 reference port, where d0-d7
+   are 0-7, a0-a8 are 8-15, and fp0-fp7 are 16-23.  */
+
+#undef DEBUGGER_REGNO
+#define DEBUGGER_REGNO(REGNO) (REGNO)
+
+/* After initial relocation, exception handling tables are never written.  */
+#define EH_TABLES_CAN_BE_READ_ONLY 1
 
 /* If we have a definition of INCOMING_RETURN_ADDR_RTX, assume that
    the rest of the DWARF 2 frame unwind support is also provided.
@@ -222,22 +233,6 @@ do {								\
    ? ((GLOBAL) ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | DW_EH_PE_sdata4 \
    : DW_EH_PE_aligned)
 #endif
-
-/* Disable -fpic and -fPIC since bsr.l _label@PLTPC
-   is unsupported by the assembler.  */
-
-#undef  SUBTARGET_OVERRIDE_OPTIONS
-#define SUBTARGET_OVERRIDE_OPTIONS					\
-do {									\
-  if (flag_pic && !TARGET_PCREL)					\
-      error ("%<-f%s%> is not supported on this target",			\
-	       (flag_pic > 1) ? "PIC" : "pic");				\
-} while (0)
-
-
-/* Install the __sync libcalls.  */
-#undef TARGET_INIT_LIBFUNCS
-#define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
 
 #ifdef USING_ELFOS_H
 /*
