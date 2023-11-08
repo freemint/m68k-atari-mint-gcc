@@ -17,6 +17,66 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
+/* The prefix for register names.  Note that REGISTER_NAMES
+   is supposed to include this prefix. Also note that this is NOT an
+   fprintf format string, it is a literal string */
+
+#undef REGISTER_PREFIX
+#define REGISTER_PREFIX "%"
+
+/* The prefix for local (compiler generated) labels.
+   These labels will not appear in the symbol table.  */
+
+#undef LOCAL_LABEL_PREFIX
+#define LOCAL_LABEL_PREFIX "."
+
+/* The prefix to add to user-visible assembler symbols.  */
+
+#undef USER_LABEL_PREFIX
+#define USER_LABEL_PREFIX ""
+
+#undef  ASM_COMMENT_START
+#define ASM_COMMENT_START "|"
+
+/* This is how to output an assembler line that says to advance the
+   location counter to a multiple of 2**LOG bytes.  */
+
+#undef ASM_OUTPUT_ALIGN
+#define ASM_OUTPUT_ALIGN(FILE,LOG)				\
+do {								\
+  if ((LOG) > 0)						\
+    fprintf ((FILE), "%s%u\n", ALIGN_ASM_OP, 1 << (LOG));	\
+} while (0)
+
+#ifndef BSS_SECTION_ASM_OP
+#define BSS_SECTION_ASM_OP	"\t.section\t.bss"
+#endif
+
+#ifndef ASM_OUTPUT_ALIGNED_BSS
+#define ASM_OUTPUT_ALIGNED_BSS(FILE, DECL, NAME, SIZE, ALIGN) \
+  asm_output_aligned_bss (FILE, DECL, NAME, SIZE, ALIGN)
+#endif
+
+#undef ASM_OUTPUT_COMMON
+#undef ASM_OUTPUT_LOCAL
+#define ASM_OUTPUT_COMMON(FILE, NAME, SIZE, ROUNDED)  \
+( fputs (".comm ", (FILE)),			\
+  assemble_name ((FILE), (NAME)),		\
+  fprintf ((FILE), ",%u\n", (int)(SIZE)))
+
+#define ASM_OUTPUT_LOCAL(FILE, NAME, SIZE, ROUNDED)  \
+( fputs (".lcomm ", (FILE)),			\
+  assemble_name ((FILE), (NAME)),		\
+  fprintf ((FILE), ",%u\n", (int)(SIZE)))
+
+/* Define how the m68k registers should be numbered for Dwarf output.
+   The numbering provided here should be compatible with the native
+   SVR4 debugger in the m68k/SVR4 reference port, where d0-d7
+   are 0-7, a0-a8 are 8-15, and fp0-fp7 are 16-23.  */
+
+#undef DEBUGGER_REGNO
+#define DEBUGGER_REGNO(REGNO) (REGNO)
+
 /* with fdlibm, most of the c99 functions are available, including sincos */
 #undef  TARGET_LIBC_HAS_FUNCTION
 #define TARGET_LIBC_HAS_FUNCTION bsd_libc_has_function
