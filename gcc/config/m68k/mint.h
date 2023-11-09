@@ -95,22 +95,6 @@ do {								\
 #define ASM_OUTPUT_ALIGNED_BSS(FILE, DECL, NAME, SIZE, ALIGN) \
   asm_output_aligned_bss (FILE, DECL, NAME, SIZE, ALIGN)
 
-/* Output a common block.  */
-
-#undef ASM_OUTPUT_COMMON
-#define ASM_OUTPUT_COMMON(FILE, NAME, SIZE, ROUNDED)  \
-( fputs (".comm ", (FILE)),			\
-  assemble_name ((FILE), (NAME)),		\
-  fprintf ((FILE), ",%u\n", (int)(SIZE)))
-
-/* Output a local common block.  */
-
-#undef ASM_OUTPUT_LOCAL
-#define ASM_OUTPUT_LOCAL(FILE, NAME, SIZE, ROUNDED)  \
-( fputs (".lcomm ", (FILE)),			\
-  assemble_name ((FILE), (NAME)),		\
-  fprintf ((FILE), ",%u\n", (int)(SIZE)))
-
 /* Disable -fpic and -fPIC since bsr.l _label@PLTPC
    is unsupported by the assembler.  */
 
