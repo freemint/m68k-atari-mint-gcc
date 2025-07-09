@@ -1,3 +1,440 @@
+2025-06-05  Release Manager
+
+	* GCC 13.4.0 released.
+
+2025-06-02  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backported from master:
+	2025-03-04  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/103391
+	* trans-expr.cc (gfc_trans_assignment_1): Do not use poly assign
+	for pointer arrays on lhs (as it is done for allocatables
+	already).
+
+2025-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-05-13  Jakub Jelinek  <jakub@redhat.com>
+		    Daniil Kochergin  <daniil2472s@gmail.com>
+		    Tobias Burnus  <tburnus@baylibre.com>
+
+	PR fortran/120191
+	* trans-intrinsic.cc (strip_kind_from_actual): Remove.
+	(gfc_conv_intrinsic_minmaxloc): Don't call strip_kind_from_actual.
+	Free and clear kind_arg->expr if non-NULL.  Set back_arg->name to
+	"%VAL" instead of a loop looking for last argument.  Remove actual
+	variable, use array_arg instead.  Free and clear dim_arg->expr if
+	non-NULL for BT_CHARACTER cases instead of using a loop.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* resolve.cc (resolve_procedure_expression): Remove extraneous space
+	from the middle of diagnostics.
+
+2025-04-22  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-04-09  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/119656
+	* interface.cc (gfc_compare_actual_formal): Fix front-end memleak
+	when searching for matching interfaces.
+	* trans-expr.cc (gfc_conv_procedure_call): If there is a formal
+	dummy corresponding to an absent argument, use its type, and only
+	fall back to inferred type otherwise.
+
+2025-03-25  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-03-19  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/116706
+	* trans-array.cc (gfc_is_reallocatable_lhs): Fix check on
+	allocatable components of derived type or class objects.
+
+2025-02-20  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-02-07  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/59252
+	* trans-expr.cc (gfc_trans_subcomponent_assign): Initialize
+	allocatable non-deferred character with NULL properly.
+
+2025-01-11  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-01-03  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/106692
+	* trans-expr.cc (gfc_conv_expr_op): Inhibit excessive optimization
+	of Cray pointers by treating them as volatile in comparisons.
+
+2025-01-06  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2023-05-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/105152
+	PR fortran/100193
+	PR fortran/87496
+	PR fortran/103389
+	PR fortran/104429
+	PR fortran/82774
+	* interface.cc (gfc_compare_actual_formal): Emit an error if an
+	unlimited polymorphic actual is not matched either to an
+	unlimited or assumed type formal argument.
+	* resolve.cc (resolve_ordinary_assign): Emit an error if the
+	var expression of an ordinary assignment is a proc pointer
+	component.
+	* trans-array.cc (gfc_walk_array_ref): Provide assumed shape
+	arrays coming from interface mapping with a viable arrayspec.
+	* trans-expr.cc (gfc_conv_intrinsic_to_class): Tidy up flagging
+	of unlimited polymorphic 'class_ts'.
+	(gfc_conv_gfc_desc_to_cfi_desc): Assumed type is unlimited
+	polymorphic and should accept any actual type.
+	(gfc_conv_procedure_call): Replace dreadful kludge with a call
+	to gfc_finalize_tree_expr. Avoid dereferencing a void pointer
+	by giving it the pointer type of the actual argument.
+	(alloc_scalar_allocatable_subcomponent): Shorten the function
+	name and replace the symbol argument with the se string length.
+	If a deferred length character length is either not present or
+	is not a variable, give the typespec a variable and assign the
+	string length to that. Use gfc_deferred_strlen to find the
+	hidden string length component.
+	(gfc_trans_subcomponent_assign): Convert the expression before
+	the call to alloc_scalar_allocatable_subcomponent so that a
+	good string length is provided.
+	(gfc_trans_structure_assign): Remove the unneeded derived type
+	symbol from calls to gfc_trans_subcomponent_assign.
+
+2024-12-22  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-12-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/117797
+	* trans-array.cc (class_array_element_size): New function.
+	(gfc_get_array_span): Refactor, using class_array_element_size
+	to return the span for descriptors that are the _data component
+	of a class expression and then class dummy references. Revert
+	the conditions to those before r15-5083 tidying up using 'sym'.
+
+2024-12-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-12-15  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/117897
+	* trans-expr.cc (gfc_trans_assignment_1): RHS pointer function
+	results must not be finalized.
+
+2024-12-15  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-12-15  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/117730
+	PR fortran/84674
+	* class.cc (add_proc_comp): If the present typebound procedure
+	component is abstract, unconditionally check the replacement.
+	Only reject a non_overridable if it has no overridden procedure
+	and the component is already present in the vtype.
+
+2024-11-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/105054
+	* resolve.cc (get_temp_from_expr): If the pointer function has
+	a deferred character length, generate a new deferred charlen
+	for the temporary.
+
+2024-11-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/117763
+	* trans-array.cc (gfc_get_array_span): Guard against derefences
+	of 'expr'. Clean up some typos. Use 'gfc_get_vptr_from_expr'
+	for clarity and apply a functional reversion of last section
+	that deals with class dummies.
+
+2024-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/84869
+	* trans-expr.cc (trans_class_vptr_len_assignment): To access
+	the '_len' field, 're' must be unlimited polymorphic.
+
+2024-11-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-11  Tomas Trnka  <trnka@scm.com>
+		    Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/116388
+	* class.cc (finalize_component): Leading underscore in the name
+	of 'byte_stride' to suppress invalid finalization.
+
+2024-11-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-11  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/109345
+	* trans-array.cc (gfc_get_array_span): Unlimited polymorphic
+	expressions are now treated separately since the span need not
+	be the same as the element size.
+
+2024-11-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-11-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/115700
+	* resolve.cc (resolve_assoc_var): Extract a substring reference
+	with missing as well as non-constant start or end.
+
+2024-11-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-10-31  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/115700
+	* resolve.cc (resolve_variable): The typespec of an expression,
+	which is not a substring, can be shared with a deferred length
+	associate name.
+	(resolve_assoc_var): Extract a substring reference with non-
+	constant start or end. Use it to flag up the need for array
+	associate name to be a pointer.
+	(resolve_block_construct): Change comment from past to future
+	tense.
+
+2024-11-14  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/115700
+	* trans-stmt.cc (trans_associate_var): Update from mainline to
+	handle substring targets correctly.
+
+2024-11-05  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/115070
+	PR fortran/115348
+	* trans-expr.cc (gfc_trans_class_init_assign): If all the
+	components of the default initializer are null for a scalar,
+	build an empty statement to prevent prior declarations from
+	disappearing.
+
+2024-11-03  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/116040
+	* trans-stmt.cc (trans_associate_var): Copy chunk in 14-branch
+	that correctly handles class function selectors.
+
+2024-11-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-10-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/79685
+	* decl.cc (match_data_constant): Find the symtree instead of
+	the symbol so the use renamed symbols are found. Pass this and
+	the derived type to gfc_match_structure_constructor.
+	* match.h: Update prototype of gfc_match_structure_contructor.
+	* primary.cc (gfc_match_structure_constructor): Remove call to
+	gfc_get_ha_sym_tree and use caller supplied symtree instead.
+
+2024-11-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2023-12-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/112459
+	* trans-array.cc (gfc_trans_array_constructor_value): Replace
+	gfc_notification_std with explicit logical expression that
+	selects F2003/2008 and excludes -std=default/gnu.
+	* trans-expr.cc (gfc_conv_expr): Ditto.
+
+2024-10-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-07-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/84868
+	* simplify.cc (gfc_simplify_len_trim): If the argument is an
+	element of a parameter array, simplify all the elements and
+	build a new parameter array to hold the result, after checking
+	that it doesn't already exist.
+	* trans-expr.cc (gfc_get_interface_mapping_array) if a string
+	length is available, use it for the typespec.
+	(gfc_add_interface_mapping): Supply the se string length.
+
+2024-09-20  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2024-09-05  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/100273
+	* trans-decl.cc (gfc_create_module_variable): Handle module
+	variable also when it is needed for the result specification
+	of a contained function.
+
+2024-08-05  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-07-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/108889
+	* gfortran.h: Add bit field 'allocated_in_scope' to gfc_symbol.
+	* trans-array.cc (gfc_array_allocate): Set 'allocated_in_scope'
+	after allocation if not a component reference.
+	(gfc_alloc_allocatable_for_assignment): If 'allocated_in_scope'
+	not set, not a component ref and not allocated, set the array
+	bounds and offset to give zero length in all dimensions. Then
+	set allocated_in_scope.
+
+2024-07-21  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2024-07-19  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/103115
+	* trans-array.cc (gfc_trans_array_constructor_value): If the first
+	element of an array constructor is deferred-length character and
+	therefore does not have an element size known at compile time, do
+	not try to collect subsequent constant elements into a constructor
+	for optimization.
+
+2024-07-20  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-05-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/113363
+	* trans-array.cc (gfc_array_init_size): Use the expr3 dtype so
+	that the correct element size is used.
+	* trans-expr.cc (gfc_conv_procedure_call): Remove restriction
+	that ss and ss->loop be present for the finalization of class
+	array function results.
+	(trans_class_assignment): Use free and malloc, rather than
+	realloc, for character expressions assigned to unlimited poly
+	entities.
+	* trans-stmt.cc (gfc_trans_allocate): Build a correct rhs for
+	the assignment of an unlimited polymorphic 'source'.
+
+2024-07-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-05-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/103312
+	* dependency.cc (gfc_dep_compare_expr): Handle component call
+	expressions. Return -2 as default and return 0 if compared with
+	a function expression that is from an interface body and has
+	the same name.
+	* expr.cc (gfc_reduce_init_expr): If the expression is a comp
+	call do not attempt to reduce, defer to resolution and return
+	false.
+	* trans-types.cc (gfc_get_dtype_rank_type,
+	gfc_get_nodesc_array_type): Fix whitespace.
+
+2024-07-08  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2024-05-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/84006
+	PR fortran/100027
+	PR fortran/98534
+	* iresolve.cc (gfc_resolve_transfer): Emit a TODO error for
+	unlimited polymorphic mold.
+	* trans-expr.cc (gfc_resize_class_size_with_len): Use the fold
+	even if a block is not available in which to fix the result.
+	(trans_class_assignment): Enable correct assignment of
+	character expressions to unlimited polymorphic variables using
+	lhs _len field and rse string_length.
+	* trans-intrinsic.cc (gfc_conv_intrinsic_storage_size): Extract
+	the class expression so that the unlimited polymorphic class
+	expression can be used in gfc_resize_class_size_with_len to
+	obtain the storage size for character payloads. Guard the use
+	of GFC_DECL_SAVED_DESCRIPTOR by testing for DECL_LANG_SPECIFIC
+	to prevent the ICE. Also, invert the order to use the class
+	expression extracted from the argument.
+	(gfc_conv_intrinsic_transfer): In same way as 'storage_size',
+	use the _len field to obtaining the correct length for arg 1.
+	Add a branch for the element size in bytes of class expressions
+	with provision to make use of the unlimited polymorphic _len
+	field. Again, the class references are explicitly identified.
+	'mold_expr' was already declared. Use it instead of 'arg'. Do
+	not fix 'dest_word_len' for deferred character sources because
+	reallocation on assign makes use of it before it is assigned.
+
+2024-06-19  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2024-06-04  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/83865
+	* trans-stmt.cc (gfc_trans_allocate): Restrict special case for
+	source-expression with zero-length character to rank 0, so that
+	the array shape is not discarded.
+
+2024-05-28  Tobias Burnus  <tburnus@baylibre.com>
+
+	Backported from master:
+	2024-05-20  Tobias Burnus  <tburnus@baylibre.com>
+
+	PR fortran/115150
+	* trans-intrinsic.cc (gfc_conv_intrinsic_bound): Fix SHAPE
+	for zero-size arrays
+
+2024-05-22  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2024-05-05  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/114827
+	* trans-array.cc (gfc_alloc_allocatable_for_assignment): Take into
+	account _len of unlimited polymorphic entities when calculating
+	the effective element size for allocation size and array span.
+	Set _len of lhs to _len of rhs.
+	* trans-expr.cc (trans_class_assignment): Take into account _len
+	of unlimited polymorphic entities for allocation size.
+
+2024-05-22  Andrew Jenner  <andrew@codesourcery.com>
+
+	Backported from master:
+	2023-11-28  Andrew Jenner  <andrew@codesourcery.com>
+		    Tobias Burnus   <tobias@codesourcery.com>
+
+	PR fortran/110415
+	* trans-expr.cc (trans_class_vptr_len_assignment): Add
+	from_vptrp parameter. Populate it. Don't check for DECL_P
+	when deciding whether to create temporary.
+	(trans_class_pointer_fcn, gfc_trans_pointer_assignment): Add
+	NULL argument to trans_class_vptr_len_assignment calls.
+	(trans_class_assignment): Get rhs_vptr from
+	trans_class_vptr_len_assignment and use it for determining size
+	for allocation/reallocation. Use return value from realloc.
+
+2024-05-21  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2024-05-11  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/115039
+	* expr.cc (gfc_traverse_expr): An inquiry ref does not constitute
+	a dependency and cannot collide with a symbol.
+
 2024-05-21  Release Manager
 
 	* GCC 13.3.0 released.

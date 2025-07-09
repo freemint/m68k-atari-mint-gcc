@@ -5057,6 +5057,8 @@ foreach { armfunc armflag armdefs } {
 		__ARM_ARCH_8M_BASE__
 	v8m_main "-march=armv8-m.main -mthumb" __ARM_ARCH_8M_MAIN__
 	v8_1m_main "-march=armv8.1-m.main -mthumb" __ARM_ARCH_8M_MAIN__
+	v8_1m_main_pacbti "-march=armv8.1-m.main+pacbti+fp -mthumb"
+		"__ARM_ARCH_8M_MAIN__ && __ARM_FEATURE_BTI && __ARM_FEATURE_PAUTH"
 	v9a "-march=armv9-a" __ARM_ARCH_9A__ } {
     eval [string map [list FUNC $armfunc FLAG $armflag DEFS $armdefs ] {
 	proc check_effective_target_arm_arch_FUNC_ok { } {
@@ -6919,7 +6921,7 @@ proc check_effective_target_powerpc_elfv2 { } {
 # Return 1 if this is a PowerPC target supporting -mrop-protect
 
 proc check_effective_target_rop_ok { } {
-    return [check_effective_target_power10_ok] && [check_effective_target_powerpc_elfv2]
+    return [check_effective_target_has_arch_pwr8] && [check_effective_target_powerpc_elfv2]
 }
 
 # The VxWorks SPARC simulator accepts only EM_SPARC executables and

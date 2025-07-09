@@ -1,3 +1,587 @@
+2025-06-05  Release Manager
+
+	* GCC 13.4.0 released.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2024-06-25  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/115358
+	* decl2.cc (mark_used): Call maybe_instantiate_decl for an array
+	variable with unknown bound.
+	* semantics.cc (finish_decltype_type): Remove now redundant
+	handling of array variables with unknown bound.
+	* typeck.cc (cxx_sizeof_expr): Likewise.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2025-01-09  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/117792
+	* pt.cc (type_dependent_expression_p): Consider the dependence
+	of the address of each template argument of a function
+	template-id.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2025-03-18  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/119233
+	* pt.cc (mark_template_arguments_used): Also handle member
+	function pointers.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2024-06-28  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/106760
+	* call.cc (add_candidates): Relax test for adding a candidate
+	to 'bad_cands' to also accept an uninstantiated template candidate
+	that has no missing conversions.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2024-07-23  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/115656
+	* constraint.cc (weakly_subsumes): Pass in_decl=tmpl to
+	get_normalized_constraints_from_info.  Rename to ...
+	(ttp_subsumes): ... this.
+	* cp-tree.h (weakly_subsumes): Rename to ...
+	(ttp_subsumes): ... this.
+	* pt.cc (is_compatible_template_arg): Adjust after renaming.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2024-09-12  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/116418
+	* tree.cc (strip_typedefs_expr) <case STATEMENT_LIST>: Replace
+	this error path with ...
+	<case STMT_EXPR>: ... this, returning the original tree.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2025-01-09  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/118060
+	* constraint.cc (tsubst_valid_expression_requirement): Don't
+	check convert_to_void during partial substitution.
+
+2025-05-27  Patrick Palka  <ppalka@redhat.com>
+
+	Backported from master:
+	2024-08-15  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/116320
+	* semantics.cc (check_accessibility_of_qualified_id): Try
+	currently_open_class when using the object type as the
+	effective qualifying type.
+
+2025-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-02-28  Jakub Jelinek  <jakub@redhat.com>
+		    Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/113976
+	* decl.cc (grokdeclarator): Don't call cp_apply_type_quals_to_decl
+	on DECL_TEMPLATE_INSTANTIATED VAR_DECLs.
+
+2025-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-09-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/116636
+	* method.cc: Include decl.h.
+	(use_thunk): Temporarily change deprecated_state to
+	UNAVAILABLE_DEPRECATED_SUPPRESS.
+
+2025-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-09-05  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/116606
+	* decl2.cc (mark_vtable_entries): Temporarily override deprecated_state to
+	UNAVAILABLE_DEPRECATED_SUPPRESS.  Remove a warning_sentinel.
+
+2025-05-26  Jason Merrill  <jason@redhat.com>
+
+	Backported from master:
+	2025-04-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/116954
+	* contracts.cc (remove_contract_attributes): Preserve flags
+	on the attribute list.
+
+2025-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backported from master:
+	2025-02-03  Richard Biener  <rguenther@suse.de>
+
+	PR c++/79786
+	* rtti.cc (emit_tinfo_decl): Fix DATA_ABI_ALIGNMENT invocation.
+
+2025-04-23  Jason Merrill  <jason@redhat.com>
+
+	Backported from master:
+	2025-04-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/114772
+	PR c++/101180
+	* pt.cc (apply_late_template_attributes): Also override
+	target_option_current_node.
+
+2025-04-23  Jason Merrill  <jason@redhat.com>
+
+	Backported from master:
+	2025-04-15  Jason Merrill  <jason@redhat.com>
+
+	PR c++/111075
+	* constexpr.cc (cxx_eval_call_expression): Allow trivial
+	call from a thunk.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/98533
+	PR c++/119123
+	* parser.cc (cp_parser_class_specifier): Update TYPE_FIELDS of
+	variant types in case cp_parser_late_parsing_default_args etc. change
+	TYPE_FIELDS on the main variant.  Add switch_to_class lambda and
+	use it to simplify repeated class switching code.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-02-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/119045
+	* constexpr.cc (cxx_eval_store_expression) <case REALPART_EXPR>:
+	Assert that refs->is_empty () rather than probe == target.
+	(cxx_eval_store_expression) <case IMAGPART_EXPR>: Likewise.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-02-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/118763
+	* init.cc (build_new_1): Don't set CLEANUP_EH_ONLY.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-02-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/118661
+	* constexpr.cc (potential_constant_expression_1): Don't diagnose
+	lvalue-to-rvalue conversion of volatile lvalue if it has NULLPTR_TYPE.
+	* decl2.cc (decl_maybe_constant_var_p): Return true for constexpr
+	decls with NULLPTR_TYPE even if they are volatile.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-01-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/117827
+	* init.cc (build_new_1): Pass address of a make_tree_vector ()
+	initialized gc tree vector to build_vec_init and append
+	build_disable_temp_cleanup to init_expr from it.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/118509
+	* typeck.cc (get_member_function_from_ptrfunc): Wrap force_target_expr
+	with save_expr.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2025-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/117825
+	* typeck.cc (cp_build_function_call_vec): Don't call
+	check_function_arguments if complain doesn't have tf_warning bit set.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/116108
+	* decl.cc (grokdeclarator): Pass TYYPE_MAIN_VARIANT (type)
+	rather than type to same_type_p when checking if the non-static
+	data member doesn't have current class type.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-11-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/117317
+	* semantics.cc (emit_associated_thunks): Do nothing for
+	!DECL_INTERFACE_KNOWN && DECL_DEFER_OUTPUT fns.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-10-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/117259
+	* typeck.cc (get_member_function_from_ptrfunc): Use force_target_expr
+	rather than save_expr for instance_ptr and function.  Don't call it
+	for TREE_CONSTANT.
+
+2025-04-23  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-09-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/116678
+	* optimize.cc: Include decl.h.
+	(maybe_thunk_body): Temporarily change deprecated_state to
+	UNAVAILABLE_DEPRECATED_SUPPRESS.
+
+2025-04-14  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2025-03-25  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/114525
+	* typeck2.cc (build_m_component_ref): Call cp_build_addr_expr
+	instead of build_address.
+
+2025-03-25  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2025-03-06  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/117504
+	* call.cc (perform_implicit_conversion_flags): Don't call
+	mark_{l,r}value_use.
+
+2025-03-24  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2024-09-14  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/116681
+	* name-lookup.cc (qualified_namespace_lookup): Use an
+	auto_cond_timer instead of using timevar_start and timevar_stop.
+
+2025-03-21  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2025-03-20  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/114292
+	* tree.cc (cp_walk_subtrees): Walk the type of DECL_EXPR
+	declarations, as well as the TYPE_{MIN,MAX}_VALUE of
+	INTEGER_TYPEs for template declarations.
+
+2025-03-18  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2025-03-18  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/118104
+	* pt.cc (use_pack_expansion_extra_args_p): Remove an assert.
+
+2025-03-12  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2025-03-12  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/119134
+	* pt.cc (check_for_bare_parameter_packs): Check DECL_CONTEXT.
+
+2025-01-29  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2025-01-14  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/118047
+	PR c++/118355
+	* typeck2.cc (massage_init_elt): Call fold_non_dependent_init
+	unless for a CONSTRUCTOR in a template.
+
+2025-01-24  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2025-01-24  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/117153
+	* decl2.cc (build_anon_union_vars): Use FIELD for the second operand
+	of a COMPONENT_REF.
+
+2025-01-19  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2025-01-17  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/118255
+	* name-lookup.cc (pushdecl): Don't call check_template_shadow
+	for hidden bindings.
+
+2025-01-17  Nathaniel Shead  <nathanieloshead@gmail.com>
+
+	Backported from master:
+	2025-01-17  Nathaniel Shead  <nathanieloshead@gmail.com>
+
+	PR c++/118147
+	* parser.cc (cp_parser_cache_defarg): Don't error when
+	CPP_PRAGMA_EOL.
+
+2025-01-17  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2025-01-16  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/117775
+	* decl.cc (fold_sizeof_expr): Make sure the folded result has
+	type size_type_node.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/110031
+	* pt.cc (lookup_and_finish_template_variable): Pass complain to
+	mark_used.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/114349
+	* name-lookup.cc (maybe_push_to_top_level): For a non-lambda,
+	don't push to top level if decl_function_context is non-null.
+	* pt.cc (maybe_instantiate_noexcept): Use maybe_push_to_top_level.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-05-15  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/114854
+	* call.cc (convert_like_internal) <case ck_user>: Don't set
+	TARGET_EXPR_DIRECT_INIT_P.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-04-12  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/109966
+	* typeck2.cc (potential_prvalue_result_of): Remove.
+	(replace_placeholders_for_class_temp_r): Check TARGET_EXPR_ELIDING_P.
+	Use a pset.  Don't replace_placeholders in TARGET_EXPRs that initialize
+	a function argument.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/109859
+	* parser.cc (cp_parser_lambda_declarator_opt): Temporarily clear
+	local_variables_forbidden_p.
+	(cp_parser_placeholder_type_specifier): Turn an assert into an
+	error.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2023-05-10  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/109680
+	* method.cc (build_trait_object): New.
+	(assignable_expr): Use it.
+	(ref_xes_from_temporary): Likewise.
+	(is_convertible_helper): Likewise.  Check FUNC_OR_METHOD_TYPE_P.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-12-17  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/117985
+	* init.cc (build_vec_init): Pop CLEANUP_FLAGS if we're not
+	generating the loop.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-02-17  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/113158
+	* search.cc (maybe_check_overriding_exception_spec): Defer checking
+	when a noexcept couldn't be instantiated & evaluated to false/true.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-04-05  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/111132
+	* constexpr.cc (get_function_named_in_call): Use
+	cp_get_fndecl_from_callee.
+	* cvt.cc (cp_get_fndecl_from_callee): If there's a
+	DECL_LOCAL_DECL_ALIAS, use it.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-09-10  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/116369
+	* call.cc (set_up_extended_ref_temp): Don't mark a temporary
+	TREE_READONLY if its type is TYPE_HAS_MUTABLE_P.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2023-07-25  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/110382
+	* constexpr.cc (cxx_eval_array_reference): Create a new constructor
+	only when we don't already have a matching one.  Clear the object
+	when the type is non-scalar.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-08-19  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/115657
+	* decl.cc (build_enumerator): Call maybe_fold_non_dependent_expr
+	instead of fold_non_dependent_expr.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2023-07-20  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/110114
+	* call.cc (implicit_conversion_1): Return early if the type isn't
+	complete.
+
+2025-01-10  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-07-18  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/115476
+	* semantics.cc (finish_trait_expr)
+	<case CPTK_HAS_UNIQUE_OBJ_REPRESENTATIONS>: Move below to call
+	check_trait_type with kind==2.
+
+2024-12-13  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-08-28  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/116424
+	* typeck2.cc (process_init_constructor_record): Move the clearing of
+	TARGET_EXPR_ELIDING_P down.
+
+2024-12-05  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2024-12-04  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/117615
+	* constexpr.cc (cxx_eval_constant_expression): Don't reject
+	INTEGER_CSTs with type POINTER_TYPE to METHOD_TYPE.
+
+2024-11-21  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/116731
+	* parser.cc (warn_for_range_copy): Check if TYPE is trivially
+	constructible, not copyable.
+
+2024-11-06  Simon Martin  <simon@nasilyan.com>
+
+	Backported from master:
+	2024-11-05  Simon Martin  <simon@nasilyan.com>
+
+	PR c++/117158
+	* typeck.cc (cp_build_array_ref): Only wrap array expression
+	into a SAVE_EXPR at template instantiation time.
+
+2024-09-17  Marek Polacek  <polacek@redhat.com>
+
+	Backported from master:
+	2024-09-17  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/116676
+	* constexpr.cc (maybe_warn_about_constant_value): Check DECL_NAME.
+
+2024-09-13  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/116449
+	* typeck.cc (get_member_function_from_ptrfunc): Use save_expr
+	on instance_ptr and function even if it doesn't have side-effects,
+	as long as it isn't a decl.
+
+2024-08-09  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/113063
+	PR c++/116289
+	* method.cc (synthesize_method): Use cp_evaluated.
+
+2024-06-17  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2024-06-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/111343
+	PR c++/115511
+	* typeck.cc (cp_compare_floating_point_conversion_ranks): If an
+	extended floating point type mv1 has same set of values as more
+	than one standard floating point type and mv2 is float, return 2.
+
+2024-05-24  Jason Merrill  <jason@redhat.com>
+
+	Backported from master:
+	2023-09-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/111529
+	* parser.cc (cp_parser_lambda_declarator_opt): Don't suggest
+	-std=c++14 for lambda templates.
+	* pt.cc (tsubst_expr): Move ANNOTATE_EXPR handling...
+	(tsubst_copy_and_build): ...here.
+
+2024-05-24  Jason Merrill  <jason@redhat.com>
+
+	Backported from master:
+	2024-01-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/113598
+	* init.cc (build_vec_init): Don't use {} for PMF.
+
+2024-05-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backported from master:
+	2024-05-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/107800
+	* cxxapi-data.csv <to_address>: Change dialect to cxx20.
+	* std-name-hint.gperf: Regenerate.
+	* std-name-hint.h: Regenerate.
+
 2024-05-21  Release Manager
 
 	* GCC 13.3.0 released.

@@ -54,6 +54,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "dbgcnt.h"
 #include "tree-ssa-propagate.h"
 #include "tree-ssa-dce.h"
+#include "tree-ssa-loop-niter.h"
 
 static unsigned int tree_ssa_phiopt_worker (bool, bool, bool);
 static bool two_value_replacement (basic_block, basic_block, edge, gphi *,
@@ -454,6 +455,16 @@ replace_phi_edge_with_variable (basic_block cond_block,
     ;
   else
     gcc_unreachable ();
+
+  /* If we are removing the cond on a loop exit,
+     reset number of iteration information of the loop. */
+  if (loop_exits_from_bb_p (cond_block->loop_father, cond_block))
+    {
+      auto loop = cond_block->loop_father;
+      free_numbers_of_iterations_estimates (loop);
+      loop->any_upper_bound = false;
+      loop->any_likely_upper_bound = false;
+    }
 
   if (edge_to_remove && EDGE_COUNT (edge_to_remove->dest->preds) == 1)
     {
@@ -1353,6 +1364,10 @@ value_replacement (basic_block cond_bb, basic_block middle_bb,
 	empty_or_with_defined_p = false;
     }
 
+  /* The middle bb is not empty if there are any phi nodes. */
+  if (phi_nodes (middle_bb))
+    empty_or_with_defined_p = false;
+
   cond = last_stmt (cond_bb);
   code = gimple_cond_code (cond);
 
@@ -2106,6 +2121,10 @@ minmax_replacement (basic_block cond_bb, basic_block middle_bb, basic_block alt_
 	  || gimple_code (assign) != GIMPLE_ASSIGN)
 	return false;
 
+      /* There cannot be any phi nodes in the middle bb. */
+      if (!gimple_seq_empty_p (phi_nodes (middle_bb)))
+	return false;
+
       lhs = gimple_assign_lhs (assign);
       ass_code = gimple_assign_rhs_code (assign);
       if (ass_code != MAX_EXPR && ass_code != MIN_EXPR)
@@ -2117,6 +2136,10 @@ minmax_replacement (basic_block cond_bb, basic_block middle_bb, basic_block alt_
       assign = last_and_only_stmt (alt_middle_bb);
       if (!assign
 	  || gimple_code (assign) != GIMPLE_ASSIGN)
+	return false;
+
+      /* There cannot be any phi nodes in the alt middle bb. */
+      if (!gimple_seq_empty_p (phi_nodes (alt_middle_bb)))
 	return false;
 
       alt_lhs = gimple_assign_lhs (assign);
@@ -2227,6 +2250,10 @@ minmax_replacement (basic_block cond_bb, basic_block middle_bb, basic_block alt_
 
       if (!assign
 	  || gimple_code (assign) != GIMPLE_ASSIGN)
+	return false;
+
+      /* There cannot be any phi nodes in the middle bb. */
+      if (!gimple_seq_empty_p (phi_nodes (middle_bb)))
 	return false;
 
       lhs = gimple_assign_lhs (assign);
@@ -2719,7 +2746,7 @@ spaceship_replacement (basic_block cond_bb, basic_block middle_bb,
 	}
       else if (tree_to_shwi (arg1) != 2
 	       || absu_hwi (tree_to_shwi (arg0)) != 1
-	       || wi::to_widest (arg0) == wi::to_widest (arg1))
+	       || wi::to_widest (arg0) == wi::to_widest (arg2))
 	return false;
       switch (cmp2)
 	{
@@ -3541,7 +3568,9 @@ cond_if_else_store_replacement_1 (basic_block then_bb, basic_block else_bb,
       || else_assign == NULL
       || !gimple_assign_single_p (else_assign)
       || gimple_clobber_p (else_assign)
-      || gimple_has_volatile_ops (else_assign))
+      || gimple_has_volatile_ops (else_assign)
+      || stmt_references_abnormal_ssa_name (then_assign)
+      || stmt_references_abnormal_ssa_name (else_assign))
     return false;
 
   lhs = gimple_assign_lhs (then_assign);

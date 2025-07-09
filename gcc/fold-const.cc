@@ -85,6 +85,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "vec-perm-indices.h"
 #include "asan.h"
 #include "gimple-range.h"
+#include "internal-fn.h"
 
 /* Nonzero if we are folding constants inside an initializer or a C++
    manifestly-constant-evaluated context; zero otherwise.
@@ -1827,7 +1828,7 @@ const_unop (enum tree_code code, tree type, tree arg0)
       if (TREE_CODE (arg0) == INTEGER_CST)
 	return fold_not_const (arg0, type);
       else if (POLY_INT_CST_P (arg0))
-	return wide_int_to_tree (type, -poly_int_cst_value (arg0));
+	return wide_int_to_tree (type, ~poly_int_cst_value (arg0));
       /* Perform BIT_NOT_EXPR on each element individually.  */
       else if (TREE_CODE (arg0) == VECTOR_CST)
 	{
@@ -4802,6 +4803,9 @@ decode_field_reference (location_t loc, tree *exp_, HOST_WIDE_INT *pbitsize,
       || *pbitsize < 0
       || offset != 0
       || TREE_CODE (inner) == PLACEHOLDER_EXPR
+      /* We eventually want to build a larger reference and need to take
+	 the address of this.  */
+      || (!REFERENCE_CLASS_P (inner) && !DECL_P (inner))
       /* Reject out-of-bound accesses (PR79731).  */
       || (! AGGREGATE_TYPE_P (TREE_TYPE (inner))
 	  && compare_tree_int (TYPE_SIZE (TREE_TYPE (inner)),
@@ -13276,6 +13280,8 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
 	{
 	  unsigned HOST_WIDE_INT bitpos = tree_to_uhwi (op2);
 	  unsigned bitsize = TYPE_PRECISION (TREE_TYPE (arg1));
+	  if (BYTES_BIG_ENDIAN)
+	    bitpos = TYPE_PRECISION (type) - bitpos - bitsize;
 	  wide_int tem = (wi::to_wide (arg0)
 			  & wi::shifted_mask (bitpos, bitsize, true,
 					      TYPE_PRECISION (type)));
@@ -14887,7 +14893,6 @@ tree_call_nonnegative_warnv_p (tree type, combined_fn fn, tree arg0, tree arg1,
     CASE_CFN_FFS:
     CASE_CFN_PARITY:
     CASE_CFN_POPCOUNT:
-    CASE_CFN_CLZ:
     CASE_CFN_CLRSB:
     case CFN_BUILT_IN_BSWAP16:
     case CFN_BUILT_IN_BSWAP32:
@@ -14895,6 +14900,22 @@ tree_call_nonnegative_warnv_p (tree type, combined_fn fn, tree arg0, tree arg1,
     case CFN_BUILT_IN_BSWAP128:
       /* Always true.  */
       return true;
+
+    CASE_CFN_CLZ:
+      if (fn != CFN_CLZ)
+	return true;
+      else if (INTEGRAL_TYPE_P (TREE_TYPE (arg0)))
+	{
+	  tree atype = TREE_TYPE (arg0);
+	  int val = 0;
+	  if (direct_internal_fn_supported_p (IFN_CLZ, atype,
+					      OPTIMIZE_FOR_BOTH)
+              && CLZ_DEFINED_VALUE_AT_ZERO (SCALAR_INT_TYPE_MODE (atype),
+                                            val) == 2
+	      && val >= 0)
+	    return true;
+	}
+      break;
 
     CASE_CFN_SQRT:
     CASE_CFN_SQRT_FN:

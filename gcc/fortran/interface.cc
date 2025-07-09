@@ -3254,7 +3254,11 @@ gfc_compare_actual_formal (gfc_actual_arglist **ap, gfc_formal_arglist *formal,
 	  return false;
 	}
       else
-	a->associated_dummy = get_nonintrinsic_dummy_arg (f);
+	{
+	  if (a->associated_dummy)
+	    free (a->associated_dummy);
+	  a->associated_dummy = get_nonintrinsic_dummy_arg (f);
+	}
 
       if (a->expr == NULL)
 	{
@@ -3358,6 +3362,16 @@ gfc_compare_actual_formal (gfc_actual_arglist **ap, gfc_formal_arglist *formal,
 	      ok = false;
 	      goto match;
 	    }
+	}
+
+      if (UNLIMITED_POLY (a->expr)
+	  && !(f->sym->ts.type == BT_ASSUMED || UNLIMITED_POLY (f->sym)))
+	{
+	  gfc_error ("Unlimited polymorphic actual argument at %L is not "
+		     "matched with either an unlimited polymorphic or "
+		     "assumed type dummy argument", &a->expr->where);
+	  ok = false;
+	  goto match;
 	}
 
       /* Special case for character arguments.  For allocatable, pointer

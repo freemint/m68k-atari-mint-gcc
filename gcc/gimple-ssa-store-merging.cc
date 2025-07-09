@@ -363,7 +363,7 @@ init_symbolic_number (struct symbolic_number *n, tree src)
    the answer. If so, REF is that memory source and the base of the memory area
    accessed and the offset of the access from that base are recorded in N.  */
 
-bool
+static bool
 find_bswap_or_nop_load (gimple *stmt, tree ref, struct symbolic_number *n)
 {
   /* Leaf node is an array or component ref. Memorize its base and
@@ -610,7 +610,9 @@ find_bswap_or_nop_1 (gimple *stmt, struct symbolic_number *n, int limit)
   gimple *rhs1_stmt, *rhs2_stmt, *source_stmt1;
   enum gimple_rhs_class rhs_class;
 
-  if (!limit || !is_gimple_assign (stmt))
+  if (!limit
+      || !is_gimple_assign (stmt)
+      || stmt_can_throw_internal (cfun, stmt))
     return NULL;
 
   rhs1 = gimple_assign_rhs1 (stmt);
@@ -1849,14 +1851,15 @@ encode_tree_to_bitpos (tree expr, unsigned char *ptr, int bitlen, int bitpos,
 		       unsigned int total_bytes)
 {
   unsigned int first_byte = bitpos / BITS_PER_UNIT;
-  bool sub_byte_op_p = ((bitlen % BITS_PER_UNIT)
-			|| (bitpos % BITS_PER_UNIT)
-			|| !int_mode_for_size (bitlen, 0).exists ());
   bool empty_ctor_p
     = (TREE_CODE (expr) == CONSTRUCTOR
        && CONSTRUCTOR_NELTS (expr) == 0
        && TYPE_SIZE_UNIT (TREE_TYPE (expr))
-		       && tree_fits_uhwi_p (TYPE_SIZE_UNIT (TREE_TYPE (expr))));
+       && tree_fits_uhwi_p (TYPE_SIZE_UNIT (TREE_TYPE (expr))));
+  bool sub_byte_op_p = ((bitlen % BITS_PER_UNIT)
+			|| (bitpos % BITS_PER_UNIT)
+			|| (!int_mode_for_size (bitlen, 0).exists ()
+			    && !empty_ctor_p));
 
   if (!sub_byte_op_p)
     {

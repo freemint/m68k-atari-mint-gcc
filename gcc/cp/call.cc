@@ -2058,15 +2058,18 @@ implicit_conversion_1 (tree to, tree from, tree expr, bool c_cast_p,
   complain &= ~tf_error;
 
   /* Call reshape_init early to remove redundant braces.  */
-  if (expr && BRACE_ENCLOSED_INITIALIZER_P (expr)
-      && CLASS_TYPE_P (to)
-      && COMPLETE_TYPE_P (complete_type (to))
-      && !CLASSTYPE_NON_AGGREGATE (to))
+  if (expr && BRACE_ENCLOSED_INITIALIZER_P (expr) && CLASS_TYPE_P (to))
     {
-      expr = reshape_init (to, expr, complain);
-      if (expr == error_mark_node)
-	return NULL;
-      from = TREE_TYPE (expr);
+      to = complete_type (to);
+      if (!COMPLETE_TYPE_P (to))
+	return nullptr;
+      if (!CLASSTYPE_NON_AGGREGATE (to))
+	{
+	  expr = reshape_init (to, expr, complain);
+	  if (expr == error_mark_node)
+	    return nullptr;
+	  from = TREE_TYPE (expr);
+	}
     }
 
   if (TYPE_REF_P (to))
@@ -6645,7 +6648,8 @@ add_candidates (tree fns, tree first_arg, const vec<tree, va_gc> *args,
 
       if (cand->viable == -1
 	  && shortcut_bad_convs
-	  && missing_conversion_p (cand))
+	  && (missing_conversion_p (cand)
+	      || TREE_CODE (cand->fn) == TEMPLATE_DECL))
 	{
 	  /* This candidate has been tentatively marked non-strictly viable,
 	     and we didn't compute all argument conversions for it (having
@@ -8472,16 +8476,12 @@ convert_like_internal (conversion *convs, tree expr, tree fn, int argnum,
 	    && TYPE_HAS_DEFAULT_CONSTRUCTOR (totype)
 	    && !processing_template_decl)
 	  {
-	    bool direct = CONSTRUCTOR_IS_DIRECT_INIT (expr);
 	    if (abstract_virtuals_error (NULL_TREE, totype, complain))
 	      return error_mark_node;
 	    expr = build_value_init (totype, complain);
 	    expr = get_target_expr (expr, complain);
 	    if (expr != error_mark_node)
-	      {
-		TARGET_EXPR_LIST_INIT_P (expr) = true;
-		TARGET_EXPR_DIRECT_INIT_P (expr) = direct;
-	      }
+	      TARGET_EXPR_LIST_INIT_P (expr) = true;
 	    return expr;
 	  }
 
@@ -13404,11 +13404,6 @@ perform_implicit_conversion_flags (tree type, tree expr,
   void *p;
   location_t loc = cp_expr_loc_or_input_loc (expr);
 
-  if (TYPE_REF_P (type))
-    expr = mark_lvalue_use (expr);
-  else
-    expr = mark_rvalue_use (expr);
-
   if (error_operand_p (expr))
     return error_mark_node;
 
@@ -13647,7 +13642,9 @@ set_up_extended_ref_temp (tree decl, tree expr, vec<tree, va_gc> **cleanups,
   init = cp_fully_fold (init);
   if (TREE_CONSTANT (init))
     {
-      if (literal_type_p (type) && CP_TYPE_CONST_NON_VOLATILE_P (type))
+      if (literal_type_p (type)
+	  && CP_TYPE_CONST_NON_VOLATILE_P (type)
+	  && !TYPE_HAS_MUTABLE_P (type))
 	{
 	  /* 5.19 says that a constant expression can include an
 	     lvalue-rvalue conversion applied to "a glvalue of literal type

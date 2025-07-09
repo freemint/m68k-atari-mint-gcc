@@ -11210,6 +11210,7 @@ fold_sizeof_expr (tree t)
 				    false, false);
   if (r == error_mark_node)
     r = size_one_node;
+  r = cp_fold_convert (size_type_node, r);
   return r;
 }
 
@@ -14361,7 +14362,8 @@ grokdeclarator (const cp_declarator *declarator,
 	  }
 	else if (!staticp
 		 && ((current_class_type
-		      && same_type_p (type, current_class_type))
+		      && same_type_p (TYPE_MAIN_VARIANT (type),
+				      current_class_type))
 		     || (!dependent_type_p (type)
 			 && !COMPLETE_TYPE_P (complete_type (type))
 			 && (!complete_or_array_type_p (type)
@@ -14856,7 +14858,12 @@ grokdeclarator (const cp_declarator *declarator,
     /* Record constancy and volatility on the DECL itself .  There's
        no need to do this when processing a template; we'll do this
        for the instantiated declaration based on the type of DECL.  */
-    if (!processing_template_decl)
+    if (!processing_template_decl
+	/* Don't do it for instantiated variable templates either,
+	   cp_apply_type_quals_to_decl should have been called on it
+	   already and might have been overridden in cp_finish_decl
+	   if initializer needs runtime initialization.  */
+	&& (!VAR_P (decl) || !DECL_TEMPLATE_INSTANTIATED (decl)))
       cp_apply_type_quals_to_decl (type_quals, decl);
 
     return decl;
@@ -16905,9 +16912,15 @@ build_enumerator (tree name, tree value, tree enumtype, tree attributes,
   tree type;
 
   /* scalar_constant_value will pull out this expression, so make sure
-     it's folded as appropriate.  */
+     it's folded as appropriate.
+
+     Creating a TARGET_EXPR in a template breaks when substituting, and
+     here we would create it for instance when using a class prvalue with
+     a user-defined conversion function.  So don't use such a tree.  We
+     instantiate VALUE here to get errors about bad enumerators even in
+     a template that does not get instantiated.  */
   if (processing_template_decl)
-    value = fold_non_dependent_expr (value);
+    value = maybe_fold_non_dependent_expr (value);
 
   /* If the VALUE was erroneous, pretend it wasn't there; that will
      result in the enum being assigned the next value in sequence.  */

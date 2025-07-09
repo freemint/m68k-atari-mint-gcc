@@ -1747,6 +1747,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     inline _GLIBCXX17_CONSTEXPR bool
     operator==(const move_iterator<_Iterator>& __x,
 	       const move_iterator<_Iterator>& __y)
+    // N.B. No contraints, x.base() == y.base() is always well-formed.
     { return __x.base() == __y.base(); }
 
 #if __cpp_lib_three_way_comparison
@@ -1807,6 +1808,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     inline _GLIBCXX17_CONSTEXPR move_iterator<_Iterator>
     operator+(typename move_iterator<_Iterator>::difference_type __n,
 	      const move_iterator<_Iterator>& __x)
+#ifdef __cpp_lib_concepts
+    requires requires { { __x.base() + __n } -> same_as<_Iterator>; }
+#endif
     { return __x + __n; }
 
   template<typename _Iterator>
@@ -1833,6 +1837,14 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     { return _ReturnType(__i); }
 
 #if __cplusplus > 201703L && __cpp_lib_concepts
+  // _GLIBCXX_RESOLVE_LIB_DEFECTS
+  // 3736.  move_iterator missing disable_sized_sentinel_for specialization
+  template<typename _Iterator1, typename _Iterator2>
+    requires (!sized_sentinel_for<_Iterator1, _Iterator2>)
+    inline constexpr bool
+    disable_sized_sentinel_for<move_iterator<_Iterator1>,
+			       move_iterator<_Iterator2>> = true;
+
   // [iterators.common] Common iterators
 
   namespace __detail
@@ -2786,6 +2798,18 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       noexcept(noexcept(_M_current == __s))
       { return _M_current == __s; }
 
+    template<__detail::__not_a_const_iterator _CIt>
+      requires __detail::__constant_iterator<_CIt> && convertible_to<_It, _CIt>
+    constexpr
+    operator _CIt() const&
+    { return _M_current; }
+
+    template<__detail::__not_a_const_iterator _CIt>
+      requires __detail::__constant_iterator<_CIt> && convertible_to<_It, _CIt>
+    constexpr
+    operator _CIt() &&
+    { return std::move(_M_current); }
+
     constexpr bool
     operator<(const basic_const_iterator& __y) const
     noexcept(noexcept(_M_current < __y._M_current))
@@ -2852,30 +2876,30 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	&& three_way_comparable_with<_It, _It2>
       { return _M_current <=> __y; }
 
-    template<__detail::__not_a_const_iterator _It2>
+    template<__detail::__not_a_const_iterator _It2, same_as<_It> _It3>
       friend constexpr bool
-      operator<(const _It2& __x, const basic_const_iterator& __y)
+      operator<(const _It2& __x, const basic_const_iterator<_It3>& __y)
       noexcept(noexcept(__x < __y._M_current))
       requires random_access_iterator<_It> && totally_ordered_with<_It, _It2>
       { return __x < __y._M_current; }
 
-    template<__detail::__not_a_const_iterator _It2>
+    template<__detail::__not_a_const_iterator _It2, same_as<_It> _It3>
       friend constexpr bool
-      operator>(const _It2& __x, const basic_const_iterator& __y)
+      operator>(const _It2& __x, const basic_const_iterator<_It3>& __y)
       noexcept(noexcept(__x > __y._M_current))
       requires random_access_iterator<_It> && totally_ordered_with<_It, _It2>
       { return __x > __y._M_current; }
 
-    template<__detail::__not_a_const_iterator _It2>
+    template<__detail::__not_a_const_iterator _It2, same_as<_It> _It3>
       friend constexpr bool
-      operator<=(const _It2& __x, const basic_const_iterator& __y)
+      operator<=(const _It2& __x, const basic_const_iterator<_It3>& __y)
       noexcept(noexcept(__x <= __y._M_current))
       requires random_access_iterator<_It> && totally_ordered_with<_It, _It2>
       { return __x <= __y._M_current; }
 
-    template<__detail::__not_a_const_iterator _It2>
+    template<__detail::__not_a_const_iterator _It2, same_as<_It> _It3>
       friend constexpr bool
-      operator>=(const _It2& __x, const basic_const_iterator& __y)
+      operator>=(const _It2& __x, const basic_const_iterator<_It3>& __y)
       noexcept(noexcept(__x >= __y._M_current))
       requires random_access_iterator<_It> && totally_ordered_with<_It, _It2>
       { return __x >= __y._M_current; }
@@ -2904,10 +2928,10 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       noexcept(noexcept(_M_current - __y))
       { return _M_current - __y; }
 
-    template<__detail::__not_a_const_iterator _Sent>
+    template<__detail::__not_a_const_iterator _Sent, same_as<_It> _It2>
       requires sized_sentinel_for<_Sent, _It>
       friend constexpr difference_type
-      operator-(const _Sent& __x, const basic_const_iterator& __y)
+      operator-(const _Sent& __x, const basic_const_iterator<_It2>& __y)
       noexcept(noexcept(__x - __y._M_current))
       { return __x - __y._M_current; }
 

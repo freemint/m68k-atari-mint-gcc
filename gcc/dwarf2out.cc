@@ -26187,10 +26187,10 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
      for the parent typedef which TYPE is a type of.  */
   if (typedef_variant_p (type))
     {
-      if (TREE_ASM_WRITTEN (type))
+      tree name = TYPE_NAME (type);
+      if (TREE_ASM_WRITTEN (name))
 	return;
 
-      tree name = TYPE_NAME (type);
       tree origin = decl_ultimate_origin (name);
       if (origin != NULL && origin != name)
 	{
@@ -26203,8 +26203,6 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
 
       /* Give typedefs the right scope.  */
       context_die = scope_die_for (type, context_die);
-
-      TREE_ASM_WRITTEN (type) = 1;
 
       gen_decl_die (name, NULL, NULL, context_die);
       return;
@@ -30799,7 +30797,8 @@ resolve_addr_in_expr (dw_attr_node *a, dw_loc_descr_ref loc)
               return false;
             remove_addr_table_entry (loc->dw_loc_oprnd1.val_entry);
 	    loc->dw_loc_oprnd1.val_entry
-	      = add_addr_table_entry (rtl, ate_kind_rtx);
+	      = add_addr_table_entry (rtl, loc->dtprel
+				      ? ate_kind_rtx_dtprel : ate_kind_rtx);
           }
 	break;
       case DW_OP_const4u:

@@ -1955,7 +1955,7 @@ resolve_procedure_expression (gfc_expr* expr)
   if (is_illegal_recursion (sym, gfc_current_ns))
     {
       if (sym->attr.use_assoc && expr->symtree->name[0] == '@')
-	gfc_warning (0, "Non-RECURSIVE procedure %qs from module %qs is "
+	gfc_warning (0, "Non-RECURSIVE procedure %qs from module %qs is"
 		     " possibly calling itself recursively in procedure %qs. "
 		     " Declare it RECURSIVE or use %<-frecursive%>",
 		     sym->name, sym->module, gfc_current_ns->proc_name->name);
@@ -5956,6 +5956,15 @@ resolve_variable (gfc_expr *e)
 	  e->ref = newref;
 	}
     }
+  else if (sym->assoc && sym->ts.type == BT_CHARACTER && sym->ts.deferred)
+    {
+      gfc_ref *ref;
+      for (ref = e->ref; ref; ref = ref->next)
+	if (ref->type == REF_SUBSTRING)
+	  break;
+      if (ref == NULL)
+	e->ts = sym->ts;
+    }
 
   if (e->ref && !gfc_resolve_ref (e))
     return false;
@@ -9387,6 +9396,15 @@ resolve_assoc_var (gfc_symbol* sym, bool resolve_target)
   /* Fix up the type-spec for CHARACTER types.  */
   if (sym->ts.type == BT_CHARACTER && !sym->attr.select_type_temporary)
     {
+      gfc_ref *ref;
+      for (ref = target->ref; ref; ref = ref->next)
+	if (ref->type == REF_SUBSTRING
+	    && (ref->u.ss.start == NULL
+		|| ref->u.ss.start->expr_type != EXPR_CONSTANT
+		|| ref->u.ss.end == NULL
+		|| ref->u.ss.end->expr_type != EXPR_CONSTANT))
+	  break;
+
       if (!sym->ts.u.cl)
 	sym->ts.u.cl = target->ts.u.cl;
 
@@ -9405,9 +9423,10 @@ resolve_assoc_var (gfc_symbol* sym, bool resolve_target)
 		gfc_get_int_expr (gfc_charlen_int_kind, NULL,
 				  target->value.character.length);
 	}
-      else if ((!sym->ts.u.cl->length
-		|| sym->ts.u.cl->length->expr_type != EXPR_CONSTANT)
+      else if (((!sym->ts.u.cl->length
+		 || sym->ts.u.cl->length->expr_type != EXPR_CONSTANT)
 		&& target->expr_type != EXPR_VARIABLE)
+	       || ref)
 	{
 	  if (!sym->ts.deferred)
 	    {
@@ -9417,7 +9436,10 @@ resolve_assoc_var (gfc_symbol* sym, bool resolve_target)
 
 	  /* This is reset in trans-stmt.cc after the assignment
 	     of the target expression to the associate name.  */
-	  sym->attr.allocatable = 1;
+	  if (ref && sym->as)
+	    sym->attr.pointer = 1;
+	  else
+	    sym->attr.allocatable = 1;
 	}
     }
 
@@ -10971,8 +10993,9 @@ resolve_block_construct (gfc_code* code)
 {
   gfc_namespace *ns = code->ext.block.ns;
 
-  /* For an ASSOCIATE block, the associations (and their targets) are already
-     resolved during resolve_symbol. Resolve the BLOCK's namespace.  */
+  /* For an ASSOCIATE block, the associations (and their targets) will be
+     resolved by gfc_resolve_symbol, during resolution of the BLOCK's
+     namespace.  */
   gfc_resolve (ns);
 }
 
@@ -11177,6 +11200,17 @@ resolve_ordinary_assign (gfc_code *code, gfc_namespace *ns)
 
   lhs = code->expr1;
   rhs = code->expr2;
+
+  if ((lhs->symtree->n.sym->ts.type == BT_DERIVED
+       || lhs->symtree->n.sym->ts.type == BT_CLASS)
+      && !lhs->symtree->n.sym->attr.proc_pointer
+      && gfc_expr_attr (lhs).proc_pointer)
+    {
+      gfc_error ("Variable in the ordinary assignment at %L is a procedure "
+		 "pointer component",
+		 &lhs->where);
+      return false;
+    }
 
   if ((gfc_numeric_ts (&lhs->ts) || lhs->ts.type == BT_LOGICAL)
       && rhs->ts.type == BT_CHARACTER
@@ -12096,6 +12130,17 @@ resolve_ptr_fcn_assign (gfc_code **code, gfc_namespace *ns)
   tmp_ptr_expr->symtree->n.sym->attr.pointer = 1;
   tmp_ptr_expr->symtree->n.sym->attr.allocatable = 0;
   tmp_ptr_expr->where = (*code)->loc;
+
+  /* A new charlen is required to ensure that the variable string length
+     is different to that of the original lhs for deferred results.  */
+  if (s->result->ts.deferred && tmp_ptr_expr->ts.type == BT_CHARACTER)
+    {
+      tmp_ptr_expr->ts.u.cl = gfc_get_charlen();
+      tmp_ptr_expr->ts.deferred = 1;
+      tmp_ptr_expr->ts.u.cl->next = gfc_current_ns->cl_list;
+      gfc_current_ns->cl_list = tmp_ptr_expr->ts.u.cl;
+      tmp_ptr_expr->symtree->n.sym->ts.u.cl = tmp_ptr_expr->ts.u.cl;
+    }
 
   this_code = build_assignment (EXEC_ASSIGN,
 				tmp_ptr_expr, (*code)->expr2,

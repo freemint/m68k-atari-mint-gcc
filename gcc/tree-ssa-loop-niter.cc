@@ -1210,17 +1210,6 @@ number_of_iterations_lt_to_ne (tree type, affine_iv *iv0, affine_iv *iv1,
 	  if (integer_zerop (assumption))
 	    goto end;
 	}
-      if (mpz_cmp (mmod, bnds->below) < 0)
-	noloop = boolean_false_node;
-      else if (POINTER_TYPE_P (type))
-	noloop = fold_build2 (GT_EXPR, boolean_type_node,
-			      iv0->base,
-			      fold_build_pointer_plus (iv1->base, tmod));
-      else
-	noloop = fold_build2 (GT_EXPR, boolean_type_node,
-			      iv0->base,
-			      fold_build2 (PLUS_EXPR, type1,
-					   iv1->base, tmod));
     }
   else
     {
@@ -1236,20 +1225,14 @@ number_of_iterations_lt_to_ne (tree type, affine_iv *iv0, affine_iv *iv1,
 	  if (integer_zerop (assumption))
 	    goto end;
 	}
-      if (mpz_cmp (mmod, bnds->below) < 0)
-	noloop = boolean_false_node;
-      else if (POINTER_TYPE_P (type))
-	noloop = fold_build2 (GT_EXPR, boolean_type_node,
-			      fold_build_pointer_plus (iv0->base,
-						       fold_build1 (NEGATE_EXPR,
-								    type1, tmod)),
-			      iv1->base);
-      else
-	noloop = fold_build2 (GT_EXPR, boolean_type_node,
-			      fold_build2 (MINUS_EXPR, type1,
-					   iv0->base, tmod),
-			      iv1->base);
     }
+
+  /* IV0 < IV1 does not loop if IV0->base >= IV1->base.  */
+  if (mpz_cmp (mmod, bnds->below) < 0)
+    noloop = boolean_false_node;
+  else
+    noloop = fold_build2 (GE_EXPR, boolean_type_node,
+			  iv0->base, iv1->base);
 
   if (!integer_nonzerop (assumption))
     niter->assumptions = fold_build2 (TRUTH_AND_EXPR, boolean_type_node,
@@ -2265,6 +2248,8 @@ build_cltz_expr (tree src, bool leading, bool define_at_zero)
 			      build_int_cst (integer_type_node, prec));
 	}
     }
+  else if (fn == NULL_TREE)
+    return NULL_TREE;
   else if (prec == 2 * lli_prec)
     {
       tree src1 = fold_convert (long_long_unsigned_type_node,
@@ -4697,7 +4682,14 @@ maybe_lower_iteration_bound (class loop *loop)
           FOR_EACH_EDGE (e, ei, bb->succs)
 	    {
 	      if (loop_exit_edge_p (loop, e)
-		  || e == loop_latch_edge (loop))
+		  || e == loop_latch_edge (loop)
+		  /* When exiting an inner loop, verify it is finite.  */
+		  || (!flow_bb_inside_loop_p (bb->loop_father, e->dest)
+		      && !finite_loop_p (bb->loop_father))
+		  /* When we enter an irreducible region and the entry
+		     does not contain a bounding stmt assume it might be
+		     infinite.  */
+		  || (bb->flags & BB_IRREDUCIBLE_LOOP))
 		{
 		  found_exit = true;
 		  break;

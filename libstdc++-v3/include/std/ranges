@@ -46,6 +46,7 @@
 #include <string_view>
 #include <tuple>
 #if __cplusplus > 202002L
+#include <utility>
 #include <variant>
 #endif
 #include <bits/ranges_util.h>
@@ -1749,8 +1750,12 @@ namespace views::__adaptor
 	  static auto
 	  _S_iter_cat()
 	  {
+	    // _GLIBCXX_RESOLVE_LIB_DEFECTS
+	    // 3564. transform_view::iterator<true>::value_type and
+	    // iterator_category should use const F&
 	    using _Base = transform_view::_Base<_Const>;
-	    using _Res = invoke_result_t<_Fp&, range_reference_t<_Base>>;
+	    using _Res = invoke_result_t<__maybe_const_t<_Const, _Fp>&,
+					 range_reference_t<_Base>>;
 	    if constexpr (is_lvalue_reference_v<_Res>)
 	      {
 		using _Cat
@@ -1799,7 +1804,8 @@ namespace views::__adaptor
 	  using iterator_concept = decltype(_S_iter_concept());
 	  // iterator_category defined in __transform_view_iter_cat
 	  using value_type
-	    = remove_cvref_t<invoke_result_t<_Fp&, range_reference_t<_Base>>>;
+	    = remove_cvref_t<invoke_result_t<__maybe_const_t<_Const, _Fp>&,
+					     range_reference_t<_Base>>>;
 	  using difference_type = range_difference_t<_Base>;
 
 	  _Iterator() requires default_initializable<_Base_iter> = default;
@@ -2524,8 +2530,8 @@ namespace views::__adaptor
       begin() const
 	requires random_access_range<const _Vp> && sized_range<const _Vp>
       {
-	return ranges::next(ranges::begin(_M_base), _M_count,
-			    ranges::end(_M_base));
+	return ranges::begin(_M_base) + ranges::min(ranges::distance(_M_base),
+						    _M_count);
       }
 
       constexpr auto
@@ -8544,7 +8550,7 @@ namespace views::__adaptor
 	operator() [[nodiscard]] (_Ts&&... __ts) const
 	{
 	  if constexpr (sizeof...(_Ts) == 0)
-	    return views::empty<tuple<>>;
+	    return views::single(tuple{});
 	  else
 	    return cartesian_product_view<all_t<_Ts>...>(std::forward<_Ts>(__ts)...);
 	}
@@ -8948,7 +8954,7 @@ namespace views::__adaptor
     inline constexpr _Enumerate enumerate;
   }
 
-#define __cpp_lib_ranges_as_const 202207L
+#define __cpp_lib_ranges_as_const 202311L
 
   template<view _Vp>
     requires input_range<_Vp>
@@ -9013,10 +9019,11 @@ namespace views::__adaptor
     namespace __detail
     {
       template<typename _Tp>
-	inline constexpr bool __is_ref_view = false;
+	inline constexpr bool __is_constable_ref_view = false;
 
       template<typename _Range>
-	inline constexpr bool __is_ref_view<ref_view<_Range>> = true;
+	inline constexpr bool __is_constable_ref_view<ref_view<_Range>>
+	  = constant_range<const _Range>;
 
       template<typename _Range>
 	concept __can_as_const_view = requires { as_const_view(std::declval<_Range>()); };
@@ -9038,10 +9045,8 @@ namespace views::__adaptor
 	  return views::empty<const element_type>;
 	else if constexpr (std::__detail::__is_span<_Tp>)
 	  return span<const element_type, _Tp::extent>(std::forward<_Range>(__r));
-	else if constexpr (__detail::__is_ref_view<_Tp>
-			   && constant_range<const element_type>)
-	  return ref_view(static_cast<const element_type&>
-			  (std::forward<_Range>(__r).base()));
+	else if constexpr (__detail::__is_constable_ref_view<_Tp>)
+	  return ref_view(std::as_const(std::forward<_Range>(__r).base()));
 	else if constexpr (is_lvalue_reference_v<_Range>
 			   && constant_range<const _Tp>
 			   && !view<_Tp>)

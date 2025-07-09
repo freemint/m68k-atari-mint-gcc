@@ -101,6 +101,20 @@ test_format()
   std::chrono::duration<float, std::milli> d{0.5};
   s = std::format("{}", d);
   VERIFY( s == "0.5ms" );
+
+  std::chrono::duration<unsigned, std::milli> u{500}; // PR libstdc++/115668
+  s = std::format("{}", u);
+  VERIFY( s == "500ms" );
+  s = std::format("{:%Q %q}", u);
+  VERIFY( s == "500 ms" );
+
+  // PR libstdc++/116755 extra minus sign for most negative value
+  auto minsec = std::chrono::seconds::min();
+  s = std::format("{}", minsec);
+  auto expected = std::format("{}s", minsec.count());
+  VERIFY( s == expected );
+  s = std::format("{:%Q%q}", minsec);
+  VERIFY( s == expected );
 }
 
 int main()

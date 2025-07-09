@@ -37,7 +37,6 @@ with Nlists;         use Nlists;
 with Nmake;          use Nmake;
 with Opt;            use Opt;
 with Rtsfind;        use Rtsfind;
-with Sem_Aux;        use Sem_Aux;
 with Sem_Util;       use Sem_Util;
 with Sinfo;          use Sinfo;
 with Sinfo.Nodes;    use Sinfo.Nodes;
@@ -293,10 +292,9 @@ package body Exp_Put_Image is
       Loc     : constant Source_Ptr := Sloc (N);
       P_Type  : constant Entity_Id  := Entity (Prefix (N));
       U_Type  : constant Entity_Id  := Underlying_Type (P_Type);
-      FST     : constant Entity_Id  := First_Subtype (U_Type);
       Sink    : constant Node_Id    := First (Expressions (N));
       Item    : constant Node_Id    := Next (Sink);
-      P_Size  : constant Uint       := Esize (FST);
+      P_Size  : constant Uint       := Esize (U_Type);
       Lib_RE  : RE_Id;
 
    begin

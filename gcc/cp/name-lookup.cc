@@ -3743,7 +3743,10 @@ pushdecl (tree decl, bool hiding)
       if (old && anticipated_builtin_p (old))
 	old = OVL_CHAIN (old);
 
-      check_template_shadow (decl);
+      if (hiding)
+	; /* Hidden bindings don't shadow anything.  */
+      else
+	check_template_shadow (decl);
 
       if (DECL_DECLARES_FUNCTION_P (decl))
 	{
@@ -6915,10 +6918,9 @@ tree lookup_qualified_name (tree t, const char *p, LOOK_want w, bool c)
 static bool
 qualified_namespace_lookup (tree scope, name_lookup *lookup)
 {
-  timevar_start (TV_NAME_LOOKUP);
+  auto_cond_timevar tv (TV_NAME_LOOKUP);
   query_oracle (lookup->name);
   bool found = lookup->search_qualified (ORIGINAL_NAMESPACE (scope));
-  timevar_stop (TV_NAME_LOOKUP);
   return found;
 }
 
@@ -8244,10 +8246,13 @@ maybe_push_to_top_level (tree d)
 {
   /* Push if D isn't function-local, or is a lambda function, for which name
      resolution is already done.  */
-  bool push_to_top
-    = !(current_function_decl
-	&& !LAMBDA_FUNCTION_P (d)
-	&& decl_function_context (d) == current_function_decl);
+  const bool push_to_top
+    = (LAMBDA_FUNCTION_P (d)
+       || (TREE_CODE (d) == TYPE_DECL
+	   && TREE_TYPE (d)
+	   && LAMBDA_TYPE_P (TREE_TYPE (d)))
+       || !current_function_decl
+       || !decl_function_context (d));
 
   if (push_to_top)
     push_to_top_level ();

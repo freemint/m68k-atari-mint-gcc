@@ -1315,8 +1315,9 @@ namespace __format
 
   // We can format a floating-point type iff it is usable with to_chars.
   template<typename _Tp>
-    concept __formattable_float = requires (_Tp __t, char* __p)
-    { __format::to_chars(__p, __p, __t, chars_format::scientific, 6); };
+    concept __formattable_float
+      = is_same_v<remove_cv_t<_Tp>, _Tp> && requires (_Tp __t, char* __p)
+      { __format::to_chars(__p, __p, __t, chars_format::scientific, 6); };
 
   template<__char _CharT>
     struct __formatter_fp
@@ -1668,12 +1669,13 @@ namespace __format
 
 	  if (_M_spec._M_localized && __builtin_isfinite(__v))
 	    {
+	      basic_string<_CharT> __s;
 	      if constexpr (is_same_v<char, _CharT>)
-		__wstr = _M_localize(__str, __expc, __fc.locale());
+		__s = _M_localize(__str, __expc, __fc.locale());
 	      else
-		__wstr = _M_localize(__str, __expc, __loc.value());
-	      if (!__wstr.empty())
-		__str = __wstr;
+		__s = _M_localize(__str, __expc, __loc.value());
+	      if (!__s.empty())
+		__str = __wstr = std::move(__s);
 	    }
 
 	  size_t __width = _M_spec._M_get_width(__fc);
@@ -2029,52 +2031,52 @@ namespace __format
     };
   /// @}
 
-  /// Format an integer.
-  template<integral _Tp, __format::__char _CharT>
-    requires (!__is_one_of<_Tp, char, wchar_t, char16_t, char32_t>::value)
-    struct formatter<_Tp, _CharT>
-    {
-      formatter() = default;
+/// @cond undocumented
+namespace __format
+{
+  // each cv-unqualified arithmetic type ArithmeticT other than
+  // char, wchar_t, char8_t, char16_t, or char32_t
+  template<typename _Tp>
+    constexpr bool __is_formattable_integer = __is_integer<_Tp>::__value;
 
-      [[__gnu__::__always_inline__]]
-      constexpr typename basic_format_parse_context<_CharT>::iterator
-      parse(basic_format_parse_context<_CharT>& __pc)
-      {
-	return _M_f.template _M_parse<_Tp>(__pc);
-      }
-
-      template<typename _Out>
-	typename basic_format_context<_Out, _CharT>::iterator
-	format(_Tp __u, basic_format_context<_Out, _CharT>& __fc) const
-	{ return _M_f.format(__u, __fc); }
-
-    private:
-      __format::__formatter_int<_CharT> _M_f;
-    };
-
-#if defined __SIZEOF_INT128__ && defined __STRICT_ANSI__
-  template<typename _Tp, __format::__char _CharT>
-    requires (__is_one_of<_Tp, __int128, unsigned __int128>::value)
-    struct formatter<_Tp, _CharT>
-    {
-      formatter() = default;
-
-      [[__gnu__::__always_inline__]]
-      constexpr typename basic_format_parse_context<_CharT>::iterator
-      parse(basic_format_parse_context<_CharT>& __pc)
-      {
-	return _M_f.template _M_parse<_Tp>(__pc);
-      }
-
-      template<typename _Out>
-	typename basic_format_context<_Out, _CharT>::iterator
-	format(_Tp __u, basic_format_context<_Out, _CharT>& __fc) const
-	{ return _M_f.format(__u, __fc); }
-
-    private:
-      __format::__formatter_int<_CharT> _M_f;
-    };
+#if defined __SIZEOF_INT128__
+  template<> inline constexpr bool __is_formattable_integer<__int128>  = true;
+  template<> inline constexpr bool __is_formattable_integer<unsigned __int128>
+      = true;
 #endif
+
+  template<> inline constexpr bool __is_formattable_integer<char> = false;
+  template<> inline constexpr bool __is_formattable_integer<wchar_t> = false;
+#ifdef _GLIBCXX_USE_CHAR8_T
+  template<> inline constexpr bool __is_formattable_integer<char8_t> = false;
+#endif
+  template<> inline constexpr bool __is_formattable_integer<char16_t> = false;
+  template<> inline constexpr bool __is_formattable_integer<char32_t> = false;
+}
+/// @endcond
+
+  /// Format an integer.
+  template<typename _Tp, __format::__char _CharT>
+    requires __format::__is_formattable_integer<_Tp>
+    struct formatter<_Tp, _CharT>
+    {
+      formatter() = default;
+
+      [[__gnu__::__always_inline__]]
+      constexpr typename basic_format_parse_context<_CharT>::iterator
+      parse(basic_format_parse_context<_CharT>& __pc)
+      {
+	return _M_f.template _M_parse<_Tp>(__pc);
+      }
+
+      template<typename _Out>
+	typename basic_format_context<_Out, _CharT>::iterator
+	format(_Tp __u, basic_format_context<_Out, _CharT>& __fc) const
+	{ return _M_f.format(__u, __fc); }
+
+    private:
+      __format::__formatter_int<_CharT> _M_f;
+    };
 
   /// Format a floating-point value.
   template<__format::__formattable_float _Tp, __format::__char _CharT>
@@ -2309,6 +2311,8 @@ namespace __format
 } // namespace __format
 /// @endcond
 
+// Concept std::formattable was introduced by P2286R8 "Formatting Ranges",
+// but we can't guard it with __cpp_lib_format_ranges until we define that!
 #if __cplusplus > 202002L
   // [format.formattable], concept formattable
   template<typename _Tp, typename _CharT>
@@ -2975,22 +2979,16 @@ namespace __format
 
 	  // TODO bfloat16 and float16
 
-#ifdef __FLT32_DIG__
+#if defined(__FLT32_DIG__) && defined(_GLIBCXX_FLOAT_IS_IEEE_BINARY32)
 	  else if constexpr (is_same_v<_Td, _Float32>)
-# ifdef _GLIBCXX_FLOAT_IS_IEEE_BINARY32
 	    return type_identity<float>();
-# else
-	    return type_identity<_Float32>();
-# endif
 #endif
-#ifdef __FLT64_DIG__
+
+#if defined(__FLT64_DIG__) && defined(_GLIBCXX_DOUBLE_IS_IEEE_BINARY64)
 	  else if constexpr (is_same_v<_Td, _Float64>)
-# ifdef _GLIBCXX_DOUBLE_IS_IEEE_BINARY64
 	    return type_identity<double>();
-# else
-	    return type_identity<_Float64>();
-# endif
 #endif
+
 #if _GLIBCXX_FORMAT_F128
 # if __FLT128_DIG__
 	  else if constexpr (is_same_v<_Td, _Float128>)
@@ -3070,16 +3068,6 @@ namespace __format
 	    return _Arg_u128;
 #endif
 
-	  // N.B. some of these types will never actually be used here,
-	  // because they get normalized to a standard floating-point type.
-#if defined __FLT32_DIG__ && ! _GLIBCXX_FLOAT_IS_IEEE_BINARY32
-	  else if constexpr (is_same_v<_Tp, _Float32>)
-	    return _Arg_f32;
-#endif
-#if defined __FLT64_DIG__ && ! _GLIBCXX_DOUBLE_IS_IEEE_BINARY64
-	  else if constexpr (is_same_v<_Tp, _Float64>)
-	    return _Arg_f64;
-#endif
 #if _GLIBCXX_FORMAT_F128 == 2
 	  else if constexpr (is_same_v<_Tp, __format::__float128_t>)
 	    return _Arg_f128;
@@ -3292,8 +3280,6 @@ namespace __format
 	{ return {_Format_arg::template _S_to_enum<_Args>()...}; }
 
     public:
-      basic_format_args() noexcept = default;
-
       template<typename... _Args>
 	basic_format_args(const _Store<_Args...>& __store) noexcept;
 
@@ -3461,6 +3447,12 @@ namespace __format
       : _M_args(__args), _M_out(std::move(__out)), _M_loc(__loc)
       { }
 
+      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+      // 4061. Should std::basic_format_context be
+      //       default-constructible/copyable/movable?
+      basic_format_context(const basic_format_context&) = delete;
+      basic_format_context& operator=(const basic_format_context&) = delete;
+
       template<typename _Out2, typename _CharT2, typename _Context2>
 	friend _Out2
 	__format::__do_vformat_to(_Out2, basic_string_view<_CharT2>,
@@ -3468,7 +3460,6 @@ namespace __format
 				  const locale*);
 
     public:
-      basic_format_context() = default;
       ~basic_format_context() = default;
 
       using iterator = _Out;
@@ -3507,7 +3498,7 @@ namespace __format
       basic_format_parse_context<_CharT> _M_pc;
 
       constexpr explicit
-      _Scanner(basic_string_view<_CharT> __str, size_t __nargs = -1)
+      _Scanner(basic_string_view<_CharT> __str, size_t __nargs = (size_t)-1)
       : _M_pc(__str, __nargs)
       { }
 

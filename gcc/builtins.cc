@@ -174,8 +174,8 @@ static tree fold_builtin_unordered_cmp (location_t, tree, tree, tree, enum tree_
 static tree fold_builtin_varargs (location_t, tree, tree*, int);
 
 static tree fold_builtin_strpbrk (location_t, tree, tree, tree, tree);
-static tree fold_builtin_strspn (location_t, tree, tree, tree);
-static tree fold_builtin_strcspn (location_t, tree, tree, tree);
+static tree fold_builtin_strspn (location_t, tree, tree, tree, tree);
+static tree fold_builtin_strcspn (location_t, tree, tree, tree, tree);
 
 static rtx expand_builtin_object_size (tree);
 static rtx expand_builtin_memory_chk (tree, rtx, machine_mode,
@@ -8976,14 +8976,16 @@ fold_builtin_frexp (location_t loc, tree arg0, tree arg1, tree rettype)
       switch (value->cl)
       {
       case rvc_zero:
+      case rvc_nan:
+      case rvc_inf:
 	/* For +-0, return (*exp = 0, +-0).  */
+	/* For +-NaN or +-Inf, *exp is unspecified, but something should
+	   be stored there so that it isn't read from uninitialized object.
+	   As glibc and newlib store *exp = 0 for +-Inf/NaN, storing
+	   0 here as well is easiest.  */
 	exp = integer_zero_node;
 	frac = arg0;
 	break;
-      case rvc_nan:
-      case rvc_inf:
-	/* For +-NaN or +-Inf, *exp is unspecified, return arg0.  */
-	return omit_one_operand_loc (loc, rettype, arg0, arg1);
       case rvc_normal:
 	{
 	  /* Since the frexp function always expects base 2, and in
@@ -9111,7 +9113,7 @@ fold_builtin_interclass_mathfn (location_t loc, tree fndecl, tree arg)
 	    arg = fold_build1_loc (loc, NOP_EXPR, type, arg);
 	  }
 	get_max_float (REAL_MODE_FORMAT (mode), buf, sizeof (buf), false);
-	real_from_string (&r, buf);
+	real_from_string3 (&r, buf, mode);
 	result = build_call_expr (isgr_fn, 2,
 				  fold_build1_loc (loc, ABS_EXPR, type, arg),
 				  build_real (type, r));
@@ -9135,7 +9137,7 @@ fold_builtin_interclass_mathfn (location_t loc, tree fndecl, tree arg)
 	    arg = fold_build1_loc (loc, NOP_EXPR, type, arg);
 	  }
 	get_max_float (REAL_MODE_FORMAT (mode), buf, sizeof (buf), false);
-	real_from_string (&r, buf);
+	real_from_string3 (&r, buf, mode);
 	result = build_call_expr (isle_fn, 2,
 				  fold_build1_loc (loc, ABS_EXPR, type, arg),
 				  build_real (type, r));
@@ -9174,9 +9176,12 @@ fold_builtin_interclass_mathfn (location_t loc, tree fndecl, tree arg)
 	arg = fold_build1_loc (loc, ABS_EXPR, type, arg);
 
 	get_max_float (REAL_MODE_FORMAT (mode), buf, sizeof (buf), false);
-	real_from_string (&rmax, buf);
-	sprintf (buf, "0x1p%d", REAL_MODE_FORMAT (orig_mode)->emin - 1);
-	real_from_string (&rmin, buf);
+	real_from_string3 (&rmax, buf, mode);
+	if (DECIMAL_FLOAT_MODE_P (mode))
+	  sprintf (buf, "1E%d", REAL_MODE_FORMAT (orig_mode)->emin - 1);
+	else
+	  sprintf (buf, "0x1p%d", REAL_MODE_FORMAT (orig_mode)->emin - 1);
+	real_from_string3 (&rmin, buf, orig_mode);
 	max_exp = build_real (type, rmax);
 	min_exp = build_real (type, rmin);
 
@@ -9365,28 +9370,33 @@ fold_builtin_fpclassify (location_t loc, tree *args, int nargs)
 	     (x == 0 ? FP_ZERO : FP_SUBNORMAL))).  */
 
   tmp = fold_build2_loc (loc, EQ_EXPR, integer_type_node, arg,
-		     build_real (type, dconst0));
+			 build_real (type, dconst0));
   res = fold_build3_loc (loc, COND_EXPR, integer_type_node,
-		     tmp, fp_zero, fp_subnormal);
+			 tmp, fp_zero, fp_subnormal);
 
-  sprintf (buf, "0x1p%d", REAL_MODE_FORMAT (mode)->emin - 1);
-  real_from_string (&r, buf);
+  if (DECIMAL_FLOAT_MODE_P (mode))
+    sprintf (buf, "1E%d", REAL_MODE_FORMAT (mode)->emin - 1);
+  else
+    sprintf (buf, "0x1p%d", REAL_MODE_FORMAT (mode)->emin - 1);
+  real_from_string3 (&r, buf, mode);
   tmp = fold_build2_loc (loc, GE_EXPR, integer_type_node,
-		     arg, build_real (type, r));
-  res = fold_build3_loc (loc, COND_EXPR, integer_type_node, tmp, fp_normal, res);
+			 arg, build_real (type, r));
+  res = fold_build3_loc (loc, COND_EXPR, integer_type_node, tmp,
+			 fp_normal, res);
 
   if (tree_expr_maybe_infinite_p (arg))
     {
       tmp = fold_build2_loc (loc, EQ_EXPR, integer_type_node, arg,
-			 build_real (type, dconstinf));
+			     build_real (type, dconstinf));
       res = fold_build3_loc (loc, COND_EXPR, integer_type_node, tmp,
-			 fp_infinite, res);
+			     fp_infinite, res);
     }
 
   if (tree_expr_maybe_nan_p (arg))
     {
       tmp = fold_build2_loc (loc, ORDERED_EXPR, integer_type_node, arg, arg);
-      res = fold_build3_loc (loc, COND_EXPR, integer_type_node, tmp, res, fp_nan);
+      res = fold_build3_loc (loc, COND_EXPR, integer_type_node, tmp,
+			     res, fp_nan);
     }
 
   return res;
@@ -9539,7 +9549,21 @@ fold_builtin_arith_overflow (location_t loc, enum built_in_function fcode,
       tree ctype = build_complex_type (type);
       tree call = build_call_expr_internal_loc (loc, ifn, ctype, 2,
 						arg0, arg1);
-      tree tgt = save_expr (call);
+      tree tgt;
+      if (ovf_only)
+	{
+	  tgt = call;
+	  intres = NULL_TREE;
+	}
+      else
+	{
+	  /* Force SAVE_EXPR even for calls which satisfy tree_invariant_p_1,
+	     as while the call itself is const, the REALPART_EXPR store is
+	     certainly not.  And in any case, we want just one call,
+	     not multiple and trying to CSE them later.  */
+	  TREE_SIDE_EFFECTS (call) = 1;
+	  tgt = save_expr (call);
+	}
       intres = build1_loc (loc, REALPART_EXPR, type, tgt);
       ovfres = build1_loc (loc, IMAGPART_EXPR, type, tgt);
       ovfres = fold_convert_loc (loc, boolean_type_node, ovfres);
@@ -9801,10 +9825,10 @@ fold_builtin_2 (location_t loc, tree expr, tree fndecl, tree arg0, tree arg1)
       return fold_builtin_modf (loc, arg0, arg1, type);
 
     case BUILT_IN_STRSPN:
-      return fold_builtin_strspn (loc, expr, arg0, arg1);
+      return fold_builtin_strspn (loc, expr, arg0, arg1, type);
 
     case BUILT_IN_STRCSPN:
-      return fold_builtin_strcspn (loc, expr, arg0, arg1);
+      return fold_builtin_strcspn (loc, expr, arg0, arg1, type);
 
     case BUILT_IN_STRPBRK:
       return fold_builtin_strpbrk (loc, expr, arg0, arg1, type);
@@ -10298,7 +10322,7 @@ fold_builtin_strpbrk (location_t loc, tree, tree s1, tree s2, tree type)
    form of the builtin function call.  */
 
 static tree
-fold_builtin_strspn (location_t loc, tree expr, tree s1, tree s2)
+fold_builtin_strspn (location_t loc, tree expr, tree s1, tree s2, tree type)
 {
   if (!validate_arg (s1, POINTER_TYPE)
       || !validate_arg (s2, POINTER_TYPE))
@@ -10314,8 +10338,7 @@ fold_builtin_strspn (location_t loc, tree expr, tree s1, tree s2)
   if ((p1 && *p1 == '\0') || (p2 && *p2 == '\0'))
     /* Evaluate and ignore both arguments in case either one has
        side-effects.  */
-    return omit_two_operands_loc (loc, size_type_node, size_zero_node,
-				  s1, s2);
+    return omit_two_operands_loc (loc, type, size_zero_node, s1, s2);
   return NULL_TREE;
 }
 
@@ -10338,7 +10361,7 @@ fold_builtin_strspn (location_t loc, tree expr, tree s1, tree s2)
    form of the builtin function call.  */
 
 static tree
-fold_builtin_strcspn (location_t loc, tree expr, tree s1, tree s2)
+fold_builtin_strcspn (location_t loc, tree expr, tree s1, tree s2, tree type)
 {
   if (!validate_arg (s1, POINTER_TYPE)
       || !validate_arg (s2, POINTER_TYPE))
@@ -10354,8 +10377,7 @@ fold_builtin_strcspn (location_t loc, tree expr, tree s1, tree s2)
     {
       /* Evaluate and ignore argument s2 in case it has
 	 side-effects.  */
-      return omit_one_operand_loc (loc, size_type_node,
-				   size_zero_node, s2);
+      return omit_one_operand_loc (loc, type, size_zero_node, s2);
     }
 
   /* If the second argument is "", return __builtin_strlen(s1).  */
@@ -10369,7 +10391,8 @@ fold_builtin_strcspn (location_t loc, tree expr, tree s1, tree s2)
       if (!fn)
 	return NULL_TREE;
 
-      return build_call_expr_loc (loc, fn, 1, s1);
+      return fold_convert_loc (loc, type,
+			       build_call_expr_loc (loc, fn, 1, s1));
     }
   return NULL_TREE;
 }

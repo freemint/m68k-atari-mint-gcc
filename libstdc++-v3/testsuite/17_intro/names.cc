@@ -136,6 +136,12 @@
 // <charconv> defines to_chars_result::ptr and to_chars_result::ec
 #define ec (
 #define ptr (
+// <map> and <unordered_map> define try_emplace
+#define try_emplace (
+#endif
+
+#if __cplusplus < 202002L
+#define ranges (
 #endif
 
 // These clash with newlib so don't use them.

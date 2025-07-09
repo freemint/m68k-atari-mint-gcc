@@ -285,6 +285,8 @@
 (define_mode_iterator SPLIT34 [SI SF PSI
                                SQ USQ SA USA])
 
+(define_mode_iterator SFDF [SF DF])
+
 ;; Define code iterators
 ;; Define two incarnations so that we can build the cartesian product.
 (define_code_iterator any_extend  [sign_extend zero_extend])
@@ -382,8 +384,13 @@
 
     emit_clobber (gen_rtx_MEM (BLKmode, hard_frame_pointer_rtx));
 
-    emit_move_insn (hard_frame_pointer_rtx, r_fp);
+    // PR64242: When r_sp is located in the frame, we must not
+    // change FP prior to reading r_sp.  Hence copy r_fp to a
+    // local register (and hope that reload won't spill it).
+    rtx r_fp_reg = copy_to_reg (r_fp);
     emit_stack_restore (SAVE_NONLOCAL, r_sp);
+
+    emit_move_insn (hard_frame_pointer_rtx, r_fp_reg);
 
     emit_use (hard_frame_pointer_rtx);
     emit_use (stack_pointer_rtx);
@@ -650,12 +657,16 @@
   [(parallel [(set (reg:MOVMODE 22)
               (mem:MOVMODE (lo_sum:PSI (reg:QI 21)
                                        (reg:HI REG_Z))))
+              (clobber (reg:QI 21))
+              (clobber (reg:HI REG_Z))
               (clobber (reg:CC REG_CC))])])
 
 (define_insn "*xload_<mode>_libgcc"
   [(set (reg:MOVMODE 22)
         (mem:MOVMODE (lo_sum:PSI (reg:QI 21)
                                  (reg:HI REG_Z))))
+   (clobber (reg:QI 21))
+   (clobber (reg:HI REG_Z))
    (clobber (reg:CC REG_CC))]
   "avr_xload_libgcc_p (<MODE>mode)
    && reload_completed"
@@ -716,12 +727,26 @@
         if (!REG_P (addr))
           src = replace_equiv_address (src, copy_to_mode_reg (PSImode, addr));
 
+        rtx dest2 = reg_overlap_mentioned_p (dest, lpm_addr_reg_rtx)
+          ? gen_reg_rtx (<MODE>mode)
+          : dest;
+
         if (!avr_xload_libgcc_p (<MODE>mode))
           /* ; No <mode> here because gen_xload8<mode>_A only iterates over ALL1.
              ; insn-emit does not depend on the mode, it's all about operands.  */
-          emit_insn (gen_xload8qi_A (dest, src));
+          emit_insn (gen_xload8qi_A (dest2, src));
         else
-          emit_insn (gen_xload<mode>_A (dest, src));
+          {
+            rtx reg_22 = gen_rtx_REG (<MODE>mode, 22);
+            if (reg_overlap_mentioned_p (dest2, reg_22)
+                || reg_overlap_mentioned_p (dest2, all_regs_rtx[21]))
+              dest2 = gen_reg_rtx (<MODE>mode);
+
+            emit_insn (gen_xload<mode>_A (dest2, src));
+          }
+
+        if (dest2 != dest)
+          emit_move_insn (dest, dest2);
 
         DONE;
       }
@@ -7609,8 +7634,6 @@
                       (pc)))]
   "dead_or_set_regno_p (insn, REG_CC)"
   {
-    const char *op;
-    int jump_mode;
     if (avr_adiw_reg_p (operands[0]))
       output_asm_insn ("sbiw %0,1" CR_TAB
                        "sbc %C0,__zero_reg__" CR_TAB
@@ -7621,8 +7644,8 @@
                        "sbc %C0,__zero_reg__" CR_TAB
                        "sbc %D0,__zero_reg__", operands);
 
-    jump_mode = avr_jump_mode (operands[2], insn);
-    op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
+    int jump_mode = avr_jump_mode (operands[2], insn, 3 - avr_adiw_reg_p (operands[0]));
+    const char *op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
     operands[1] = gen_rtx_CONST_STRING (VOIDmode, op);
 
     switch (jump_mode)
@@ -7652,16 +7675,14 @@
                       (pc)))]
   "dead_or_set_regno_p (insn, REG_CC)"
   {
-    const char *op;
-    int jump_mode;
     if (avr_adiw_reg_p (operands[0]))
       output_asm_insn ("sbiw %0,1", operands);
     else
       output_asm_insn ("subi %A0,1" CR_TAB
                        "sbc %B0,__zero_reg__", operands);
 
-    jump_mode = avr_jump_mode (operands[2], insn);
-    op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
+    int jump_mode = avr_jump_mode (operands[2], insn, 1 - avr_adiw_reg_p (operands[0]));
+    const char *op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
     operands[1] = gen_rtx_CONST_STRING (VOIDmode, op);
 
     switch (jump_mode)
@@ -7693,16 +7714,14 @@
                       (pc)))]
   "dead_or_set_regno_p (insn, REG_CC)"
   {
-    const char *op;
-    int jump_mode;
     if (avr_adiw_reg_p (operands[0]))
       output_asm_insn ("sbiw %0,1", operands);
     else
       output_asm_insn ("subi %A0,1" CR_TAB
                        "sbc %B0,__zero_reg__", operands);
 
-    jump_mode = avr_jump_mode (operands[2], insn);
-    op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
+    int jump_mode = avr_jump_mode (operands[2], insn, 1 - avr_adiw_reg_p (operands[0]));
+    const char *op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
     operands[1] = gen_rtx_CONST_STRING (VOIDmode, op);
 
     switch (jump_mode)
@@ -7734,14 +7753,12 @@
                       (pc)))]
   "dead_or_set_regno_p (insn, REG_CC)"
   {
-    const char *op;
-    int jump_mode;
     output_asm_insn ("ldi %3,1"   CR_TAB
                      "sub %A0,%3" CR_TAB
                      "sbc %B0,__zero_reg__", operands);
 
-    jump_mode = avr_jump_mode (operands[2], insn);
-    op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
+    int jump_mode = avr_jump_mode (operands[2], insn, 2);
+    const char *op = ((EQ == <CODE>) ^ (jump_mode == 1)) ? "brcc" : "brcs";
     operands[1] = gen_rtx_CONST_STRING (VOIDmode, op);
 
     switch (jump_mode)
@@ -9778,6 +9795,20 @@
     int bitno = INTVAL (operands[2]);
     operands[3] = simplify_gen_subreg (QImode, operands[1], <MODE>mode, bitno / 8);
     operands[4] = GEN_INT (bitno % 8);
+  })
+
+
+;; Work around PR115307: Early passes expand isinf/f/l to a bloat.
+;; These passes do not consider costs, and there is no way to
+;; hook in or otherwise disable the generated bloat.
+
+;; isinfsf2  isinfdf2
+(define_expand "isinf<mode>2"
+  [(parallel [(match_operand:HI 0)
+              (match_operand:SFDF 1)])]
+  ""
+  {
+    FAIL;
   })
 
 

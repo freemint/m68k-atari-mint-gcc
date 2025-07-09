@@ -845,7 +845,7 @@ rs6000_init_builtins (void)
 	  enum rs6000_gen_builtins fn_code = (enum rs6000_gen_builtins) i;
 	  if (!rs6000_builtin_is_supported (fn_code))
 	    continue;
-	  tree fntype = rs6000_builtin_info[i].fntype;
+	  tree fntype = rs6000_builtin_info_fntype[i];
 	  tree t = TREE_TYPE (fntype);
 	  fprintf (stderr, "%s %s (", rs6000_type_string (t),
 		   rs6000_builtin_info[i].bifname);
@@ -3534,7 +3534,7 @@ rs6000_expand_builtin (tree exp, rtx target, rtx /* subtarget */,
     }
 
   /* Check for restricted constant arguments.  */
-  for (int i = 0; i < 2; i++)
+  for (size_t i = 0; i < ARRAY_SIZE (bifaddr->restr); i++)
     {
       switch (bifaddr->restr[i])
 	{
@@ -3552,7 +3552,7 @@ rs6000_expand_builtin (tree exp, rtx target, rtx /* subtarget */,
 		error ("argument %d must be a literal between 0 and %d,"
 		       " inclusive",
 		       bifaddr->restr_opnd[i], p);
-		return CONST0_RTX (mode[0]);
+		return const0_rtx;
 	      }
 	    break;
 	  }
@@ -3569,7 +3569,7 @@ rs6000_expand_builtin (tree exp, rtx target, rtx /* subtarget */,
 		       " inclusive",
 		       bifaddr->restr_opnd[i], bifaddr->restr_val1[i],
 		       bifaddr->restr_val2[i]);
-		return CONST0_RTX (mode[0]);
+		return const0_rtx;
 	      }
 	    break;
 	  }
@@ -3586,7 +3586,7 @@ rs6000_expand_builtin (tree exp, rtx target, rtx /* subtarget */,
 		       "between %d and %d, inclusive",
 		       bifaddr->restr_opnd[i], bifaddr->restr_val1[i],
 		       bifaddr->restr_val2[i]);
-		return CONST0_RTX (mode[0]);
+		return const0_rtx;
 	      }
 	    break;
 	  }
@@ -3602,7 +3602,7 @@ rs6000_expand_builtin (tree exp, rtx target, rtx /* subtarget */,
 		       "literal %d",
 		       bifaddr->restr_opnd[i], bifaddr->restr_val1[i],
 		       bifaddr->restr_val2[i]);
-		return CONST0_RTX (mode[0]);
+		return const0_rtx;
 	      }
 	    break;
 	  }

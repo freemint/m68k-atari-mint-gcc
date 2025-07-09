@@ -702,16 +702,14 @@ build_constexpr_constructor_member_initializers (tree type, tree body)
 
 /* We have an expression tree T that represents a call, either CALL_EXPR
    or AGGR_INIT_EXPR.  If the call is lexically to a named function,
-   retrun the _DECL for that function.  */
+   return the _DECL for that function.  */
 
 static tree
 get_function_named_in_call (tree t)
 {
-  tree fun = cp_get_callee (t);
-  if (fun && TREE_CODE (fun) == ADDR_EXPR
-      && TREE_CODE (TREE_OPERAND (fun, 0)) == FUNCTION_DECL)
-    fun = TREE_OPERAND (fun, 0);
-  return fun;
+  tree callee = cp_get_callee (t);
+  tree fun = cp_get_fndecl_from_callee (callee, /*fold*/false);
+  return fun ? fun : callee;
 }
 
 /* Subroutine of check_constexpr_fundef.  BODY is the body of a function
@@ -2883,6 +2881,9 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
      we can only get a trivial function here with -fno-elide-constructors.  */
   gcc_checking_assert (!trivial_fn_p (fun)
 		       || !flag_elide_constructors
+		       /* Or it's a call from maybe_thunk_body (111075).  */
+		       || (TREE_CODE (t) == CALL_EXPR ? CALL_FROM_THUNK_P (t)
+			   : AGGR_INIT_FROM_THUNK_P (t))
 		       /* We don't elide constructors when processing
 			  a noexcept-expression.  */
 		       || cp_noexcept_operand);
@@ -4301,15 +4302,24 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
   else
     val = build_value_init (elem_type, tf_warning_or_error);
 
-  if (!SCALAR_TYPE_P (elem_type))
+  /* Create a new constructor only if we don't already have a suitable one.  */
+  const bool new_ctor = (!SCALAR_TYPE_P (elem_type)
+			 && (!ctx->ctor
+			     || !same_type_ignoring_top_level_qualifiers_p
+				  (elem_type, TREE_TYPE (ctx->ctor))));
+  if (new_ctor)
     {
       new_ctx = *ctx;
+      /* We clear the object here.  We used to replace it with T, but that
+	 caused problems (101371, 108158); and anyway, T is the initializer,
+	 not the target object.  */
+      new_ctx.object = NULL_TREE;
       new_ctx.ctor = build_constructor (elem_type, NULL);
       ctx = &new_ctx;
     }
   t = cxx_eval_constant_expression (ctx, val, lval, non_constant_p,
 				    overflow_p);
-  if (!SCALAR_TYPE_P (elem_type) && t != ctx->ctor)
+  if (new_ctor && t != ctx->ctor)
     free_constructor (ctx->ctor);
   return t;
 }
@@ -6000,14 +6010,14 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
 	  break;
 
 	case REALPART_EXPR:
-	  gcc_assert (probe == target);
+	  gcc_assert (refs->is_empty ());
 	  vec_safe_push (refs, probe);
 	  vec_safe_push (refs, TREE_TYPE (probe));
 	  probe = TREE_OPERAND (probe, 0);
 	  break;
 
 	case IMAGPART_EXPR:
-	  gcc_assert (probe == target);
+	  gcc_assert (refs->is_empty ());
 	  vec_safe_push (refs, probe);
 	  vec_safe_push (refs, TREE_TYPE (probe));
 	  probe = TREE_OPERAND (probe, 0);
@@ -6835,6 +6845,7 @@ maybe_warn_about_constant_value (location_t loc, tree decl)
       && warn_interference_size
       && !OPTION_SET_P (param_destruct_interfere_size)
       && DECL_CONTEXT (decl) == std_node
+      && DECL_NAME (decl)
       && id_equal (DECL_NAME (decl), "hardware_destructive_interference_size")
       && (LOCATION_FILE (input_location) != main_input_filename
 	  || module_exporting_p ())
@@ -7777,6 +7788,12 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 		    return t;
 		  }
 	      }
+	    else if (TYPE_PTR_P (type)
+		    && TREE_CODE (TREE_TYPE (type)) == METHOD_TYPE)
+	      /* INTEGER_CST with pointer-to-method type is only used
+		 for a virtual method in a pointer to member function.
+		 Don't reject those.  */
+	      ;
 	    else
 	      {
 		/* This detects for example:
@@ -9061,7 +9078,8 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict, bool now,
        available, so we don't bother with switch tracking.  */
     return true;
 
-  if (TREE_THIS_VOLATILE (t) && want_rval)
+  if (TREE_THIS_VOLATILE (t) && want_rval
+      && !NULLPTR_TYPE_P (TREE_TYPE (t)))
     {
       if (flags & tf_error)
 	constexpr_error (loc, fundef_p, "lvalue-to-rvalue conversion of "

@@ -79,6 +79,10 @@
 # include <limits>
 #endif
 
+#if __cplusplus > 202002L
+# include <bits/ranges_algobase.h> // for ranges::iota
+#endif
+
 /**
  * @defgroup numerics Numerics
  *
@@ -485,8 +489,8 @@ namespace __detail
     {
       while (__first != __last)
 	{
-	  auto __v = __init;
-	  __init = __binary_op(__init, *__first);
+	  _Tp __v = std::move(__init);
+	  __init = __binary_op(__v, *__first);
 	  ++__first;
 	  *__result++ = std::move(__v);
 	}

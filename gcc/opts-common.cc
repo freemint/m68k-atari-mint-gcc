@@ -502,6 +502,7 @@ add_misspelling_candidates (auto_vec<char *> *candidates,
   for (unsigned i = 0; i < ARRAY_SIZE (option_map); i++)
     {
       const char *opt0 = option_map[i].opt0;
+      const char *opt1 = option_map[i].opt1;
       const char *new_prefix = option_map[i].new_prefix;
       size_t new_prefix_len = strlen (new_prefix);
 
@@ -510,8 +511,9 @@ add_misspelling_candidates (auto_vec<char *> *candidates,
 
       if (strncmp (opt_text, new_prefix, new_prefix_len) == 0)
 	{
-	  char *alternative = concat (opt0 + 1, opt_text + new_prefix_len,
-				      NULL);
+	  char *alternative
+	    = concat (opt0 + 1, opt1 ? " " : "", opt1 ? opt1 : "",
+		      opt_text + new_prefix_len, NULL);
 	  candidates->safe_push (alternative);
 	}
     }
@@ -2107,7 +2109,8 @@ jobserver_info::disconnect ()
 {
   if (!pipe_path.empty ())
     {
-      gcc_assert (close (pipefd) == 0);
+      int res = close (pipefd);
+      gcc_assert (res == 0);
       pipefd = -1;
     }
 }
@@ -2132,5 +2135,6 @@ jobserver_info::return_token ()
 {
   int fd = pipe_path.empty () ? wfd : pipefd;
   char c = 'G';
-  gcc_assert (write (fd, &c, 1) == 1);
+  int res = write (fd, &c, 1);
+  gcc_assert (res == 1);
 }

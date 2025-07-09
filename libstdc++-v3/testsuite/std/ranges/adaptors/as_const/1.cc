@@ -9,7 +9,7 @@
 #include <testsuite_hooks.h>
 #include <testsuite_iterators.h>
 
-#if __cpp_lib_ranges_as_const != 202207L
+#if __cpp_lib_ranges_as_const != 202311L
 # error "Feature-test macro __cpp_lib_ranges_as_const has wrong value in <ranges>"
 #endif
 
@@ -62,6 +62,22 @@ test03()
   std::vector<int> v;
   std::same_as<ranges::ref_view<const std::vector<int>>>
     auto r = views::as_const(v);
+
+  // PR libstdc++/119135
+  std::same_as<ranges::ref_view<const std::vector<int>>>
+    auto r2 = views::as_const(views::all(v));
+}
+
+void
+test04()
+{
+  // PR libstdc++/115046 - meta-recursion with join_view and as_const_view
+  int x[3] = {1,2,3};
+  auto v = x
+    | views::chunk(3)
+    | views::transform(views::as_const)
+    | views::join;
+  VERIFY( ranges::equal(v, x) );
 }
 
 int
@@ -70,4 +86,5 @@ main()
   static_assert(test01());
   static_assert(test02());
   test03();
+  test04();
 }

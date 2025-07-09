@@ -963,8 +963,14 @@ copy_loop_before (class loop *loop, bool redirect_lc_phi_defs)
 	  if (virtual_operand_p (gimple_phi_result (phi)))
 	    continue;
 	  use_operand_p use_p = PHI_ARG_DEF_PTR_FROM_EDGE (phi, exit);
-	  tree new_def = get_current_def (USE_FROM_PTR (use_p));
-	  SET_USE (use_p, new_def);
+	  if (TREE_CODE (USE_FROM_PTR (use_p)) == SSA_NAME)
+	    {
+	      tree new_def = get_current_def (USE_FROM_PTR (use_p));
+	      if (!new_def)
+		/* Something defined outside of the loop.  */
+		continue;
+	      SET_USE (use_p, new_def);
+	    }
 	}
     }
 
@@ -2157,25 +2163,32 @@ loop_distribution::pg_add_dependence_edges (struct graph *rdg, int dir,
 		 gcc.dg/tree-ssa/pr94969.c.  */
 	      if (DDR_NUM_DIST_VECTS (ddr) != 1)
 		this_dir = 2;
-	      /* If the overlap is exact preserve stmt order.  */
-	      else if (lambda_vector_zerop (DDR_DIST_VECT (ddr, 0),
-					    DDR_NB_LOOPS (ddr)))
-		;
-	      /* Else as the distance vector is lexicographic positive swap
-		 the dependence direction.  */
 	      else
 		{
-		  if (DDR_REVERSED_P (ddr))
-		    this_dir = -this_dir;
-		  this_dir = -this_dir;
-
+		  /* If the overlap is exact preserve stmt order.  */
+		  if (lambda_vector_zerop (DDR_DIST_VECT (ddr, 0),
+					   DDR_NB_LOOPS (ddr)))
+		    ;
+		  /* Else as the distance vector is lexicographic positive swap
+		     the dependence direction.  */
+		  else
+		    {
+		      if (DDR_REVERSED_P (ddr))
+			this_dir = -this_dir;
+		      this_dir = -this_dir;
+		    }
 		  /* When then dependence distance of the innermost common
-		     loop of the DRs is zero we have a conflict.  */
+		     loop of the DRs is zero we have a conflict.  This is
+		     due to wonky dependence analysis which sometimes
+		     ends up using a zero distance in place of unknown.  */
 		  auto l1 = gimple_bb (DR_STMT (dr1))->loop_father;
 		  auto l2 = gimple_bb (DR_STMT (dr2))->loop_father;
 		  int idx = index_in_loop_nest (find_common_loop (l1, l2)->num,
 						DDR_LOOP_NEST (ddr));
-		  if (DDR_DIST_VECT (ddr, 0)[idx] == 0)
+		  if (DDR_DIST_VECT (ddr, 0)[idx] == 0
+		      /* Unless it is the outermost loop which is the one
+			 we eventually distribute.  */
+		      && idx != 0)
 		    this_dir = 2;
 		}
 	    }
@@ -3530,7 +3543,7 @@ determine_reduction_stmt_1 (const loop_p loop, const basic_block *bbs)
       basic_block bb = bbs[i];
 
       for (gphi_iterator bsi = gsi_start_phis (bb); !gsi_end_p (bsi);
-	   gsi_next_nondebug (&bsi))
+	   gsi_next (&bsi))
 	{
 	  gphi *phi = bsi.phi ();
 	  if (virtual_operand_p (gimple_phi_result (phi)))
@@ -3543,8 +3556,8 @@ determine_reduction_stmt_1 (const loop_p loop, const basic_block *bbs)
 	    }
 	}
 
-      for (gimple_stmt_iterator bsi = gsi_start_bb (bb); !gsi_end_p (bsi);
-	   gsi_next_nondebug (&bsi), ++ninsns)
+      for (gimple_stmt_iterator bsi = gsi_start_nondebug_bb (bb);
+	   !gsi_end_p (bsi); gsi_next_nondebug (&bsi), ++ninsns)
 	{
 	  /* Bail out early for loops which are unlikely to match.  */
 	  if (ninsns > 16)

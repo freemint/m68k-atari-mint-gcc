@@ -2097,28 +2097,13 @@ asan_emit_stack_protection (rtx base, rtx pbase, unsigned int alignb,
       mem = adjust_address (mem, VOIDmode, base_align_bias);
       emit_move_insn (mem, gen_int_mode (ASAN_STACK_RETIRED_MAGIC, ptr_mode));
       unsigned HOST_WIDE_INT sz = asan_frame_size >> ASAN_SHADOW_SHIFT;
+      bool asan_stack_free_emitted_p = false;
       if (use_after_return_class < 5
 	  && can_store_by_pieces (sz, builtin_memset_read_str, &c,
 				  BITS_PER_UNIT, true))
-	{
-	  /* Emit:
-	       memset(ShadowBase, kAsanStackAfterReturnMagic, ShadowSize);
-	       **SavedFlagPtr(FakeStack, class_id) = 0
-	  */
-	  store_by_pieces (shadow_mem, sz, builtin_memset_read_str, &c,
-			   BITS_PER_UNIT, true, RETURN_BEGIN);
-
-	  unsigned HOST_WIDE_INT offset
-	    = (1 << (use_after_return_class + 6));
-	  offset -= GET_MODE_SIZE (ptr_mode);
-	  mem = gen_rtx_MEM (ptr_mode, base);
-	  mem = adjust_address (mem, ptr_mode, offset);
-	  rtx addr = gen_reg_rtx (ptr_mode);
-	  emit_move_insn (addr, mem);
-	  addr = convert_memory_address (Pmode, addr);
-	  mem = gen_rtx_MEM (QImode, addr);
-	  emit_move_insn (mem, const0_rtx);
-	}
+	/* Emit memset (ShadowBase, kAsanStackAfterReturnMagic, ShadowSize).  */
+	store_by_pieces (shadow_mem, sz, builtin_memset_read_str, &c,
+			 BITS_PER_UNIT, true, RETURN_BEGIN);
       else if (use_after_return_class >= 5
 	       || !set_storage_via_setmem (shadow_mem,
 					   GEN_INT (sz),
@@ -2135,6 +2120,20 @@ asan_emit_stack_protection (rtx base, rtx pbase, unsigned int alignb,
 			     GEN_INT (asan_frame_size + base_align_bias),
 			     TYPE_MODE (pointer_sized_int_node),
 			     orig_addr, ptr_mode);
+	  asan_stack_free_emitted_p = true;
+	}
+      if (!asan_stack_free_emitted_p)
+	{
+	  /* Emit **SavedFlagPtr (FakeStack, class_id) = 0.  */
+	  unsigned HOST_WIDE_INT offset = (1 << (use_after_return_class + 6));
+	  offset -= GET_MODE_SIZE (ptr_mode);
+	  mem = gen_rtx_MEM (ptr_mode, base);
+	  mem = adjust_address (mem, ptr_mode, offset);
+	  rtx addr = gen_reg_rtx (ptr_mode);
+	  emit_move_insn (addr, mem);
+	  addr = convert_memory_address (Pmode, addr);
+	  mem = gen_rtx_MEM (QImode, addr);
+	  emit_move_insn (mem, const0_rtx);
 	}
       lab = gen_label_rtx ();
       emit_jump (lab);
@@ -2607,7 +2606,7 @@ maybe_cast_to_ptrmode (location_t loc, tree len, gimple_stmt_iterator *iter,
   if (ptrofftype_p (len))
     return len;
   gimple *g = gimple_build_assign (make_ssa_name (pointer_sized_int_node),
-				  NOP_EXPR, len);
+				   NOP_EXPR, len);
   gimple_set_location (g, loc);
   if (before_p)
     gsi_safe_insert_before (iter, g);
@@ -2641,16 +2640,13 @@ build_check_stmt (location_t loc, tree base, tree len,
 		  bool is_non_zero_len, bool before_p, bool is_store,
 		  bool is_scalar_access, unsigned int align = 0)
 {
-  gimple_stmt_iterator gsi = *iter;
   gimple *g;
 
   gcc_assert (!(size_in_bytes > 0 && !is_non_zero_len));
   gcc_assert (size_in_bytes == -1 || size_in_bytes >= 1);
 
-  gsi = *iter;
-
   base = unshare_expr (base);
-  base = maybe_create_ssa_name (loc, base, &gsi, before_p);
+  base = maybe_create_ssa_name (loc, base, iter, before_p);
 
   if (len)
     {
@@ -2701,12 +2697,11 @@ build_check_stmt (location_t loc, tree base, tree len,
 						 align / BITS_PER_UNIT));
   gimple_set_location (g, loc);
   if (before_p)
-    gsi_safe_insert_before (&gsi, g);
+    gsi_safe_insert_before (iter, g);
   else
     {
-      gsi_insert_after (&gsi, g, GSI_NEW_STMT);
-      gsi_next (&gsi);
-      *iter = gsi;
+      gsi_insert_after (iter, g, GSI_NEW_STMT);
+      gsi_next (iter);
     }
 }
 

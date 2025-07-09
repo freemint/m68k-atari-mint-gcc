@@ -26,6 +26,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "target.h"
 #include "cp-tree.h"
+#include "decl.h"
 #include "stringpool.h"
 #include "cgraph.h"
 #include "varasm.h"
@@ -282,6 +283,11 @@ use_thunk (tree thunk_fndecl, bool emit_p)
 
   /* Thunks are always addressable; they only appear in vtables.  */
   TREE_ADDRESSABLE (thunk_fndecl) = 1;
+
+  /* Don't diagnose deprecated or unavailable functions just because they
+     have thunks emitted for them.  */
+  auto du = make_temp_override (deprecated_state,
+                                UNAVAILABLE_DEPRECATED_SUPPRESS);
 
   /* Figure out what function is being thunked to.  It's referenced in
      this translation unit.  */
@@ -1797,6 +1803,7 @@ synthesize_method (tree fndecl)
      it now.  */
   push_deferring_access_checks (dk_no_deferred);
 
+  cp_evaluated ev;
   if (! context)
     push_to_top_level ();
   else if (nested)
@@ -1904,6 +1911,27 @@ build_stub_object (tree reftype)
     reftype = cp_build_reference_type (reftype, /*rval*/true);
   tree stub = build1 (CONVERT_EXPR, reftype, integer_one_node);
   return convert_from_reference (stub);
+}
+
+/* Build a std::declval<TYPE>() expression and return it.  */
+
+tree
+build_trait_object (tree type)
+{
+  /* TYPE can't be a function with cv-/ref-qualifiers: std::declval is
+     defined as
+
+       template<class T>
+       typename std::add_rvalue_reference<T>::type declval() noexcept;
+
+     and std::add_rvalue_reference yields T when T is a function with
+     cv- or ref-qualifiers, making the definition ill-formed.  */
+  if (FUNC_OR_METHOD_TYPE_P (type)
+      && (type_memfn_quals (type) != TYPE_UNQUALIFIED
+	  || type_memfn_rqual (type) != REF_QUAL_NONE))
+    return error_mark_node;
+
+  return build_stub_object (type);
 }
 
 /* Determine which function will be called when looking up NAME in TYPE,
@@ -2054,8 +2082,8 @@ static tree
 assignable_expr (tree to, tree from)
 {
   cp_unevaluated cp_uneval_guard;
-  to = build_stub_object (to);
-  from = build_stub_object (from);
+  to = build_trait_object (to);
+  from = build_trait_object (from);
   tree r = cp_build_modify_expr (input_location, to, NOP_EXPR, from, tf_none);
   return r;
 }
@@ -2234,7 +2262,9 @@ ref_xes_from_temporary (tree to, tree from, bool direct_init_p)
     return false;
   /* We don't check is_constructible<T, U>: if T isn't constructible
      from U, we won't be able to create a conversion.  */
-  tree val = build_stub_object (from);
+  tree val = build_trait_object (from);
+  if (val == error_mark_node)
+    return false;
   if (!TYPE_REF_P (from) && TREE_CODE (from) != FUNCTION_TYPE)
     val = CLASS_TYPE_P (from) ? force_rvalue (val, tf_none) : rvalue (val);
   return ref_conv_binds_to_temporary (to, val, direct_init_p).is_true ();
@@ -2249,7 +2279,15 @@ is_convertible_helper (tree from, tree to)
   if (VOID_TYPE_P (from) && VOID_TYPE_P (to))
     return integer_one_node;
   cp_unevaluated u;
-  tree expr = build_stub_object (from);
+  tree expr = build_trait_object (from);
+  /* std::is_{,nothrow_}convertible test whether the imaginary function
+     definition
+
+       To test() { return std::declval<From>(); }
+
+     is well-formed.  A function can't return a function.  */
+  if (FUNC_OR_METHOD_TYPE_P (to) || expr == error_mark_node)
+    return error_mark_node;
   deferring_access_check_sentinel acs (dk_no_deferred);
   return perform_implicit_conversion (to, expr, tf_none);
 }

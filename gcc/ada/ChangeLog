@@ -1,3 +1,164 @@
+2025-06-05  Release Manager
+
+	* GCC 13.4.0 released.
+
+2025-04-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/112958
+	* Makefile.rtl (LIBGNAT_TARGET_PAIRS) [x86 FreeBSD]: Add specific
+	version of s-dorepr.adb.
+	* libgnat/s-dorepr__freebsd.adb: New file.
+
+2025-04-04  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* libgnat/a-ngcoar.adb (Eigensystem): Adjust notation and fix the
+	layout of the real symmetric matrix in the main comment.  Adjust
+	the layout of the associated code accordingly and correctly turn
+	the 2Nx1 real vectors into Nx1 complex ones.
+	(Eigenvalues): Minor similar tweaks.
+	* libgnat/a-ngrear.adb (Jacobi): Minor tweaks in the main comment.
+	Adjust notation and corresponding parameter names of functions.
+	Fix call to Unit_Matrix routine.  Adjust the comment describing
+	the various kinds of iterations to match the implementation.
+
+2025-03-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.cc (gnat_to_gnu_entity) <E_Record_Subtype>: Set
+	the may_alias attribute if a specific GCC type is built.
+
+2025-03-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gen_il-gen-gen_nodes.adb (N_Formal_Package_Declaration): Use
+	N_Declaration instead of Node_Kind as ancestor.
+	* sem_ch12.adb (Get_Formal_Entity): Remove obsolete alternative.
+	(Instantiate_Formal_Package): Take into account the abbreviated
+	instances in the main loop running over the actuals of the local
+	package created for the formal package.
+
+2025-02-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/118712
+	* sem_warn.adb (Check_References): Deal with small adjustments of
+	references.
+
+2025-01-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* exp_aggr.adb (Two_Pass_Aggregate_Expansion): Use the base type of
+	the index type to find the type used to compute the length.
+
+2025-01-05  Estevan Castilho (Tevo)  <estevan.cps@gmail.com>
+
+	* libgnarl/s-taprop__dummy.adb: Remove use clause for
+	System.Parameters.
+	(Unlock): Remove Global_Lock formal parameter.
+	(Write_Lock): Likewise.
+
+2024-12-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.cc (get_atomic_access): Deal specifically with
+	nodes that are both Atomic and Volatile_Full_Access in Ada 2012.
+
+2024-12-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/117996
+	* libgnat/a-ngrear.adb (Jacobi): Remove default value for
+	Compute_Vectors formal parameter.
+	(Sort_Eigensystem): Add Compute_Vectors formal parameter.  Do not
+	modify the Vectors if Compute_Vectors is False.
+	(Eigensystem): Pass True as Compute_Vectors to Sort_Eigensystem.
+	(Eigenvalues): Pass False as Compute_Vectors to Sort_Eigensystem.
+
+2024-11-26  Arsen Arsenović  <arsen@aarsen.me>
+
+	Backported from master:
+	2024-08-19  Arsen Arsenović  <arsen@aarsen.me>
+
+	PR ada/115917
+	* gnatvsn.ads: Add note about the duplication of this value in
+	version.c.
+	* version.c (VER_LEN_MAX): Define to the same value as
+	Gnatvsn.Ver_Len_Max.
+	(gnat_version_string): Use VER_LEN_MAX as bound.
+
+2024-11-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/117328
+	* exp_aggr.adb (Two_Pass_Aggregate_Expansion): Use a type sized
+	from the index type to compute the length.  Simplify and remove
+	useless calls to New_Copy_Tree for this computation.
+
+2024-11-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/113868
+	* par-ch6.adb (P_Subprogram) <Scan_Body_Or_Expression_Function>:
+	Add delta aggregate alongside the other forms of aggregates.
+
+2024-11-04  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* checks.adb (Selected_Length_Checks.Get_E_Length): For a
+	component of a record with discriminants and if the expression is
+	a selected component, try to build an actual subtype from its
+	prefix instead of from the discriminal.
+
+2024-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/116551
+	* gcc-interface/trans.cc (node_is_atomic) <N_Identifier>: Return
+	false if the type of the entity is an unconstrained array type.
+	(node_is_volatile_full_access) <N_Identifier>: Likewise.
+
+2024-10-14  Steve Baird  <baird@adacore.com>
+
+	PR ada/114593
+	* sem_res.adb (Valid_Conversion): Test In_Instance instead of
+	In_Instance_Body.
+
+2024-10-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/115535
+	* exp_put_image.adb: Remove clauses for Sem_Aux.
+
+2024-10-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* exp_aggr.ads (Is_Two_Pass_Aggregate): New function declaration.
+	* exp_aggr.adb (Is_Two_Pass_Aggregate): New function body.
+	(Expand_Array_Aggregate): Call Is_Two_Pass_Aggregate to detect the
+	aggregates that need the 2-pass expansion.
+	* exp_ch3.adb (Expand_Freeze_Array_Type): In the anonymous array
+	case, build the initialization procedure if the initial value in
+	the object declaration is a 2-pass aggregate.
+
+2024-10-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/115535
+	* exp_put_image.adb (Build_Elementary_Put_Image_Call): Use the size
+	of the underlying type to find the support type.
+
+2024-10-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/114640
+	* exp_util.adb (Find_Hook_Context): For a node present within a
+	conditional expression, do not return an N_Elsif_Part node.
+
+2024-10-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/114636
+	* sem_ch12.adb (Check_Formal_Package_Instance): For a defaulted
+	formal discrete type, skip the generated implicit base type.
+
+2024-06-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/114708
+	* exp_util.adb (Finalize_Address): Add guard for incomplete types.
+
+2024-06-10  Javier Miranda  <miranda@adacore.com>
+
+	* sem_ch6.adb (Might_Need_BIP_Task_Actuals): Add support
+	for access-to-subprogram parameter types.
+	* exp_ch6.adb (Add_Task_Actuals_To_Build_In_Place_Call):
+	Add dummy BIP parameters to access-to-subprogram types
+	that may reference a function that has BIP parameters.
+
 2024-05-21  Release Manager
 
 	* GCC 13.3.0 released.

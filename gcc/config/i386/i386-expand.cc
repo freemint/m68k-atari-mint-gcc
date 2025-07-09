@@ -4116,29 +4116,29 @@ ix86_expand_sse_movcc (rtx dest, rtx cmp, rtx op_true, rtx op_false)
   switch (mode)
     {
     case E_V2SFmode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_mmx_blendvps;
       break;
     case E_V4SFmode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_sse4_1_blendvps;
       break;
     case E_V2DFmode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_sse4_1_blendvpd;
       break;
     case E_SFmode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_sse4_1_blendvss;
       break;
     case E_DFmode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_sse4_1_blendvsd;
       break;
     case E_V8QImode:
     case E_V4HImode:
     case E_V2SImode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	{
 	  gen = gen_mmx_pblendvb_v8qi;
 	  blend_mode = V8QImode;
@@ -4146,14 +4146,14 @@ ix86_expand_sse_movcc (rtx dest, rtx cmp, rtx op_true, rtx op_false)
       break;
     case E_V4QImode:
     case E_V2HImode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	{
 	  gen = gen_mmx_pblendvb_v4qi;
 	  blend_mode = V4QImode;
 	}
       break;
     case E_V2QImode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	gen = gen_mmx_pblendvb_v2qi;
       break;
     case E_V16QImode:
@@ -4163,18 +4163,18 @@ ix86_expand_sse_movcc (rtx dest, rtx cmp, rtx op_true, rtx op_false)
     case E_V4SImode:
     case E_V2DImode:
     case E_V1TImode:
-      if (TARGET_SSE4_1)
+      if (TARGET_SSE_MOVCC_USE_BLENDV && TARGET_SSE4_1)
 	{
 	  gen = gen_sse4_1_pblendvb;
 	  blend_mode = V16QImode;
 	}
       break;
     case E_V8SFmode:
-      if (TARGET_AVX)
+      if (TARGET_AVX && TARGET_SSE_MOVCC_USE_BLENDV)
 	gen = gen_avx_blendvps256;
       break;
     case E_V4DFmode:
-      if (TARGET_AVX)
+      if (TARGET_AVX && TARGET_SSE_MOVCC_USE_BLENDV)
 	gen = gen_avx_blendvpd256;
       break;
     case E_V32QImode:
@@ -4183,7 +4183,7 @@ ix86_expand_sse_movcc (rtx dest, rtx cmp, rtx op_true, rtx op_false)
     case E_V16BFmode:
     case E_V8SImode:
     case E_V4DImode:
-      if (TARGET_AVX2)
+      if (TARGET_AVX2 && TARGET_SSE_MOVCC_USE_BLENDV)
 	{
 	  gen = gen_avx2_pblendvb;
 	  blend_mode = V32QImode;
@@ -13096,6 +13096,9 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
       op1 = expand_normal (arg1);
       op2 = expand_normal (arg2);
 
+      if (GET_MODE (op1) != Pmode)
+	op1 = convert_to_mode (Pmode, op1, 1);
+
       if (!address_operand (op2, VOIDmode))
 	{
 	  op2 = convert_memory_address (Pmode, op2);
@@ -13131,6 +13134,9 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
       emit_label (ok_label);
       emit_insn (gen_rtx_SET (target, pat));
 
+      if (GET_MODE (op0) != Pmode)
+	op0 = convert_to_mode (Pmode, op0, 1);
+
       for (i = 0; i < 8; i++)
 	{
 	  op = gen_rtx_MEM (V2DImode,
@@ -13154,6 +13160,9 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
 
 	if (!REG_P (op0))
 	  op0 = copy_to_mode_reg (SImode, op0);
+
+	if (GET_MODE (op2) != Pmode)
+	  op2 = convert_to_mode (Pmode, op2, 1);
 
 	op = gen_rtx_REG (V2DImode, GET_SSE_REGNO (0));
 	emit_move_insn (op, op1);
@@ -13191,6 +13200,9 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
 
 	if (!REG_P (op0))
 	  op0 = copy_to_mode_reg (SImode, op0);
+
+	if (GET_MODE (op3) != Pmode)
+	  op3 = convert_to_mode (Pmode, op3, 1);
 
 	/* Force to use xmm0, xmm1 for keylow, keyhi*/
 	op = gen_rtx_REG (V2DImode, GET_SSE_REGNO (0));
@@ -17096,6 +17108,8 @@ quarter:
   else if (use_vec_merge)
     {
 do_vec_merge:
+      if (!nonimmediate_operand (val, inner_mode))
+	val = force_reg (inner_mode, val);
       tmp = gen_rtx_VEC_DUPLICATE (mode, val);
       tmp = gen_rtx_VEC_MERGE (mode, tmp, target,
 			       GEN_INT (HOST_WIDE_INT_1U << elt));

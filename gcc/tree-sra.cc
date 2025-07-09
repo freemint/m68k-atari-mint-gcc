@@ -100,6 +100,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "builtins.h"
 #include "tree-sra.h"
 #include "opts.h"
+#include "tree-ssa-alias-compare.h"
 
 /* Enumeration of all aggregate reductions we can do.  */
 enum sra_mode { SRA_MODE_EARLY_IPA,   /* early call regularization */
@@ -968,6 +969,7 @@ create_access (tree expr, gimple *stmt, bool write)
   access->type = TREE_TYPE (expr);
   access->write = write;
   access->grp_unscalarizable_region = unscalarizable_region;
+  access->grp_same_access_path = true;
   access->stmt = stmt;
   access->reverse = reverse;
 
@@ -1394,6 +1396,9 @@ build_accesses_from_assign (gimple *stmt)
   racc = build_access_from_expr_1 (rhs, stmt, false);
   lacc = build_access_from_expr_1 (lhs, stmt, true);
 
+  bool tbaa_hazard
+    = !types_equal_for_same_type_for_tbaa_p (TREE_TYPE (lhs), TREE_TYPE (rhs));
+
   if (lacc)
     {
       lacc->grp_assignment_write = 1;
@@ -1408,6 +1413,8 @@ build_accesses_from_assign (gimple *stmt)
 	    bitmap_set_bit (cannot_scalarize_away_bitmap,
 			    DECL_UID (lacc->base));
 	}
+      if (tbaa_hazard)
+	lacc->grp_same_access_path = false;
     }
 
   if (racc)
@@ -1427,6 +1434,8 @@ build_accesses_from_assign (gimple *stmt)
 	}
       if (storage_order_barrier_p (lhs))
 	racc->grp_unscalarizable_region = 1;
+      if (tbaa_hazard)
+	racc->grp_same_access_path = false;
     }
 
   if (lacc && racc
@@ -1504,9 +1513,16 @@ scan_function (void)
 	      break;
 
 	    case GIMPLE_CALL:
-	      for (i = 0; i < gimple_call_num_args (stmt); i++)
-		ret |= build_access_from_expr (gimple_call_arg (stmt, i),
-					       stmt, false);
+	      if (gimple_call_flags (stmt) & ECF_RETURNS_TWICE)
+		{
+		  for (i = 0; i < gimple_call_num_args (stmt); i++)
+		    disqualify_base_of_expr (gimple_call_arg (stmt, i),
+					     "Passed to a returns_twice call.");
+		}
+	      else
+		for (i = 0; i < gimple_call_num_args (stmt); i++)
+		  ret |= build_access_from_expr (gimple_call_arg (stmt, i),
+						 stmt, false);
 
 	      t = gimple_call_lhs (stmt);
 	      if (t && !disqualify_if_bad_bb_terminating_stmt (stmt, t, NULL))
@@ -2215,7 +2231,7 @@ sort_and_splice_var_accesses (tree var)
       bool grp_partial_lhs = access->grp_partial_lhs;
       bool first_scalar = is_gimple_reg_type (access->type);
       bool unscalarizable_region = access->grp_unscalarizable_region;
-      bool grp_same_access_path = true;
+      bool grp_same_access_path = access->grp_same_access_path;
       bool bf_non_full_precision
 	= (INTEGRAL_TYPE_P (access->type)
 	   && TYPE_PRECISION (access->type) != access->size
@@ -2234,7 +2250,8 @@ sort_and_splice_var_accesses (tree var)
 	gcc_assert (access->offset >= low
 		    && access->offset + access->size <= high);
 
-      grp_same_access_path = path_comparable_for_same_access (access->expr);
+      if (grp_same_access_path)
+	grp_same_access_path = path_comparable_for_same_access (access->expr);
 
       j = i + 1;
       while (j < access_count)
@@ -2287,7 +2304,8 @@ sort_and_splice_var_accesses (tree var)
 	    }
 
 	  if (grp_same_access_path
-	      && !same_access_path_p (access->expr, ac2->expr))
+	      && (!ac2->grp_same_access_path
+		  || !same_access_path_p (access->expr, ac2->expr)))
 	    grp_same_access_path = false;
 
 	  ac2->group_representative = access;
@@ -3235,7 +3253,7 @@ create_total_scalarization_access (struct access *parent, HOST_WIDE_INT pos,
   access->grp_write = parent->grp_write;
   access->grp_total_scalarization = 1;
   access->grp_hint = 1;
-  access->grp_same_access_path = path_comparable_for_same_access (expr);
+  access->grp_same_access_path = 0;
   access->reverse = reverse_storage_order_for_component_p (expr);
 
   access->next_sibling = next_sibling;
@@ -3970,8 +3988,10 @@ sra_modify_expr (tree *expr, gimple_stmt_iterator *gsi, bool write)
 	    }
 	  else
 	    {
-	      gassign *stmt;
+	      if (TREE_READONLY (access->base))
+		return false;
 
+	      gassign *stmt;
 	      if (access->grp_partial_lhs)
 		repl = force_gimple_operand_gsi (gsi, repl, true, NULL_TREE,
 						 true, GSI_SAME_STMT);

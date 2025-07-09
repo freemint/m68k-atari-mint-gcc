@@ -2649,6 +2649,7 @@ predicate_statements (loop_p loop)
 		 This will cause the vectorizer to match the "in branch"
 		 clone variants, and serves to build the mask vector
 		 in a natural way.  */
+	      tree mask = cond;
 	      gcall *call = dyn_cast <gcall *> (gsi_stmt (gsi));
 	      tree orig_fn = gimple_call_fn (call);
 	      int orig_nargs = gimple_call_num_args (call);
@@ -2656,7 +2657,18 @@ predicate_statements (loop_p loop)
 	      args.safe_push (orig_fn);
 	      for (int i = 0; i < orig_nargs; i++)
 		args.safe_push (gimple_call_arg (call, i));
-	      args.safe_push (cond);
+	      /* If `swap', we invert the mask used for the if branch for use
+		 when masking the function call.  */
+	      if (swap)
+		{
+		  gimple_seq stmts = NULL;
+		  tree true_val
+		    = constant_boolean_node (true, TREE_TYPE (mask));
+		  mask = gimple_build (&stmts, BIT_XOR_EXPR,
+				       TREE_TYPE (mask), mask, true_val);
+		  gsi_insert_seq_before (&gsi, stmts, GSI_SAME_STMT);
+		}
+	      args.safe_push (mask);
 
 	      /* Replace the call with a IFN_MASK_CALL that has the extra
 		 condition parameter. */
@@ -3194,7 +3206,9 @@ ifcvt_local_dce (class loop *loop)
       gimple_stmt_iterator gsiprev = gsi;
       gsi_prev (&gsiprev);
       stmt = gsi_stmt (gsi);
-      if (gimple_store_p (stmt) && gimple_vdef (stmt))
+      if (!gimple_has_volatile_ops (stmt)
+	  && gimple_store_p (stmt)
+	  && gimple_vdef (stmt))
 	{
 	  tree lhs = gimple_get_lhs (stmt);
 	  ao_ref write;

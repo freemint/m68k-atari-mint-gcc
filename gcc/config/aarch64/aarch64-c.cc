@@ -139,7 +139,7 @@ aarch64_update_cpp_builtins (cpp_reader *pfile)
   aarch64_def_or_undef (TARGET_ILP32, "_ILP32", pfile);
   aarch64_def_or_undef (TARGET_ILP32, "__ILP32__", pfile);
 
-  aarch64_def_or_undef (TARGET_CRYPTO, "__ARM_FEATURE_CRYPTO", pfile);
+  aarch64_def_or_undef (TARGET_AES && TARGET_SHA2, "__ARM_FEATURE_CRYPTO", pfile);
   aarch64_def_or_undef (TARGET_SIMD_RDMA, "__ARM_FEATURE_QRDMX", pfile);
   aarch64_def_or_undef (TARGET_SVE, "__ARM_FEATURE_SVE", pfile);
   cpp_undef (pfile, "__ARM_FEATURE_SVE_BITS");
@@ -202,6 +202,11 @@ aarch64_update_cpp_builtins (cpp_reader *pfile)
 			"__ARM_FEATURE_BF16_VECTOR_ARITHMETIC", pfile);
   aarch64_def_or_undef (TARGET_BF16_FP,
 			"__ARM_FEATURE_BF16_SCALAR_ARITHMETIC", pfile);
+  aarch64_def_or_undef (TARGET_BF16_FP,
+			"__ARM_FEATURE_BF16", pfile);
+  aarch64_def_or_undef (TARGET_SVE_BF16,
+			"__ARM_FEATURE_SVE_BF16", pfile);
+
   aarch64_def_or_undef (TARGET_LS64,
 			"__ARM_FEATURE_LS64", pfile);
   aarch64_def_or_undef (AARCH64_ISA_RCPC, "__ARM_FEATURE_RCPC", pfile);
