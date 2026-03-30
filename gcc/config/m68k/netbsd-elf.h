@@ -210,7 +210,7 @@ while (0)
    regnum.  Make it a1 instead.  */
 
 #undef STATIC_CHAIN_REGNUM
-#define STATIC_CHAIN_REGNUM A1_REG
+#define STATIC_CHAIN_REGNUM (M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG)
 #undef M68K_STATIC_CHAIN_REG_NAME
 #define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a1"
 
@@ -250,7 +250,7 @@ while (0)
 
 #undef FUNCTION_VALUE
 #define FUNCTION_VALUE(VALTYPE, FUNC)					\
-  m68k_function_value (VALTYPE, FUNC)
+  m68k_function_value (VALTYPE, FUNC, true)
 
 
 /* Define how to find the value returned by a library function

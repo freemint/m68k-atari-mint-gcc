@@ -348,14 +348,27 @@ m68*-*-*)
 	fi
 	case "${host}" in
 	  *-*-mint*)
+            # mshort variants are only generated for libgcc
+            # mfastcall variants are only generated for libgcc & libstdc++
 	    case "${srcdir}" in
 	      */libgcc ) : ;;
+	      */libstdc++-v3)
+	        old_multidirs="${multidirs}"
+	        multidirs=""
+	        for x in ${old_multidirs}; do
+		  case "$x" in
+		    *mshort* ) : ;;
+		    *) multidirs="${multidirs} ${x}" ;;
+		  esac
+		done
+		;;
 	      *)
 	        old_multidirs="${multidirs}"
 	        multidirs=""
 	        for x in ${old_multidirs}; do
 		  case "$x" in
-		    *mshort ) : ;;
+		    *mshort* ) : ;;
+		    *mfastcall* ) : ;;
 		    *) multidirs="${multidirs} ${x}" ;;
 		  esac
 		done

@@ -79,7 +79,7 @@ extern rtx m68k_legitimize_tls_address (rtx);
 extern bool m68k_tls_reference_p (rtx, bool);
 extern int valid_dbcc_comparison_p_2 (rtx, machine_mode);
 extern rtx m68k_libcall_value (machine_mode);
-extern rtx m68k_function_value (const_tree, const_tree);
+extern rtx m68k_function_value (const_tree, const_tree, bool);
 extern int emit_move_sequence (rtx *, machine_mode, rtx);
 extern bool m68k_movem_pattern_p (rtx, rtx, HOST_WIDE_INT, bool);
 extern const char *m68k_output_movem (rtx *, rtx, HOST_WIDE_INT, bool);
@@ -115,3 +115,13 @@ extern rtx m68k_legitimize_call_address (rtx);
 extern rtx m68k_legitimize_sibcall_address (rtx);
 extern int m68k_hard_regno_rename_ok(unsigned int, unsigned int);
 extern poly_int64 m68k_push_rounding (poly_int64);
+
+#ifdef RTX_CODE
+#ifdef TREE_CODE
+void m68k_init_cumulative_args (CUMULATIVE_ARGS *, tree, rtx, tree, int);
+#endif
+#endif
+void m68k_order_regs_for_local_alloc(void);
+void m68k_call_abi_override (const_tree);
+enum calling_abi m68k_function_type_abi (const_tree);
+enum calling_abi m68k_cfun_abi (void);

@@ -197,3 +197,11 @@ Support more than 8192 GOT entries on ColdFire.
 mxtls
 Target Mask(XTLS)
 Support TLS segment larger than 64K.
+
+mnofastcall
+Target RejectNegative InverseMask(FASTCALL)
+Use standard calling conventions.
+
+mfastcall
+Target Mask(FASTCALL)
+Use calling convention passing arguments in registers.

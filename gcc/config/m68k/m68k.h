@@ -26,6 +26,19 @@ along with GCC; see the file COPYING3.  If not see
 # define MOTOROLA 0  /* Use the MIT assembly syntax.  */
 #endif
 
+/* Available call abi.  */
+enum calling_abi
+{
+  STD_ABI = 0,
+  FASTCALL_ABI = 1
+};
+
+/* The abi used by target.  */
+extern enum calling_abi m68k_abi;
+
+/* The default abi used by target.  */
+#define DEFAULT_ABI STD_ABI
+
 /* Handle --with-cpu default option from configure script.  */
 #define OPTION_DEFAULT_SPECS						\
   { "cpu",   "%{!m68020-40:%{!m68020-60:\
@@ -136,6 +149,11 @@ along with GCC; see the file COPYING3.  If not see
 	  builtin_define ("__M68881__"); /* Non-standard */		\
 	}								\
 									\
+      if (TARGET_FASTCALL)                                              \
+        {                                                               \
+      	  builtin_define ("__FASTCALL__"); /* Non-standard */		\
+        }                                                               \
+                                                                        \
       if (TARGET_COLDFIRE)						\
 	{								\
 	  const char *tmp;						\
@@ -409,7 +427,7 @@ along with GCC; see the file COPYING3.  If not see
  */
 #define ARG_POINTER_REGNUM 24
 
-#define STATIC_CHAIN_REGNUM A0_REG
+#define STATIC_CHAIN_REGNUM (M68K_STRUCT_VALUE_REGNUM == A0_REG ? A1_REG : A0_REG)
 #define M68K_STATIC_CHAIN_REG_NAME REGISTER_PREFIX "a0"
 
 /* Register in which address to store a structure value
@@ -421,8 +439,8 @@ along with GCC; see the file COPYING3.  If not see
 /* The m68k has three kinds of registers, so eight classes would be
    a complete set.  One of them is not needed.  */
 enum reg_class {
-  NO_REGS, DATA_REGS,
-  ADDR_REGS, FP_REGS,
+  NO_REGS, DATA_REGS, DATA0_REG,
+  ADDR_REGS, ADDR0_REG, FP_REGS,
   GENERAL_REGS, DATA_OR_FP_REGS,
   ADDR_OR_FP_REGS, ALL_REGS,
   LIM_REG_CLASSES };
@@ -430,8 +448,8 @@ enum reg_class {
 #define N_REG_CLASSES (int) LIM_REG_CLASSES
 
 #define REG_CLASS_NAMES \
- { "NO_REGS", "DATA_REGS",              \
-   "ADDR_REGS", "FP_REGS",              \
+ { "NO_REGS", "DATA_REGS", "DATA0_REG",            \
+   "ADDR_REGS", "ADDR0_REG", "FP_REGS",            \
    "GENERAL_REGS", "DATA_OR_FP_REGS",   \
    "ADDR_OR_FP_REGS", "ALL_REGS" }
 
@@ -439,7 +457,9 @@ enum reg_class {
 {					\
   {0x00000000},  /* NO_REGS */		\
   {0x000000ff},  /* DATA_REGS */	\
+  {0x00000001},  /* DATA0_REG */	\
   {0x0100ff00},  /* ADDR_REGS */	\
+  {0x00000100},  /* ADDR0_REG */	\
   {0x00ff0000},  /* FP_REGS */		\
   {0x0100ffff},  /* GENERAL_REGS */	\
   {0x00ff00ff},  /* DATA_OR_FP_REGS */	\
@@ -476,11 +496,12 @@ extern enum reg_class regno_reg_class[];
 #define FIRST_PARM_OFFSET(FNDECL) 8
 
 /* On the m68k the return value defaults to D0.  */
+#undef FUNCTION_VALUE
 #define FUNCTION_VALUE(VALTYPE, FUNC)  \
-  gen_rtx_REG (TYPE_MODE (VALTYPE), D0_REG)
+  m68k_function_value (VALTYPE, FUNC, false)
 
 /* On the m68k the return value defaults to D0.  */
-#define LIBCALL_VALUE(MODE)  gen_rtx_REG (MODE, D0_REG)
+#define LIBCALL_VALUE(MODE)  m68k_libcall_value (MODE)
 
 /* On the m68k, D0 is usually the only register used.  */
 #define FUNCTION_VALUE_REGNO_P(N) ((N) == D0_REG)
@@ -491,15 +512,61 @@ extern enum reg_class regno_reg_class[];
 #define NEEDS_UNTYPED_CALL 0
 
 /* On the m68k, all arguments are usually pushed on the stack.  */
-#define FUNCTION_ARG_REGNO_P(N) 0
+/* 1 if N is a possible register number for function argument passing.  */
+#define FUNCTION_ARG_REGNO_P(N)			\
+  ((((int)N) >= 0 && (N) < M68K_FASTCALL_DATA_PARM)		\
+   || ((N) >= 8 && (N) < 8 + M68K_FASTCALL_ADDR_PARM)	\
+   || (TARGET_68881 && (N) >= 16 && (N) < 16 + M68K_FASTCALL_DATA_PARM))
 
-/* On the m68k, this is a single integer, which is a number of bytes
-   of arguments scanned so far.  */
-#define CUMULATIVE_ARGS int
 
-/* On the m68k, the offset starts at 0.  */
-#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, INDIRECT, N_NAMED_ARGS) \
- ((CUM) = 0)
+/* The number of data/float registers and address registers to use for
+   fast calls. */
+#define M68K_FASTCALL_DATA_PARM 3
+#define M68K_FASTCALL_ADDR_PARM 2
+
+/* Call clobbered regs. */
+#define M68K_STD_USED_REGS 2
+#define M68K_FASTCALL_USED_DATA_REGS 3
+#define M68K_FASTCALL_USED_ADDR_REGS 2
+
+/* On the m68k, this is a structure:
+   regs_already_used: bitmask of the already used registers.
+   last_arg_reg - register number of the most recently passed argument.
+     -1 if passed on stack.
+   last_arg_len - number of registers used by the most recently passed
+     argument.
+*/
+
+struct m68k_args
+{
+  unsigned long /* HARD_REG_SET */ regs_already_used;
+  int last_arg_reg;
+  int last_arg_len;
+  enum calling_abi call_abi;
+};
+
+#define CUMULATIVE_ARGS struct m68k_args
+
+/* The default number of data, address and float registers to use when
+   user specified '-mregparm' switch, not '-mregparm=<value>' option.  */
+
+#define ADJUST_REG_ALLOC_ORDER m68k_order_regs_for_local_alloc ()
+
+#define OVERRIDE_ABI_FORMAT(FNDECL) m68k_call_abi_override (FNDECL)
+
+#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
+  m68k_init_cumulative_args (&(CUM), (FNTYPE), (LIBNAME), (FNDECL), (N_NAMED_ARGS) != -1)
+
+#undef TARGET_FUNCTION_ARG_ADVANCE
+#define TARGET_FUNCTION_ARG_ADVANCE m68k_function_arg_advance
+
+/* On m68k all args are pushed, except if -mfastcall then d0-2, a0-1 and
+   fp0-2 are used for passing the first arguments.
+   Note: by default, the static-chain is passed in a0. Targets that want
+   to make full use of '-mfastcall' are advised to pass the static-chain
+   somewhere else.  */
+#undef TARGET_FUNCTION_ARG
+#define TARGET_FUNCTION_ARG m68k_function_arg
 
 #define FUNCTION_PROFILER(FILE, LABELNO)  \
   asm_fprintf (FILE, "\tlea %LLP%d,%Ra0\n\tjsr mcount\n", (LABELNO))
@@ -923,3 +990,11 @@ extern int m68k_sched_address_bypass_p (rtx_insn *, rtx_insn *);
 extern int m68k_sched_indexed_address_bypass_p (rtx_insn *, rtx_insn *);
 
 #define CPU_UNITS_QUERY 1
+
+#ifndef USED_FOR_TARGET
+struct GTY(()) machine_function {
+  /* Specifies the current abi to be used.
+     STD_ABI means cdecl abi. Otherwise FASTCALL_ABI means fastcall abi.  */
+  ENUM_BITFIELD(calling_abi) call_abi : 8;
+};
+#endif

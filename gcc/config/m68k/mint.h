@@ -171,7 +171,7 @@ do {									\
 
 /* Install the __sync libcalls.  */
 #undef TARGET_INIT_LIBFUNCS
-#define TARGET_INIT_LIBFUNCS  m68k_init_sync_libfuncs
+#define TARGET_INIT_LIBFUNCS  m68k_init_libfuncs
 
 /* with fdlibm, most of the c99 functions are available, including sincos */
 #undef  TARGET_LIBC_HAS_FUNCTION

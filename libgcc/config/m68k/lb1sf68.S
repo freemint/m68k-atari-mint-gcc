@@ -431,6 +431,12 @@ $_exception_handler:
 	rts
 #endif /* L_floatex */
 
+#ifdef __FASTCALL__
+
+#include "lb1sf68-fast.S"
+
+#else
+
 #ifdef  L_mulsi3
 	.text
 	FUNC(__mulsi3)
@@ -629,6 +635,7 @@ SYM (__modsi3):
 	rts
 #endif /* L_modsi3 */
 
+#endif /* __FASTCALL__ */
 
 #ifdef  L_double
 
