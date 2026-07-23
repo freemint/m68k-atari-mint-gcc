@@ -85,7 +85,7 @@ package System.Bitfield_Utils is
       --  Assert that both are aligned the same, to the size in bytes of Val
       --  (not Val_2).
 
-      pragma Assert (Val'Alignment = Val'Size / Storage_Unit);
+      pragma Assert (Val'Alignment = 2);
       pragma Assert (Val_2'Alignment = Val'Alignment);
 
       type Val_Array is array (Positive range <>) of Val;

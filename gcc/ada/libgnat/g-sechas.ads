@@ -45,7 +45,7 @@ with System;
 package GNAT.Secure_Hashes is
 
    type Buffer_Type is new Stream_Element_Array;
-   for Buffer_Type'Alignment use 8;
+   --  for Buffer_Type'Alignment use 8;
    --  Secure hash functions use a string buffer that is also accessed as an
    --  array of words, which may require up to 64 bit alignment.
 

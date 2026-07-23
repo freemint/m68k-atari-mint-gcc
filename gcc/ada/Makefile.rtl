@@ -2370,6 +2370,33 @@ ifeq ($(strip $(filter-out m68k% linux%,$(target_cpu) $(target_os))),)
   LIBRARY_VERSION := $(LIB_VERSION)
 endif
 
+# M68K FreeMiNT
+ifeq ($(strip $(filter-out m68k% mint%,$(target_cpu) $(target_os))),)
+  LIBGNAT_TARGET_PAIRS = \
+  a-intnam.ads<libgnarl/a-intnam__mint.ads \
+  s-inmaop.adb<libgnarl/s-inmaop__posix.adb \
+  s-intman.adb<libgnarl/s-intman__posix.adb \
+  s-mint.ads<libgnarl/s-mint.ads \
+  s-osinte.adb<libgnarl/s-osinte__posix.adb \
+  s-osinte.ads<libgnarl/s-osinte__mint.ads \
+  s-osprim.adb<libgnat/s-osprim__posix.adb \
+  s-taprop.adb<libgnarl/s-taprop__linux.adb \
+  s-tasinf.ads<libgnarl/s-tasinf__linux.ads \
+  s-tasinf.adb<libgnarl/s-tasinf__linux.adb \
+  s-taspri.ads<libgnarl/s-taspri__posix.ads \
+  s-tpopsp.adb<libgnarl/s-tpopsp__posix-foreign.adb \
+  system.ads<libgnat/system-mint.ads
+
+  TOOLS_TARGET_PAIRS = indepsw.adb<indepsw-gnu.adb
+
+  EXTRA_GNATRTL_TASKING_OBJS=s-mint.o
+  EH_MECHANISM=-gcc
+  THREADSLIB =
+  GNATLIB_SHARED = gnatlib
+  GMEM_LIB = gmemlib
+  LIBRARY_VERSION := $(LIB_VERSION)
+endif
+
 # SH4 Linux
 ifeq ($(strip $(filter-out sh4% linux%,$(target_cpu) $(target_os))),)
   LIBGNAT_TARGET_PAIRS = \
