@@ -1,5 +1,5 @@
 M68K_MLIB_CPU += && ((CPU ~ "^m68000") || (CPU ~ "^m68020") || (CPU ~ "^mcf5475"))
 
-M68K_MLIB_OPTIONS += mshort
+M68K_MLIB_OPTIONS += mshort mfastcall
 
-M68K_MLIB_DIRNAMES += mshort
+M68K_MLIB_DIRNAMES += mshort mfastcall

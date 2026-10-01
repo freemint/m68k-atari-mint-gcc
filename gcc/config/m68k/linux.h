@@ -170,7 +170,7 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef FUNCTION_VALUE
 #define FUNCTION_VALUE(VALTYPE, FUNC)					\
-  m68k_function_value (VALTYPE, FUNC)
+  m68k_function_value (VALTYPE, FUNC, true)
 
 /* Define how to find the value returned by a library function
    assuming the value has mode MODE.

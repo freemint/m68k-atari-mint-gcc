@@ -431,6 +431,12 @@ $_exception_handler:
 	rts
 #endif /* L_floatex */
 
+#ifdef __FASTCALL__
+
+#include "lb1sf68-fast.S"
+
+#else
+
 #ifdef  L_mulsi3
 	.text
 	FUNC(__mulsi3)
@@ -629,6 +635,30 @@ SYM (__modsi3):
 	rts
 #endif /* L_modsi3 */
 
+#endif /* __FASTCALL__ */
+
+| With -mfastcall the single precision operands arrive in d0/d1 instead of
+| on the stack.  Push them and call the stack based implementation.
+	.macro	SF_FASTCALL_ENTRY body
+#ifdef __FASTCALL__
+	movel	d1,sp@-
+	movel	d0,sp@-
+	jbsr	\body
+	addql	IMM (8),sp
+	rts
+\body:
+#endif
+	.endm
+
+	.macro	PUSH_SF_OPERANDS
+#ifdef __FASTCALL__
+	movl	d1,sp@-
+	movl	d0,sp@-
+#else
+	movl	a6@(12),sp@-
+	movl	a6@(8),sp@-
+#endif
+	.endm
 
 #ifdef  L_double
 
@@ -2662,7 +2692,11 @@ Lf$div$0:
 | float __subsf3(float, float);
 	FUNC(__subsf3)
 SYM (__subsf3):
+#ifdef __FASTCALL__
+	bchg	IMM (31),d1	| change sign of second operand
+#else
 	bchg	IMM (31),sp@(8)	| change sign of second operand
+#endif
 				| and fall through
 |=============================================================================
 |                              __addsf3
@@ -2671,6 +2705,7 @@ SYM (__subsf3):
 | float __addsf3(float, float);
 	FUNC(__addsf3)
 SYM (__addsf3):
+	SF_FASTCALL_ENTRY Laddsf$stack
 #ifndef __mcoldfire__
 	link	a6,IMM (0)	| everything will be done in registers
 	moveml	d2-d7,sp@-	| save all data registers but d0-d1
@@ -3158,6 +3193,7 @@ Laddsf$nf:
 | float __mulsf3(float, float);
 	FUNC(__mulsf3)
 SYM (__mulsf3):
+	SF_FASTCALL_ENTRY Lmulsf$stack
 #ifndef __mcoldfire__
 	link	a6,IMM (0)
 	moveml	d2-d7,sp@-
@@ -3373,6 +3409,7 @@ Lmulsf$b$den:
 | float __divsf3(float, float);
 	FUNC(__divsf3)
 SYM (__divsf3):
+	SF_FASTCALL_ENTRY Ldivsf$stack
 #ifndef __mcoldfire__
 	link	a6,IMM (0)
 	moveml	d2-d7,sp@-
@@ -3699,6 +3736,7 @@ Lround$0:
 | float __negsf2(float);
 	FUNC(__negsf2)
 SYM (__negsf2):
+	SF_FASTCALL_ENTRY Lnegsf$stack
 #ifndef __mcoldfire__
 	link	a6,IMM (0)
 	moveml	d2-d7,sp@-
@@ -3843,8 +3881,7 @@ Lcmpf$inop:
 SYM (__cmpsf2):
 	link	a6,IMM (0)
 	pea	1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4042,8 +4079,7 @@ SYM (__ledf2):
 SYM (__eqsf2):
 	link	a6,IMM (0)
 	pea	1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4056,8 +4092,7 @@ SYM (__eqsf2):
 SYM (__nesf2):
 	link	a6,IMM (0)
 	pea	1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4070,8 +4105,7 @@ SYM (__nesf2):
 SYM (__gtsf2):
 	link	a6,IMM (0)
 	pea	-1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4084,8 +4118,7 @@ SYM (__gtsf2):
 SYM (__gesf2):
 	link	a6,IMM (0)
 	pea	-1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4098,8 +4131,7 @@ SYM (__gesf2):
 SYM (__ltsf2):
 	link	a6,IMM (0)
 	pea	1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts
@@ -4112,8 +4144,7 @@ SYM (__ltsf2):
 SYM (__lesf2):
 	link	a6,IMM (0)
 	pea	1
-	movl	a6@(12),sp@-
-	movl	a6@(8),sp@-
+	PUSH_SF_OPERANDS
 	PICCALL	SYM (__cmpsf2_internal)
 	unlk	a6
 	rts

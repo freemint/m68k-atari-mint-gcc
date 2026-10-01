@@ -158,6 +158,10 @@ mnoshort
 Target RejectNegative InverseMask(SHORT)
 Consider type 'int' to be 32 bits wide.
 
+mnofastcall
+Target RejectNegative InverseMask(FASTCALL)
+Use standard calling conventions. 
+
 mpcrel
 Target Mask(PCREL)
 Generate pc-relative code.
@@ -177,6 +181,10 @@ ID of shared library to build.
 mshort
 Target Mask(SHORT)
 Consider type 'int' to be 16 bits wide.
+
+mfastcall
+Target Mask(FASTCALL)
+Use calling convention passing arguments in registers.
 
 msoft-float
 Target RejectNegative InverseMask(HARD_FLOAT)
