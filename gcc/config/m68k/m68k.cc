@@ -1806,16 +1806,16 @@ m68k_ok_for_sibcall_p (tree decl, tree exp)
 	return false;
     }
 
-  /* The FASTCALL ABI has more call-clobbered registers;
-      disallow sibcalls from STD to FASTCALL.  */
-  if (cfun->machine->call_abi == STD_ABI
-      && m68k_function_type_abi (type) == FASTCALL_ABI)
+  /* Reject cross-ABI sibcalls entirely.  */
+  if (m68k_function_type_abi (type) != cfun->machine->call_abi)
       return false;
 
-  /* FIXME: currently does not work at all for FASTCALL, because the
-     A2 register for the call will be restored in the epilogue
-     before being used */
-  if (cfun->machine->call_abi == FASTCALL_ABI || m68k_function_type_abi (type) != cfun->machine->call_abi)
+  /* For FASTCALL, only allow direct sibcalls (to a known symbol).
+     Indirect sibcalls would need m68k_legitimize_sibcall_address to
+     load the target into STATIC_CHAIN_REGNUM (A0), which conflicts
+     with FASTCALL argument registers.  Direct calls just emit
+     "jra symbol" with no register conflict.  */
+  if (cfun->machine->call_abi == FASTCALL_ABI && !decl)
       return false;
 
   kind = m68k_get_function_kind (current_function_decl);
