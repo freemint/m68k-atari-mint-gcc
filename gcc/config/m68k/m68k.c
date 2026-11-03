@@ -523,8 +523,9 @@ m68k_option_override (void)
      certain flags.  */
   target_mask = 0;
 
-  /* ColdFire is lenient about alignment.  */
-  if (!TARGET_COLDFIRE)
+  /* ColdFire is lenient about alignment, and so are the 68020 and later,
+     except for CPU32.  */
+  if (!TARGET_COLDFIRE && (!TARGET_68020 || entry->isa == isa_cpu32))
     target_mask |= MASK_STRICT_ALIGNMENT;
 
   if ((m68k_cpu_flags & FL_BITFIELD) != 0)
