@@ -1,5 +1,47 @@
-M68K_MLIB_CPU += && ((CPU ~ "^m68000") || (CPU ~ "^m68020") || (CPU ~ "^mcf5475"))
+M68K_MLIB_CPU += && ((CPU ~ "^m68000") || (CPU ~ "^m68020") || CPU ~ "^m68060" || (CPU ~ "^mcf5475"))
 
-M68K_MLIB_OPTIONS += mshort
+M68K_MLIB_OPTIONS += msoft-float/m68881 mshort
 
-M68K_MLIB_DIRNAMES += mshort
+M68K_MLIB_DIRNAMES += softfp m68881 mshort
+
+M68K_MLIB_MATCHES += \
+	m68881=mhard-float \
+	mcpu?68000=mc68000 \
+	mcpu?68000=mcpu?68010 \
+	mcpu?68020=mcpu?68030 \
+	mcpu?68020=mc68020 \
+	mcpu?68020=m68020-40 \
+	mcpu?68020=m68020-60 \
+	mcpu?68060=mcpu?68040 \
+	mcpu?5475=mcfv4e \
+	mcpu?5475=mcpu?5470 \
+	mcpu?5475=mcpu?5471 \
+	mcpu?5475=mcpu?5472 \
+	mcpu?5475=mcpu?5473 \
+	mcpu?5475=mcpu?5474 \
+	mcpu?5475=mcpu?547x \
+	mcpu?5475=mcpu?5480 \
+	mcpu?5475=mcpu?5481 \
+	mcpu?5475=mcpu?5482 \
+	mcpu?5475=mcpu?5483 \
+	mcpu?5475=mcpu?5484 \
+	mcpu?5475=mcpu?5485 \
+	mcpu?5475=mcpu?548x
+
+# "*" means other options (mshort in our case)
+M68K_MLIB_EXCEPTIONS += \
+	mcpu=68020/msoft-float* \
+	mcpu=68060/msoft-float* \
+	mcpu=5475/msoft-float* \
+	mcpu=68000/m68881* \
+	mcpu=68060/m68881* \
+	mcpu=5475/m68881*
+
+MULTILIB_REUSE += \
+	mcpu.68000=mcpu.68000/msoft-float \
+	mcpu.68000=mcpu.68000/m68881 \
+	mcpu.68000=mcpu.68060/msoft-float \
+	mcpu.68020=mcpu.68020/msoft-float \
+	mcpu.68060=mcpu.68060/m68881 \
+	mcpu.5475=mcpu.5475/msoft-float \
+	mcpu.5475=mcpu.5475/m68881
