@@ -1099,8 +1099,13 @@ static rtx m68k_function_arg (cumulative_args_t cum_v, const function_arg_info &
           regend = regbegin + M68K_FASTCALL_DATA_PARM;
           len = GET_MODE_NUNITS (mode);
         }
-      /* FIXME: Two last conditions below are workarounds for bugs.  */
-      else if (INTEGRAL_MODE_P (mode) && mode != CQImode && mode != CHImode)
+      /* Aggregates less aligned than their mode have that mode only with
+         -mno-strict-align, so pass them on the stack to keep the ABI
+         independent of it, like m68k_return_in_memory does.
+         FIXME: Two last conditions below are workarounds for bugs.  */
+      else if (!(arg.type && AGGREGATE_TYPE_P (arg.type)
+                 && TYPE_ALIGN (arg.type) < GET_MODE_ALIGNMENT (mode))
+               && INTEGRAL_MODE_P (mode) && mode != CQImode && mode != CHImode)
         {
           len = (GET_MODE_SIZE (mode) + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD;
           if (len == 1)
