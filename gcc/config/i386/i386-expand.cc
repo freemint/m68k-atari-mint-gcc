@@ -13170,7 +13170,7 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
 	for (i = 0; i < 3; i++)
 	  xmm_regs[i] = gen_rtx_REG (V2DImode, GET_SSE_REGNO (i));
 
-	if (target == 0)
+	if (target == 0 || !register_operand (target, SImode))
 	  target = gen_reg_rtx (SImode);
 
 	emit_insn (gen_encodekey128u32 (target, op0));
@@ -13213,7 +13213,7 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
 	for (i = 0; i < 4; i++)
 	  xmm_regs[i] = gen_rtx_REG (V2DImode, GET_SSE_REGNO (i));
 
-	if (target == 0)
+	if (target == 0 || !register_operand (target, SImode))
 	  target = gen_reg_rtx (SImode);
 
 	emit_insn (gen_encodekey256u32 (target, op0));
@@ -16724,6 +16724,11 @@ ix86_expand_vector_set (bool mmx_ok, rtx target, rtx val, int elt)
   machine_mode mmode = VOIDmode;
   rtx (*gen_blendm) (rtx, rtx, rtx, rtx);
 
+  if (!IN_RANGE (elt, 0, GET_MODE_NUNITS (mode)))
+    {
+      emit_move_insn (target, target);
+      return;
+    }
   switch (mode)
     {
     case E_V2SImode:

@@ -2766,12 +2766,9 @@ spaceship_replacement (basic_block cond_bb, basic_block middle_bb,
 	 or the comparisons are the same and operands not swapped,
 	 or the true and false edges are swapped, it is not.  */
       if ((lhs2 == lhs1)
-	  ^ (((cond2_phi_edge->flags
-	       & ((cmp2 == LT_EXPR || cmp2 == LE_EXPR)
-		  ? EDGE_TRUE_VALUE : EDGE_FALSE_VALUE)) != 0)
-	     != ((e1->flags
-		  & ((cmp1 == LT_EXPR || cmp1 == LE_EXPR)
-		     ? EDGE_TRUE_VALUE : EDGE_FALSE_VALUE)) != 0)))
+	  ^ ((cmp2 == LT_EXPR || cmp2 == LE_EXPR)
+	     != (cmp1 == LT_EXPR || cmp1 == LE_EXPR))
+	  ^ ((cond2_phi_edge->flags & EDGE_FALSE_VALUE) != 0))
 	return false;
       if (!single_pred_p (cond2_bb) || !cond_only_block_p (cond2_bb))
 	return false;
@@ -2966,10 +2963,8 @@ spaceship_replacement (basic_block cond_bb, basic_block middle_bb,
 	    {
 	      if (has_cast_debug_uses)
 		{
-		  tree temp3 = make_node (DEBUG_EXPR_DECL);
-		  DECL_ARTIFICIAL (temp3) = 1;
-		  TREE_TYPE (temp3) = TREE_TYPE (orig_use_lhs);
-		  SET_DECL_MODE (temp3, TYPE_MODE (type));
+		  tree temp3
+		    = build_debug_expr_decl (TREE_TYPE (orig_use_lhs));
 		  t = fold_convert (TREE_TYPE (temp3), temp2);
 		  g = gimple_build_debug_bind (temp3, t, phi);
 		  gsi_insert_before (&gsi, g, GSI_SAME_STMT);
@@ -3149,15 +3144,35 @@ cond_removal_in_builtin_zero_pattern (basic_block cond_bb,
       || arg != gimple_cond_lhs (cond))
     return false;
 
-  /* Canonicalize.  */
-  if ((e2->flags & EDGE_TRUE_VALUE
-       && gimple_cond_code (cond) == NE_EXPR)
-      || (e1->flags & EDGE_TRUE_VALUE
-	  && gimple_cond_code (cond) == EQ_EXPR))
+  edge true_edge, false_edge;
+  /* We need to know which is the true edge and which is the false
+     edge so that we know when to invert the condition below.  */
+  extract_true_false_edges_from_block (cond_bb, &true_edge, &false_edge);
+
+  /* Forward the edges over the middle basic block.  */
+  if (true_edge->dest == middle_bb)
+    true_edge = EDGE_SUCC (true_edge->dest, 0);
+  if (false_edge->dest == middle_bb)
+    false_edge = EDGE_SUCC (false_edge->dest, 0);
+
+  /* Canonicalize the args with respect to the edges,
+     arg0 is from the true edge and arg1 is from the
+     false edge.
+     That is `cond ? arg0 : arg1`.*/
+  if (true_edge == e1)
+    gcc_assert (false_edge == e2);
+  else
     {
+      gcc_assert (false_edge == e1);
+      gcc_assert (true_edge == e2);
       std::swap (arg0, arg1);
-      std::swap (e1, e2);
     }
+
+  /* Canonicalize the args such that we get:
+     `arg != 0 ? arg0 : arg1`. So swap arg0/arg1
+     around if cond was an equals.  */
+  if (gimple_cond_code (cond) == EQ_EXPR)
+    std::swap (arg0, arg1);
 
   /* Check PHI arguments.  */
   if (lhs != arg0

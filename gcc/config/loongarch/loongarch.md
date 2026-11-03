@@ -74,6 +74,8 @@
 
   UNSPEC_SIBCALL_VALUE_MULTIPLE_INTERNAL_1
   UNSPEC_CALL_VALUE_MULTIPLE_INTERNAL_1
+
+  UNSPEC_SSP
 ])
 
 (define_c_enum "unspecv" [
@@ -2698,7 +2700,7 @@
   [(set_attr "type" "branch")])
 
 
-(define_expand "cbranch<mode>4"
+(define_expand "@cbranch<mode>4"
   [(set (pc)
 	(if_then_else (match_operator 0 "comparison_operator"
 			[(match_operand:GPR 1 "register_operand")
@@ -3583,6 +3585,90 @@
   "crcc.w.<size>.w\t%0,%1,%2"
   [(set_attr "type" "unknown")
    (set_attr "mode" "<MODE>")])
+
+;; Set and check against stack canary without leaving it in a register.
+;; DO NOT ATTEMPT TO SPLIT THESE INSNS!  It's important for security reason
+;; that the canary value does not live beyond the life of this sequence.
+
+(define_insn "@stack_protect_combined_set_normal_<mode>"
+  [(set (match_operand:P 0 "memory_operand" "=m,ZC")
+        (unspec:P [(mem:P (match_operand:P 1 "ssp_normal_operand"))]
+		  UNSPEC_SSP))
+   (set (match_scratch:P 2 "=&r,&r") (const_int 0))]
+  ""
+{
+  loongarch_output_asm_load_canary (operands[2], operands[1], NULL_RTX);
+  output_asm_insn (which_alternative ? "stptr.d\t%2,%0" : "st.d\t%2,%0",
+		   operands);
+  return "ori\t%2,$r0,0";
+}
+  [(set_attr "type" "store")
+   (set_attr "length" "20")])
+
+(define_insn "@stack_protect_combined_set_extreme_<mode>"
+  [(set (match_operand:P 0 "memory_operand" "=m,ZC")
+        (unspec:P [(mem:P (match_operand:P 1 "ssp_operand"))] UNSPEC_SSP))
+   (set (match_scratch:P 2 "=&r,&r") (const_int 0))
+   (set (match_scratch:P 3 "=&r,&r") (const_int 0))]
+  ""
+{
+  loongarch_output_asm_load_canary (operands[2], operands[1], operands[3]);
+  output_asm_insn (which_alternative ? "stptr.d\t%2,%0" : "st.d\t%2,%0",
+		   operands);
+  return "ori\t%2,$r0,0\n\tori\t%3,$r0,0";
+}
+  [(set_attr "type" "store")
+   (set_attr "length" "36")])
+
+(define_insn "@stack_protect_combined_test_internal_<mode>"
+  [(set (match_operand:P 0 "register_operand" "=r,r,&r,&r")
+	(xor:P
+	  (match_operand:P 1 "memory_operand" "=m,ZC,m,ZC")
+	    (unspec:P
+	      [(mem:P (match_operand:P 2 "ssp_operand" "ZE,ZE,ZF,ZF"))]
+	      UNSPEC_SSP)))
+   (set (match_scratch:P 3 "=&r,&r,&r,&r") (const_int 0))]
+  ""
+{
+  rtx t = (which_alternative >= 2 ? operands[0] : NULL_RTX);
+  loongarch_output_asm_load_canary (operands[3], operands[2], t);
+  output_asm_insn ((which_alternative & 1) ? "ldptr.d\t%0,%1"
+					   : "ld.d\t%0,%1",
+		   operands);
+  return "xor\t%0,%0,%3\n\tori\t%3,$r0,0";
+}
+  [(set_attr "type" "load,load,load,load")
+   (set_attr "length" "24,24,36,36")])
+
+(define_expand "stack_protect_combined_set"
+  [(match_operand 0 "memory_operand")
+   (match_operand 1 "memory_operand")]
+  ""
+{
+  rtx canary = XEXP (operands[1], 0);
+  auto fn = (ssp_normal_operand (canary, VOIDmode)
+	     ? gen_stack_protect_combined_set_normal
+	     : gen_stack_protect_combined_set_extreme);
+
+  emit_insn (fn (Pmode, operands[0], canary));
+  DONE;
+})
+
+(define_expand "stack_protect_combined_test"
+  [(match_operand 0 "memory_operand")
+   (match_operand 1 "memory_operand")
+   (match_operand 2 "")]
+  ""
+{
+  rtx t = gen_reg_rtx (Pmode);
+  rtx canary = XEXP (operands[1], 0);
+  emit_insn (gen_stack_protect_combined_test_internal (Pmode, t,
+						       operands[0],
+						       canary));
+  rtx cond = gen_rtx_EQ (VOIDmode, t, const0_rtx);
+  emit_jump_insn (gen_cbranch4 (Pmode, cond, t, const0_rtx, operands[2]));
+  DONE;
+})
 
 ;; Synchronization instructions.
 

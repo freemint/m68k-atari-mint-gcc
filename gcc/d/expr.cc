@@ -2051,27 +2051,31 @@ public:
     /* Compile the function literal body.  */
     build_decl_tree (e->fd);
 
-    /* If nested, this will be a trampoline.  */
-    if (e->fd->isNested ())
-      {
-	tree func = build_address (get_symbol_decl (e->fd));
-	tree object;
+    tree func = build_address (get_symbol_decl (e->fd));
+    Type *tb = e->type->toBasetype ();
 
-	if (this->constp_)
+    /* If a delegate is expected, the literal will be inferred as a delegate
+       even if it accesses no variables from an enclosing function.  */
+    if (tb->ty == TY::Tdelegate)
+      {
+	/* Static delegate variables have no context pointer.  */
+	if (this->constp_ || !e->fd->isNested ())
 	  {
-	    /* Static delegate variables have no context pointer.  */
-	    object = null_pointer_node;
-	    this->result_ = build_method_call (func, object, e->fd->type);
+	    this->result_ = build_method_call (func, null_pointer_node,
+					       e->fd->type);
 	    TREE_CONSTANT (this->result_) = 1;
 	  }
 	else
 	  {
-	    object = get_frame_for_symbol (e->fd);
+	    gcc_assert (e->fd->isNested ());
+	    tree object = get_frame_for_symbol (e->fd);
 	    this->result_ = build_method_call (func, object, e->fd->type);
 	  }
       }
     else
       {
+	/* The function literal is a function pointer.  */
+	gcc_assert (tb->ty == TY::Tpointer);
 	this->result_ = build_nop (build_ctype (e->type),
 				   build_address (get_symbol_decl (e->fd)));
       }
@@ -2193,7 +2197,8 @@ public:
 	      {
 		/* Generate a slice for non-zero initialized aggregates,
 		   otherwise create an empty array.  */
-		gcc_assert (e->type == Type::tvoid->arrayOf ()->constOf ());
+		gcc_assert (e->type->nextOf ()->isConst ()
+			    && e->type->nextOf ()->ty == TY::Tvoid);
 
 		tree type = build_ctype (e->type);
 		tree length = size_int (sd->dsym->structsize);
@@ -2736,8 +2741,9 @@ public:
 	/* Array literal for a `scope' dynamic array.  */
 	gcc_assert (tb->ty == TY::Tarray);
 	ctor = force_target_expr (ctor);
-	this->result_ = d_array_value (type, size_int (e->elements->length),
-				       build_address (ctor));
+	ctor = d_array_value (type, size_int (e->elements->length),
+			      build_address (ctor));
+	this->result_ = compound_expr (saved_elems, ctor);
       }
     else
       {

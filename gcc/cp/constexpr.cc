@@ -402,11 +402,7 @@ build_data_member_initialization (tree t, vec<constructor_elt, va_gc> **vec)
     }
   if (TREE_CODE (t) == CONVERT_EXPR)
     t = TREE_OPERAND (t, 0);
-  if (TREE_CODE (t) == INIT_EXPR
-      /* vptr initialization shows up as a MODIFY_EXPR.  In C++14 we only
-	 use what this function builds for cx_check_missing_mem_inits, and
-	 assignment in the ctor body doesn't count.  */
-      || (cxx_dialect < cxx14 && TREE_CODE (t) == MODIFY_EXPR))
+  if (TREE_CODE (t) == INIT_EXPR)
     {
       member = TREE_OPERAND (t, 0);
       init = break_out_target_exprs (TREE_OPERAND (t, 1));
@@ -467,6 +463,9 @@ build_data_member_initialization (tree t, vec<constructor_elt, va_gc> **vec)
       if (TREE_CODE (aggr) != COMPONENT_REF)
 	/* Normal member initialization.  */
 	member = TREE_OPERAND (member, 1);
+      else if (VAR_P (get_base_address (aggr)))
+	/* Initializing a local variable, don't add anything.  */
+	return true;
       else if (ANON_AGGR_TYPE_P (TREE_TYPE (aggr)))
 	/* Initializing a member of an anonymous union.  */
 	return build_anon_member_initialization (member, init, vec);
@@ -565,11 +564,11 @@ check_constexpr_ctor_body (tree last, tree list, bool complain)
   else if (list != last
 	   && !check_constexpr_ctor_body_1 (last, list))
     ok = false;
-  if (!ok)
+  if (!ok && complain)
     {
-      if (complain)
-	error ("%<constexpr%> constructor does not have empty body");
-      DECL_DECLARED_CONSTEXPR_P (current_function_decl) = false;
+      pedwarn (input_location, OPT_Wc__14_extensions,
+	       "%<constexpr%> constructor does not have empty body");
+      ok = true;
     }
   return ok;
 }
@@ -1097,6 +1096,9 @@ explain_invalid_constexpr_fn (tree fun)
 	  require_potential_rvalue_constant_expression (body);
 	  if (DECL_CONSTRUCTOR_P (fun))
 	    cx_check_missing_mem_inits (DECL_CONTEXT (fun), body, true);
+	  else if (body == NULL_TREE || body == error_mark_node)
+	    error ("body of %<constexpr%> function %qD not a return-statement",
+		   fun);
 	}
     }
 }
@@ -2272,7 +2274,11 @@ cxx_dynamic_cast_fn_p (tree fndecl)
 {
   return (cxx_dialect >= cxx20
 	  && id_equal (DECL_NAME (fndecl), "__dynamic_cast")
-	  && CP_DECL_CONTEXT (fndecl) == abi_node);
+	  && CP_DECL_CONTEXT (fndecl) == abi_node
+	  /* Only consider implementation-detail __dynamic_cast calls that
+	     correspond to a dynamic_cast, and ignore direct calls to
+	     abi::__dynamic_cast.  */
+	  && DECL_ARTIFICIAL (fndecl));
 }
 
 /* Often, we have an expression in the form of address + offset, e.g.
@@ -2742,6 +2748,17 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
 	  gcc_assert (arg0);
 	  if (IDENTIFIER_NEW_OP_P (DECL_NAME (fun)))
 	    {
+	      /* FIXME: We should not get here; the VERIFY_CONSTANT above
+		 should have already caught it.  But currently a conversion
+		 from pointer type to arithmetic type is only considered
+		 non-constant for CONVERT_EXPRs, not NOP_EXPRs.  */
+	      if (!tree_fits_uhwi_p (arg0))
+		{
+		  if (!ctx->quiet)
+		    error_at (loc, "cannot allocate array: size not constant");
+		  *non_constant_p = true;
+		  return t;
+		}
 	      tree type = build_array_type_nelts (char_type_node,
 						  tree_to_uhwi (arg0));
 	      tree var = build_decl (loc, VAR_DECL,
@@ -8377,6 +8394,17 @@ cxx_eval_outermost_constant_expr (tree t, bool allow_non_constant,
 	   TARGET_EXPR.  */
 	r = TARGET_EXPR_INITIAL (r);
     }
+
+  /* uid_sensitive_constexpr_evaluation_value restricts warning-dependent
+     constexpr evaluation to avoid unnecessary template instantiation, and is
+     always done with mce_unknown.  But due to gaps in the restriction logic
+     we may still end up taking an evaluation path that in turn requires
+     manifestly constant evaluation, and such evaluation must not be
+     restricted since it likely has semantic consequences.
+     TODO: Remove/replace the mechanism in GCC 17.  */
+  auto uids = make_temp_override (uid_sensitive_constexpr_evaluation_value);
+  if (ctx.manifestly_const_eval == mce_true)
+    uid_sensitive_constexpr_evaluation_value = false;
 
   auto_vec<tree, 16> cleanups;
   global_ctx.cleanups = &cleanups;

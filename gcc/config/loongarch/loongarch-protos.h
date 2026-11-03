@@ -180,4 +180,6 @@ extern rtx loongarch_expand_builtin (tree, rtx, rtx subtarget ATTRIBUTE_UNUSED,
 				     machine_mode, int);
 extern tree loongarch_build_builtin_va_list (void);
 
+extern bool loongarch_symbol_extreme_p (enum loongarch_symbol_type);
+extern void loongarch_output_asm_load_canary (rtx reg, rtx canary, rtx tmp);
 #endif /* ! GCC_LOONGARCH_PROTOS_H */

@@ -857,6 +857,8 @@ gimple_range_op_handler::maybe_builtin_call ()
   switch (func)
     {
     case CFN_BUILT_IN_CONSTANT_P:
+      if (gimple_call_num_args (call) != 1)
+	return;
       m_op1 = gimple_call_arg (call, 0);
       m_valid = true;
       if (irange::supports_p (TREE_TYPE (m_op1)))
@@ -868,6 +870,8 @@ gimple_range_op_handler::maybe_builtin_call ()
       break;
 
     CASE_FLT_FN (CFN_BUILT_IN_SIGNBIT):
+      if (gimple_call_num_args (call) != 1)
+	return;
       m_op1 = gimple_call_arg (call, 0);
       m_float = &op_cfn_signbit;
       m_valid = true;

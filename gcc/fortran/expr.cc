@@ -1120,7 +1120,7 @@ is_CFI_desc (gfc_symbol *sym, gfc_expr *e)
       && e && e->expr_type == EXPR_VARIABLE)
     sym = e->symtree->n.sym;
 
-  if (sym && sym->attr.dummy
+  if (sym && sym->attr.dummy && sym->ns && sym->ns->proc_name
       && sym->ns->proc_name->attr.is_bind_c
       && (sym->attr.pointer
 	  || sym->attr.allocatable
@@ -1939,16 +1939,26 @@ simplify_const_ref (gfc_expr *p)
       switch (p->ref->type)
 	{
 	case REF_ARRAY:
+	  /* <type/kind spec>, parameter :: x(<int>) = scalar_expr
+	     will generate this.  */
+	  if (p->expr_type != EXPR_ARRAY)
+	    {
+	      if (p->ref->u.ar.type == AR_ELEMENT)
+		{
+		  int dim;
+		  for (dim = 0; dim < p->ref->u.ar.dimen; dim++)
+		    if (!p->ref->u.ar.start[dim]
+			|| p->ref->u.ar.start[dim]->expr_type != EXPR_CONSTANT)
+		      return true;
+		}
+
+	      remove_subobject_ref (p, NULL);
+	      break;
+	    }
+
 	  switch (p->ref->u.ar.type)
 	    {
 	    case AR_ELEMENT:
-	      /* <type/kind spec>, parameter :: x(<int>) = scalar_expr
-		 will generate this.  */
-	      if (p->expr_type != EXPR_ARRAY)
-		{
-		  remove_subobject_ref (p, NULL);
-		  break;
-		}
 	      if (!find_array_element (p->value.constructor, &p->ref->u.ar, &cons))
 		return false;
 

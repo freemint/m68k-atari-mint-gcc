@@ -6288,6 +6288,7 @@ build_compound_literal (location_t loc, tree type, tree init, bool non_const,
 
       type = TREE_TYPE (decl);
       TREE_TYPE (DECL_INITIAL (decl)) = type;
+      relayout_decl (decl);
     }
 
   if (type == error_mark_node || !COMPLETE_TYPE_P (type))

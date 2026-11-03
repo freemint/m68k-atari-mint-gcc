@@ -5312,7 +5312,13 @@ cpp_directive_only_process (cpp_reader *pfile,
 		    switch (c)
 		      {
 		      case '\\':
-			esc = true;
+			if (esc)
+			  {
+			    star = false;
+			    esc = false;
+			  }
+			else
+			  esc = true;
 			break;
 
 		      case '\r':
@@ -5343,7 +5349,7 @@ cpp_directive_only_process (cpp_reader *pfile,
 			break;
 
 		      case '/':
-			if (star)
+			if (star && !esc)
 			  goto done_comment;
 			/* FALLTHROUGH  */
 

@@ -1632,13 +1632,17 @@ the next @option{-x} option.  Possible values for @var{language} are:
 @smallexample
 c  c-header  cpp-output
 c++  c++-header  c++-system-header c++-user-header c++-cpp-output
-objective-c  objective-c-header  objective-c-cpp-output
-objective-c++ objective-c++-header objective-c++-cpp-output
+objective-c  objective-c-header  objective-c-cpp-output  objc-cpp-output
+objective-c++  objective-c++-header  objective-c++-cpp-output
+objc++-cpp-output
 assembler  assembler-with-cpp
-ada
+ada  adascil  adawhy
 d
-f77  f77-cpp-input f95  f95-cpp-input
+f77  f77-cpp-input  f95  f95-cpp-input
 go
+modula-2  modula-2-cpp-output
+rust
+lto
 @end smallexample
 
 @item -x none
@@ -32565,11 +32569,11 @@ VPCLMULQDQ, AVX512BITALG, RDPID and AVX512VPOPCNTDQ instruction set support.
 @item alderlake
 @itemx raptorlake
 @itemx meteorlake
-Intel Alder Lake/Raptor Lake/Meteor Lake CPU with 64-bit extensions, MOVBE, MMX,
-SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, POPCNT, AES, PREFETCHW, PCLMUL, RDRND,
-XSAVE, XSAVEC, XSAVES, XSAVEOPT, FSGSBASE, PTWRITE, RDPID, SGX, GFNI-SSE, CLWB,
-MOVDIRI, MOVDIR64B, CLDEMOTE, WAITPKG, ADCX, AVX, AVX2, BMI, BMI2, F16C, FMA,
-LZCNT, PCONFIG, PKU, VAES, VPCLMULQDQ, SERIALIZE, HRESET, KL, WIDEKL and
+Intel Alder Lake/Raptor Lake/Meteor Lake CPU with 64-bit extensions, MOVBE,
+MMX, SSE, SSE2, SSE3, SSSE3, SSE4.1, SSE4.2, POPCNT, AES, PREFETCHW, PCLMUL,
+RDRND, XSAVE, XSAVEC, XSAVES, XSAVEOPT, FSGSBASE, PTWRITE, RDPID, SGX,
+GFNI-SSE, CLWB, MOVDIRI, MOVDIR64B, WAITPKG, ADCX, AVX, AVX2, BMI, BMI2, F16C,
+FMA, LZCNT, PCONFIG, PKU, VAES, VPCLMULQDQ, SERIALIZE, HRESET, KL, WIDEKL and
 AVX-VNNI instruction set support.
 
 @item sapphirerapids

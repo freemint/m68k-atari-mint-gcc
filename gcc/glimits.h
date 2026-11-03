@@ -157,7 +157,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 # undef BOOL_WIDTH
 # define BOOL_WIDTH 1
 
-# define __STDC_VERSION_LIMITS_H__	202311L
+# ifndef __STDC_VERSION_LIMITS_H__
+#  define __STDC_VERSION_LIMITS_H__	202311L
+# endif
 #endif
 
 #endif /* _LIMITS_H___ */

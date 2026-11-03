@@ -248,6 +248,22 @@
   return loongarch_symbolic_constant_p (op, &type);
 })
 
+(define_predicate "symbolic_off64_operand"
+ (match_code "const,symbol_ref,label_ref")
+{
+  enum loongarch_symbol_type type;
+  return loongarch_symbolic_constant_p (op, &type)
+	 && loongarch_symbol_extreme_p (type);
+})
+
+;; Currently stack canary must be the global symbol __stack_chk_guard.
+(define_predicate "ssp_operand" (match_code "symbol_ref"))
+
+;; If the stack canary is within the normal/medium code model.
+(define_predicate "ssp_normal_operand"
+  (and (match_operand 0 "ssp_operand")
+       (not (match_operand 0 "symbolic_off64_operand"))))
+
 (define_predicate "equality_operator"
   (match_code "eq,ne"))
 

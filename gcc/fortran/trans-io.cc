@@ -2493,7 +2493,9 @@ transfer_expr (gfc_se * se, gfc_typespec * ts, tree addr_expr,
 
 		  if (c->attr.dimension)
 		    {
-		      tmp = transfer_array_component (tmp, c, & code->loc);
+		      tmp = transfer_array_component (tmp, c,
+						      code ? &code->loc
+						      : NULL);
 		      gfc_add_expr_to_block (&se->pre, tmp);
 		    }
 		  else

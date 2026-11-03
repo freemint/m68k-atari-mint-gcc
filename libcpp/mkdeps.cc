@@ -81,7 +81,8 @@ public:
   };
 
   mkdeps ()
-    : module_name (NULL), cmi_name (NULL), is_header_unit (false), quote_lwm (0)
+    : module_name (NULL), cmi_name (NULL), is_header_unit (false),
+      quote_lwm (0), first_phony_dep (1)
   {
   }
   ~mkdeps ()
@@ -111,6 +112,7 @@ public:
   const char *cmi_name;
   bool is_header_unit;
   unsigned short quote_lwm;
+  unsigned int first_phony_dep;
 };
 
 /* Apply Make quoting to STR, TRAIL.  Note that it's not possible to
@@ -291,11 +293,17 @@ deps_add_default_target (class mkdeps *d, const char *tgt)
 void
 deps_add_dep (class mkdeps *d, const char *t)
 {
-  gcc_assert (*t);
+  if (*t)
+    {
+      t = apply_vpath (d, t);
 
-  t = apply_vpath (d, t);
-
-  d->deps.push (xstrdup (t));
+      d->deps.push (xstrdup (t));
+    }
+  /* When called first with "", remember we should
+     emit for -MP all dependencies rather than just
+     second and following dependency.  See PR105412.  */
+  else if (d->deps.size () == 0)
+    d->first_phony_dep = 0;
 }
 
 void
@@ -405,7 +413,7 @@ make_write (const cpp_reader *pfile, FILE *fp, unsigned int colmax)
       make_write_vec (d->deps, fp, column, colmax);
       fputs ("\n", fp);
       if (CPP_OPTION (pfile, deps.phony_targets))
-	for (unsigned i = 1; i < d->deps.size (); i++)
+	for (unsigned i = d->first_phony_dep; i < d->deps.size (); i++)
 	  fprintf (fp, "%s:\n", munge (d->deps[i]));
     }
 

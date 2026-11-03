@@ -3246,9 +3246,12 @@ finish_compound_literal (tree type, tree compound_literal,
 	  return error_mark_node;
 	}
       else if (cxx_dialect < cxx23)
-	pedwarn (input_location, OPT_Wc__23_extensions,
-		 "%<auto{x}%> only available with "
-		 "%<-std=c++2b%> or %<-std=gnu++2b%>");
+	{
+	  if ((complain & tf_warning_or_error) != 0)
+	    pedwarn (input_location, OPT_Wc__23_extensions,
+		     "%<auto{x}%> only available with "
+		     "%<-std=c++2b%> or %<-std=gnu++2b%>");
+	}
       type = do_auto_deduction (type, compound_literal, type, complain,
 				adc_variable_type);
       if (type == error_mark_node)
@@ -11362,6 +11365,16 @@ finish_static_assert (tree condition, tree message, location_t location,
 		      TREE_STRING_POINTER (message));
 
 	  diagnose_failing_condition (bad, cloc, show_expr_p);
+
+	  /* Suppress -Wreturn-type for functions with failed static_asserts.
+	     Otherwise templates like:
+	     if constexpr (whatever)
+	       return something (args);
+	     else
+	       static_assert (false, "explanation");
+	     get a useless extra -Wreturn-type warning.  */
+	  if (current_function_decl)
+	    suppress_warning (current_function_decl, OPT_Wreturn_type);
 	}
       else if (condition && condition != error_mark_node)
 	{

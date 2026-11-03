@@ -3233,6 +3233,12 @@ add_candidate_1 (struct ivopts_data *data, tree base, tree step, bool important,
 static bool
 allow_ip_end_pos_p (class loop *loop)
 {
+  /* Do not allow IP_END when creating the IV would need to split the
+     latch edge as that makes all IP_NORMAL invalid.  */
+  auto pos = gsi_last_bb (ip_end_pos (loop));
+  if (!gsi_end_p (pos) && stmt_ends_bb_p (gsi_stmt (pos)))
+    return false;
+
   if (!ip_normal_pos (loop))
     return true;
 
@@ -7237,12 +7243,7 @@ create_new_iv (struct ivopts_data *data, struct iv_cand *cand)
     case IP_END:
       incr_pos = gsi_last_bb (ip_end_pos (data->current_loop));
       after = true;
-      if (!gsi_end_p (incr_pos) && stmt_ends_bb_p (gsi_stmt (incr_pos)))
-	{
-	  edge e = find_edge (gsi_bb (incr_pos), data->current_loop->header);
-	  incr_pos = gsi_after_labels (split_edge (e));
-	  after = false;
-	}
+      gcc_assert (gsi_end_p (incr_pos) || !stmt_ends_bb_p (gsi_stmt (incr_pos)));
       break;
 
     case IP_AFTER_USE:

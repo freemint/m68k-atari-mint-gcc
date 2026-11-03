@@ -2974,6 +2974,11 @@ convert_plusminus_to_widen (gimple_stmt_iterator *gsi, gimple *stmt,
   if (to_mode == from_mode)
     return false;
 
+  /* For fixed point types, the mode classes could be different
+     so reject that case. */
+  if (GET_MODE_CLASS (from_mode) != GET_MODE_CLASS (to_mode))
+    return false;
+
   from_unsigned1 = TYPE_UNSIGNED (type1);
   from_unsigned2 = TYPE_UNSIGNED (type2);
   optype = type1;
@@ -3640,7 +3645,7 @@ maybe_optimize_guarding_check (vec<gimple *> &mul_stmts, gimple *cond_stmt,
 	return;
     }
   gimple_stmt_iterator gsi = gsi_after_labels (bb);
-  mul_stmts.quick_push (div_stmt);
+  mul_stmts.safe_push (div_stmt);
   if (is_gimple_debug (gsi_stmt (gsi)))
     gsi_next_nondebug (&gsi);
   unsigned cast_count = 0;
@@ -3741,6 +3746,7 @@ maybe_optimize_guarding_check (vec<gimple *> &mul_stmts, gimple *cond_stmt,
   else
     gimple_cond_make_false (zero_gcond);
   update_stmt (zero_cond);
+  reset_flow_sensitive_info_in_bb (bb);
   *cfg_changed = true;
 }
 

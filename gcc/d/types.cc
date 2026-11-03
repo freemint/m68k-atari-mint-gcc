@@ -324,6 +324,10 @@ insert_aggregate_bitfield (tree type, tree bitfield, size_t width,
   DECL_BIT_FIELD (bitfield) = 1;
   DECL_BIT_FIELD_TYPE (bitfield) = TREE_TYPE (bitfield);
 
+  DECL_NONADDRESSABLE_P (bitfield) = 1;
+  if (DECL_NAME (bitfield) == NULL_TREE)
+    DECL_PADDING_P (bitfield) = 1;
+
   TYPE_FIELDS (type) = chainon (TYPE_FIELDS (type), bitfield);
 }
 
@@ -589,7 +593,12 @@ finish_aggregate_mode (tree type)
 	return;
     }
 
-  compute_record_mode (type);
+  /* Force mode of non-trivially copyable structs to be BLKmode, preventing it
+     from being returned in a register.  */
+  if (TREE_ADDRESSABLE (type))
+    SET_TYPE_MODE (type, BLKmode);
+  else
+    compute_record_mode (type);
 
   /* Propagate computed mode to all variants of this aggregate type.  */
   for (tree t = TYPE_MAIN_VARIANT (type); t; t = TYPE_NEXT_VARIANT (t))
@@ -671,7 +680,11 @@ finish_aggregate_type (unsigned structsize, unsigned alignsize, tree type)
 	  continue;
 	}
 
-      layout_decl (field, 0);
+      /* Layout the field decl using its known alignment.  */
+      unsigned int known_align =
+	least_bit_hwi (tree_to_uhwi (DECL_FIELD_BIT_OFFSET (field)));
+
+      layout_decl (field, known_align);
 
       /* Give bit-field its proper type after layout_decl.  */
       if (DECL_BIT_FIELD (field))
@@ -699,6 +712,7 @@ finish_aggregate_type (unsigned structsize, unsigned alignsize, tree type)
       if (t == type)
 	continue;
 
+      TYPE_NAME (t) = TYPE_NAME (type);
       TYPE_FIELDS (t) = TYPE_FIELDS (type);
       TYPE_LANG_SPECIFIC (t) = TYPE_LANG_SPECIFIC (type);
       TYPE_SIZE (t) = TYPE_SIZE (type);
@@ -706,6 +720,7 @@ finish_aggregate_type (unsigned structsize, unsigned alignsize, tree type)
       TYPE_PACKED (t) = TYPE_PACKED (type);
       SET_TYPE_ALIGN (t, TYPE_ALIGN (type));
       TYPE_USER_ALIGN (t) = TYPE_USER_ALIGN (type);
+      TREE_ADDRESSABLE (t) = TREE_ADDRESSABLE (type);
     }
 
   /* Complete any other forward-referenced fields of this aggregate type.  */
@@ -955,7 +970,7 @@ public:
 
 	/* Type `noreturn` is a terminator, as no other arguments can possibly
 	   be evaluated after it.  */
-	if (type == noreturn_type_node)
+	if (TYPE_MAIN_VARIANT (type) == noreturn_type_node)
 	  break;
 
 	fnparams = chainon (fnparams, build_tree_list (0, type));
@@ -981,7 +996,7 @@ public:
     d_keep (t->ctype);
 
     /* Qualify function types that have the type `noreturn` as volatile.  */
-    if (fntype == noreturn_type_node)
+    if (TYPE_MAIN_VARIANT (fntype) == noreturn_type_node)
       t->ctype = build_qualified_type (t->ctype, TYPE_QUAL_VOLATILE);
 
     /* Handle any special support for calling conventions.  */
@@ -1223,6 +1238,12 @@ public:
     TYPE_LANG_SPECIFIC (t->ctype) = build_lang_type (t);
     TYPE_CXX_ODR_P (t->ctype) = 1;
 
+    /* For structs with a user defined postblit, copy constructor, or a
+       destructor, also set TREE_ADDRESSABLE on the type and all variants.
+       This will make the struct be passed around by reference.  */
+    if (!t->sym->isPOD ())
+      TREE_ADDRESSABLE (t->ctype) = 1;
+
     if (t->sym->members)
       {
 	/* Must set up the overall size and alignment before determining
@@ -1243,18 +1264,6 @@ public:
       {
 	build_type_decl (t->ctype, t->sym);
 	apply_user_attributes (t->sym, t->ctype);
-      }
-
-    /* For structs with a user defined postblit, copy constructor, or a
-       destructor, also set TREE_ADDRESSABLE on the type and all variants.
-       This will make the struct be passed around by reference.  */
-    if (!t->sym->isPOD ())
-      {
-	for (tree tv = t->ctype; tv != NULL_TREE; tv = TYPE_NEXT_VARIANT (tv))
-	  {
-	    TREE_ADDRESSABLE (tv) = 1;
-	    SET_TYPE_MODE (tv, BLKmode);
-	  }
       }
   }
 

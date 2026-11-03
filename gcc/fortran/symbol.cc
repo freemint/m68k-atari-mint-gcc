@@ -2600,6 +2600,21 @@ gfc_find_component (gfc_symbol *sym, const char *name,
 /* Given a symbol, free all of the component structures and everything
    they point to.  */
 
+void
+gfc_free_component (gfc_component *p)
+{
+  gfc_free_array_spec (p->as);
+  gfc_free_expr (p->initializer);
+  if (p->kind_expr)
+    gfc_free_expr (p->kind_expr);
+  if (p->param_list)
+    gfc_free_actual_arglist (p->param_list);
+  free (p->tb);
+  p->tb = NULL;
+  free (p);
+}
+
+
 static void
 free_components (gfc_component *p)
 {
@@ -2608,16 +2623,7 @@ free_components (gfc_component *p)
   for (; p; p = q)
     {
       q = p->next;
-
-      gfc_free_array_spec (p->as);
-      gfc_free_expr (p->initializer);
-      if (p->kind_expr)
-	gfc_free_expr (p->kind_expr);
-      if (p->param_list)
-	gfc_free_actual_arglist (p->param_list);
-      free (p->tb);
-      p->tb = NULL;
-      free (p);
+      gfc_free_component (p);
     }
 }
 

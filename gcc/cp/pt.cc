@@ -221,6 +221,7 @@ static tree enclosing_instantiation_of (tree tctx);
 static void instantiate_body (tree pattern, tree args, tree d, bool nested);
 static tree maybe_dependent_member_ref (tree, tree, tsubst_flags_t, tree);
 static void mark_template_arguments_used (tree, tree);
+static void mark_template_arguments_used_1 (tree);
 
 /* Make the current scope suitable for access checking when we are
    processing T.  T can be FUNCTION_DECL for instantiated function
@@ -6904,7 +6905,8 @@ has_value_dependent_address (tree op)
       if (VAR_P (op)
 	  && TREE_STATIC (op)
 	  && TREE_CODE (ctx) == FUNCTION_DECL
-	  && type_dependent_expression_p (ctx))
+	  && DECL_TEMPLATE_INFO (ctx)
+	  && any_dependent_template_arguments_p (DECL_TI_ARGS (ctx)))
 	return true;
     }
 
@@ -10859,7 +10861,10 @@ any_template_parm_r (tree t, void *data)
       break;
 
     case TEMPLATE_PARM_INDEX:
-      WALK_SUBTREE (TREE_TYPE (t));
+      /* No need to consider template parameters within the type of an NTTP:
+	 substitution into an NTTP is done directly with the corresponding
+	 template argument, and its type only comes into play earlier during
+	 coercion.  */
       break;
 
     case TEMPLATE_DECL:
@@ -13541,7 +13546,8 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 	  /* We can't substitute for this parameter pack.  We use a flag as
 	     well as the missing_level counter because function parameter
 	     packs don't have a level.  */
-	  gcc_assert (processing_template_decl || is_auto (parm_pack));
+	  gcc_assert (processing_template_decl || is_auto (parm_pack)
+		      || args == NULL_TREE);
 	  unsubstituted_packs = true;
 	}
     }
@@ -15118,11 +15124,26 @@ tsubst_decl (tree t, tree args, tsubst_flags_t complain)
 	    cp_apply_type_quals_to_decl (cp_type_quals (type), r);
 
 	    if (DECL_C_BIT_FIELD (r))
-	      /* For bit-fields, DECL_BIT_FIELD_REPRESENTATIVE gives the
-		 number of bits.  */
-	      DECL_BIT_FIELD_REPRESENTATIVE (r)
-		= tsubst_expr (DECL_BIT_FIELD_REPRESENTATIVE (t), args,
-			       complain, in_decl);
+	      {
+		/* For bit-fields, DECL_BIT_FIELD_REPRESENTATIVE gives the
+		   number of bits.  */
+		tree width
+		  = tsubst_expr (DECL_BIT_FIELD_REPRESENTATIVE (t), args,
+				 complain, in_decl);
+		if (width
+		    && width != error_mark_node
+		    && !type_dependent_expression_p (width)
+		    && !INTEGRAL_OR_UNSCOPED_ENUMERATION_TYPE_P
+			 (TREE_TYPE (width)))
+		  {
+		    if (complain & tf_error)
+		      error_at (DECL_SOURCE_LOCATION (t),
+		      		"width of bit-field %qD has non-integral "
+				"type %qT", r, TREE_TYPE (width));
+		    RETURN (error_mark_node);
+		  }
+		DECL_BIT_FIELD_REPRESENTATIVE (r) = width;
+	      }
 	    if (DECL_INITIAL (t))
 	      {
 		/* Set up DECL_TEMPLATE_INFO so that we can get at the
@@ -16940,6 +16961,15 @@ tsubst_baselink (tree baselink, tree object_type,
       bool maybe_incomplete = BASELINK_FUNCTIONS_MAYBE_INCOMPLETE_P (baselink);
       baselink = lookup_fnfields (qualifying_scope, name, /*protect=*/1,
 				  complain);
+      if (!baselink)
+	{
+	  if ((complain & tf_error)
+	      && constructor_name_p (name, qualifying_scope))
+	    error ("cannot call constructor %<%T::%D%> directly",
+		   qualifying_scope, name);
+	  return error_mark_node;
+	}
+
       if (maybe_incomplete)
 	{
 	  /* Filter out from the new lookup set those functions which didn't
@@ -16951,15 +16981,6 @@ tsubst_baselink (tree baselink, tree object_type,
 	    = filter_memfn_lookup (fns, BASELINK_FUNCTIONS (baselink),
 				   binfo_type);
 	  BASELINK_FUNCTIONS_MAYBE_INCOMPLETE_P (baselink) = true;
-	}
-
-      if (!baselink)
-	{
-	  if ((complain & tf_error)
-	      && constructor_name_p (name, qualifying_scope))
-	    error ("cannot call constructor %<%T::%D%> directly",
-		   qualifying_scope, name);
-	  return error_mark_node;
 	}
 
       fns = BASELINK_FUNCTIONS (baselink);
@@ -17921,12 +17942,16 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 
     case OFFSET_REF:
       {
-	tree type = tsubst (TREE_TYPE (t), args, complain, in_decl);
+	/* We should only get here for an OFFSET_REF like A::m; a .* in a
+	   template is represented as a DOTSTAR_EXPR.  */
+	gcc_checking_assert
+	  (same_type_p (TREE_TYPE (t), TREE_TYPE (TREE_OPERAND (t, 1))));
 	tree op0 = tsubst_copy (TREE_OPERAND (t, 0), args, complain, in_decl);
 	tree op1 = tsubst_copy (TREE_OPERAND (t, 1), args, complain, in_decl);
+	tree type = TREE_TYPE (op1);
 	r = build2 (code, type, op0, op1);
 	PTRMEM_OK_P (r) = PTRMEM_OK_P (t);
-	if (!mark_used (TREE_OPERAND (r, 1), complain)
+	if (!mark_used (op1, complain)
 	    && !(complain & tf_error))
 	  return error_mark_node;
 	return r;
@@ -21510,10 +21535,16 @@ tsubst_copy_and_build (tree t,
 	  }
 	else if (TREE_CODE (member) == FIELD_DECL)
 	  {
+	    /* Assume access of this FIELD_DECL has already been checked; we
+	       don't recheck it to avoid bogus access errors when substituting
+	       a reduced constant initializer (97740).  */
+	    gcc_checking_assert (TREE_CODE (TREE_OPERAND (t, 1)) == FIELD_DECL);
+	    push_deferring_access_checks (dk_deferred);
 	    r = finish_non_static_data_member (member, object, NULL_TREE,
 					       complain);
-	    if (TREE_CODE (r) == COMPONENT_REF)
-	      REF_PARENTHESIZED_P (r) = REF_PARENTHESIZED_P (t);
+	    pop_deferring_access_checks ();
+	    if (REF_PARENTHESIZED_P (t))
+	      r = force_paren_expr (r);
 	    RETURN (r);
 	  }
 	else if (type_dependent_expression_p (object))
@@ -22000,6 +22031,14 @@ mark_template_arguments_used (tree tmpl, tree args)
   /* We already marked outer arguments when specializing the context.  */
   args = INNERMOST_TEMPLATE_ARGS (args);
 
+  mark_template_arguments_used_1 (args);
+}
+
+/* Main recursive part of the above.  */
+
+static void
+mark_template_arguments_used_1 (tree args)
+{
   for (tree arg : tree_vec_range (args))
     {
       /* A (pointer/reference to) function or variable NTTP argument.  */
@@ -22040,6 +22079,8 @@ mark_template_arguments_used (tree tmpl, tree args)
 	  cp_walk_tree_without_duplicates (&DECL_INITIAL (arg),
 					   mark_used_r, nullptr);
 	}
+      else if (TREE_CODE (arg) == NONTYPE_ARGUMENT_PACK)
+	mark_template_arguments_used_1 (ARGUMENT_PACK_ARGS (arg));
     }
 }
 

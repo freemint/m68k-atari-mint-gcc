@@ -1,3 +1,306 @@
+2026-09-11  Release Manager
+
+	* GCC 13.5.0 released.
+
+2026-08-05  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backported from master:
+	2026-07-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/125866
+	* expr.cc (is_CFI_desc): Add check for proc_name.
+
+2026-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2026-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/126303
+	* frontend-passes.cc (inner_loop_may_be_skipped): If inner loop iterator
+	is not integral, return true.
+
+2026-07-20  Mikael Morin  <mikael@gcc.gnu.org>
+
+	Backported from master:
+	2026-07-03  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/97592
+	PR fortran/125998
+	* trans-array.cc (gfc_conv_array_parameter): Always create a new
+	descriptor.  Copy lbound and ubound from the original descriptor
+	using matching dimension indexes.  Recalculate stride and
+	offset.
+
+2026-07-09  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-09  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/103367
+	* trans-array.cc (gfc_conv_array_initializer): Emit an error for
+	invalid residual initializer expressions before returning a safe
+	empty constructor.
+
+2026-07-09  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-07  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/103367
+	* trans-array.cc (gfc_conv_array_initializer): Return empty
+	constructor for unexpected expression types after parameter
+	substitution.
+
+2026-07-09  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backported from master:
+	2026-07-07  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/103367
+	* expr.cc (simplify_const_ref): Hoist the call to
+	remove_subobject_ref up a level.
+	* primary.cc (gfc_match_rvalue): Don't copy the value expr
+	if the type is an EXPR_VARIABLE.
+	* trans-array.cc (gfc_conv_array_initializer): Only copy the expr
+	value if it does not have a ref.
+
+2026-05-21  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backported from master:
+	2026-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/106546
+	* frontend-passes.cc (create_var): Set attr->automatic on
+	new symbol.
+	(create_do_loop): Likewise on iteration variable.
+
+2026-05-20  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backported from master:
+	2026-05-19  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/115260
+	* trans-expr.cc (gfc_conv_subref_array_arg): Pass false to
+	dealloc argument of gfc_trans_scalar_assign if we are
+	converting a g77-style argument.
+
+2026-05-14  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-08  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/96986
+	* resolve.cc (resolve_global_procedure): Move entry symbol
+	lookup outside the resolved != -1 block.
+
+2026-05-13  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-10  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/94978
+	* frontend-passes.cc (evaluate_loop_bound): New helper.
+	(inner_loop_may_be_skipped): New helper.
+	(do_subscript): Skip outer-loop bound warnings when nested inner loops
+	may be zero-trip for the substituted bound.
+
+2026-05-13  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2026-03-16  Paul Thomas  <pault@gcc.gnu.org>
+		    Steve Kargl  <kargls@comcast.net>
+
+	PR fortran/93832
+	* array.cc (resolve_array_bound): Emit error and return false
+	if bound expression is derived type or class.
+	* primary.cc (gfc_convert_to_structure_constructor): Do not
+	dereference NULL in character component test. Define 'shorter'
+	and use it help cure one of several whitespace issues.
+
+2026-05-13  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-11  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/93814
+	* trans-decl.cc (build_entry_thunks): Create local result buffer
+	and length temporaries for bind(c) CHARACTER entry thunks when the
+	master returns by reference but the thunk returns by value.
+
+2026-05-13  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-08  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/93715
+	* trans-decl.cc (gfc_trans_deferred_vars): Skip auto array
+	allocation for scalar coarrays.
+
+2026-05-09  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-07  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/107425
+	* trans-decl.cc (gfc_finish_var_decl): Check for
+	omp_affinity_iterators namespace before FL_LABEL BLOCK check.
+	Only route actual iterator variables through add_decl_as_local;
+	add other variables to the enclosing function.
+
+2026-05-09  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-06  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/79524
+	PR fortran/79524
+	* decl.cc (discard_pending_charlens): New helper.
+	(add_init_expr_to_sym): Drop statement-local charlens when
+	rejecting variable-length parameter arrays.
+	(variable_decl, do_parm, enumerator_decl): Save the current
+	namespace charlen list before parsing declarations with
+	initializers.
+	(match_procedure_decl): Adjust call to add_init_expr_to_sym.
+
+2026-04-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2026-03-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/102619
+	* trans-expr.cc (gfc_get_interface_mapping_array): Add argument
+	'assumed_rank_formal', which if true returns the descriptor in
+	'ifm'.
+	(gfc_add_interface_mapping): Detect an assumed rank formal arg
+	of a non-intrinsic function to set 'assumed_rank_formal' and
+	pass the descriptor to gfc_get_interface_mapping_array.
+
+2026-04-14  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-09-11  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/121616
+	* primary.cc (gfc_variable_attr): Properly set dimension attribute
+	from a component ref.
+
+2026-04-13  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-03-30  Christopher Albert  <albert@tugraz.at>
+
+	* scanner.cc (skip_free_oacc_sentinel): Clear openmp_flag only for
+	fresh OpenACC directive lines.
+	(skip_free_omp_sentinel): Clear openacc_flag only for fresh OpenMP
+	directive lines.
+
+2026-04-13  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-13  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/95879
+	PR fortran/95879
+	* parse.cc (fixup_st_func_formals): New function to update
+	statement function formal argument lists referencing a symbol
+	about to be freed.
+	(gfc_fixup_sibling_symbols): Call fixup_st_func_formals before
+	gfc_release_symbol.
+
+2026-04-02  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-04-02  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/102596
+	* trans-openmp.cc (gfc_omp_clause_default_ctor): Only require an
+	outer reference when the constructor path actually uses it.
+
+2026-04-02  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2026-04-02  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/120286
+	* trans-openmp.cc (gfc_is_class_pointer_type): New helper.
+	(gfc_omp_clause_copy_ctor): Unwrap saved descriptors before
+	deciding whether privatization should preserve only pointer
+	association.  Handle scalar class pointers on that path too.
+	(gfc_omp_clause_dtor): Likewise.
+
+2026-03-30  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-03-11  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/95338
+	* trans-types.cc (gfc_get_entry_result_type): New helper to use the
+	ABI return type for mixed ENTRY union fields.
+	(gfc_get_mixed_entry_union): Use it for each entry result field.
+
+2026-03-30  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-03-12  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/106946
+	* decl.cc (gfc_match_data_decl): Remove CLASS components added by a
+	failed declaration in a derived type, and guard symtree deletion.
+	* gfortran.h (gfc_free_component, gfc_delete_symtree): Declare.
+	* symbol.cc (gfc_free_component): New function.
+	(free_components): Use it.
+	(gfc_delete_symtree): Make non-static.
+
+2026-03-29  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-03-13  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/102459
+	* trans-openmp.cc (gfc_trans_omp_clauses): Choose the scalar
+	reference path from the full expression rank rather than the first
+	array reference.
+	(gfc_trans_omp_depobj): Likewise.
+
+2026-03-29  Christopher Albert  <albert@tugraz.at>
+
+	Backported from master:
+	2026-03-12  Christopher Albert  <albert@tugraz.at>
+
+	PR fortran/82721
+	* decl.cc (discard_pending_charlen): New helper.
+	(build_sym): Discard unattached CHARACTER length nodes when
+	gfc_add_type rejects the declaration.
+
+2026-03-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from master:
+	2026-03-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/84245
+	* match.cc (gfc_match_select_type): Free the temporary namespace
+	only on MATCH_NO. Return immediately on MATCH_ERROR.
+
+2026-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from master:
+	2026-03-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/124450
+	* trans-io.cc (transfer_expr): If code is NULL, call
+	transfer_array_component with NULL where argument rather than
+	&code->loc.
+
+2025-10-05  Harald Anlauf  <anlauf@gmx.de>
+
+	Backported from master:
+	2025-09-03  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/121263
+	* trans-intrinsic.cc (gfc_conv_intrinsic_transfer): For an
+	unlimited polymorphic SOURCE to TRANSFER use saved descriptor
+	if possible.
+
 2025-06-05  Release Manager
 
 	* GCC 13.4.0 released.
